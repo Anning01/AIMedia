@@ -1,0 +1,9 @@
+.idea
+local_config.py
+.venv
+*.pyc
+chrome
+*.db
+temp
+setup.py
+rename.py
