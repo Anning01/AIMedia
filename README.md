@@ -89,9 +89,9 @@ git clone https://github.com/Anning01/AIMedia.git
 - 完整的使用演示：抓紧制作中 `(*>﹏<*)′~
 - 如何在Windows上部署：抓紧制作中 `(*>﹏<*)′~
 
-#### ① 创建虚拟环境
+#### ① 创建虚拟环境 （Conda）
 
-建议使用 [conda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) 创建 python 虚拟环境
+建议使用 [conda](https://www.anaconda.com/download/success) 创建 python 虚拟环境
 
 ```shell
 git clone https://github.com/Anning01/AIMedia.git
@@ -101,7 +101,7 @@ conda activate AIMedia
 pip install -r requirements.txt
 ```
 
-#### ③ 启动Web界面 🌐
+#### ② 启动Web界面 🌐
 
 注意需要到 AIMedia 项目 `根目录` 下执行以下命令
 
@@ -111,13 +111,34 @@ pip install -r requirements.txt
 conda activate AIMedia
 streamlit run main.py
 ```
+#### ① 使用venv (请确定 python 版本 3.12.4)
+
+```shell
+git clone https://github.com/Anning01/AIMedia.git
+cd AIMedia
+python -m venv .venv
+.\.venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+#### ② 启动Web界面 🌐
+
+注意需要到 AIMedia 项目 `根目录` 下执行以下命令
+
+###### Windows
+
+```bat
+streamlit run main.py
+或者
+.\webui.bat（conda不可以这样执行）
+```
 
 > 注意：我们自动发布依赖chrome测试版，需要手动下载
 
 下载地址：
 
-- 百度网盘: https://pan.baidu.com/s/
-- 夸克网盘：https://pan.quark.cn/s/
+- 百度网盘: 链接：https://pan.baidu.com/s/1x6J3K4KdWrI9vOG8yvSSBw  提取码：7jyw
+
 
 模型下载后解压，整个目录放到 `.\AIMedia` 里面，
 最终的文件路径应该是这样: `.\AIMedia\chrome`
