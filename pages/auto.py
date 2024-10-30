@@ -74,7 +74,6 @@ def start_client():
     started = False
 
     token = get_data()
-    print(f"Token: {token}")
     def run_client():
         nonlocal started
         if not started:
@@ -103,7 +102,7 @@ def start_client():
             #                             creationflags=subprocess.CREATE_NEW_CONSOLE, errors='ignore')
     threading.Thread(target=run_client).start()
 
-st.write('托管机器人，可开启多个，根据电脑cpu和自己的任务量')
+st.write('托管机器人，可开启多个，建议开启绑定账号的数量，支持局域网多台机器自动联机，根据电脑cpu和自己的任务量')
 cols = st.columns([0.8, 0.1])
 with cols[1]:
     if st.button("启动托管"):
@@ -121,7 +120,6 @@ account_configs = []
 for item in user_data:
     conn = create_conn()
     task_num,classify = select_task_num(item['uid'],conn)
-    print(task_num)
     dict_ = {
         "nickname": item['nickname'],
         "uid": item['uid'],

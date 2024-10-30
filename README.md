@@ -13,85 +13,94 @@
   <a href="https://github.com/Anning01/AIMedia" target="_blank"><img src="docs/logo.png" style="width: 120px; height: 120px; border-radius: 50%;"/></a>
 </div>
 <br>
-自动抓取热点，自动生成新闻，自动发布各大平台。  <b>全自动托管AI媒体软件</b> 
+Automatically capture trending topics, auto-generate news, and automatically publish to major platforms. <b>Fully automated AI-powered media software</b>
 <br>
 </div>
 
-## 功能特性 🎯
+## Features 🎯
 
-- [x] 支持 **热点新闻抓取**，自动抓取各大平台的热点新闻
-    - [x] 抖音热点
-    - [x] 网易新闻
-    - [ ] 微博热点
-- [x] 支持 **根据新闻AI自动创作**，自动发布各个平台
-    - [x] 今日头条
-    - [ ] 小红书
-    - [ ] 公众号
-    - [ ] 百家平台
-- [x] 针对无图纯文本，使用AI生成图像，增加原创率，阅读体验
+- [x] Supports **trending news capture**, automatically fetching trending news from major platforms
+    - [x] Douyin Trending
+    - [x] NetEase News
+    - [ ] Weibo Trending
+- [x] Supports **AI-based auto-news creation**, with automatic publishing to various platforms
+    - [x] Today’s Headlines
+    - [ ] Little Red Book
+    - [ ] WeChat Official Accounts
+    - [ ] Baijia Platform
+- [x] For text-only content, AI generates images to increase originality and improve reader engagement.
 
-### 后期计划 📅
+### Future Plans 📅
 
-- [ ] 自动生成视频发布各个平台
+- [ ] Auto-generate videos for publishing across platforms
 
-## 交流讨论 💬
+## Community & Discussions 💬
 
 <img src="docs/wechat.png" width="250">
 
-## 视频演示 📺
+## Video Demonstration 📺
 
-ps: 抓紧制作中 `(*>﹏<*)′~
+ps: In progress `(*>﹏<*)′~
 
-## 配置要求 📦
+## Requirements 📦
 
-- 建议最低 CPU 4核或以上，内存 8G 或以上，显卡非必须
-- Windows 10 或以上
+- Minimum recommended: CPU with 4 cores or more, 8GB of RAM or more, GPU is not required
+- Windows 10 or above
 
-## 快速开始 🚀
+## Quick Start 🚀
 
-下载一键启动包，解压直接使用（路径不要有 **中文**、**特殊字符**、**空格**）
+Download the one-click startup package, extract, and use directly (avoid paths with **Chinese characters**, **special characters**, or **spaces**).
 
 ### Windows
-- 百度网盘: https://pan.baidu.com/s/ 提取码: 
-- 夸克网盘：https://pan.quark.cn/s/
+- Baidu Drive: https://pan.baidu.com/s/1YIV2avc_i5V8IcltWoFh1g  Code: 99k1
 
-下载后，建议先**双击执行** `update.bat` 更新到**最新代码**，然后右键点击 **以管理员权限运行** `webui.bat` 启动
+After downloading, first extract `venv.tar.gz` to the `venv` folder in the current directory. The structure should look like this:
 
-启动后，会自动打开浏览器（如果打开是空白，建议换成 **Chrome** 或者 **Edge** 打开）
 
-### 其他系统
+```
+AIMedia  
+  ├─venv
+  ├─main.py
+  ├─chrome
+  ├─...
+```
 
-不支持，仅支持window
 
-## 安装部署 📥
+It is recommended to **double-click** `update.bat` first to update to the **latest code** (requires Git). Then right-click to **run as administrator** `webui.bat` to start.
 
-### 前提条件
+After startup, the browser will open automatically (if a blank page opens, try using **Chrome** or **Edge**).
 
-- 尽量不要使用 **中文路径**，避免出现一些无法预料的问题
-- 请确保你的 **网络** 是正常的，VPN需要打开`全局流量`模式
+### Other Systems
 
-#### ① 克隆代码
+Not supported; only Windows is supported.
+
+## Installation & Deployment 📥
+
+### Prerequisites
+
+- Avoid using **paths with Chinese characters** to prevent unforeseen issues.
+- Make sure your **network** is stable; VPN should be in "global traffic" mode.
+
+#### ① Clone the Code
 
 ```shell
 git clone https://github.com/Anning01/AIMedia.git
 ```
+#### ② Edit the Configuration File
 
-#### ② 修改配置文件
+- Copy the `config.py` file and name it `local_config.py`.
+- Configure `zhipu_aip_key` as specified in `config.py`. Enable the Stable Diffusion API if you need AI-generated images.
 
-- 将 `config.py` 文件复制一份，命名为 `local_config.py`
-- 按照 `config.py` 文件中的说明，配置好 `sessionid` 和 `zhipu_aip_key`，如需要AI配图，打开enable 配置相关的 stable diffusion api
+### Manual Deployment 📦
 
+> Video Tutorial
 
-### 手动部署 📦
+- Full usage demonstration: In progress `(*>﹏<*)′~
+- How to deploy on Windows: In progress `(*>﹏<*)′~
 
-> 视频教程
+#### ① Create a Virtual Environment (Conda)
 
-- 完整的使用演示：抓紧制作中 `(*>﹏<*)′~
-- 如何在Windows上部署：抓紧制作中 `(*>﹏<*)′~
-
-#### ① 创建虚拟环境 （Conda）
-
-建议使用 [conda](https://www.anaconda.com/download/success) 创建 python 虚拟环境
+It is recommended to use [conda](https://www.anaconda.com/download/success) to create a Python virtual environment.
 
 ```shell
 git clone https://github.com/Anning01/AIMedia.git
@@ -101,9 +110,9 @@ conda activate AIMedia
 pip install -r requirements.txt
 ```
 
-#### ② 启动Web界面 🌐
+#### ② Start the Web Interface 🌐
 
-注意需要到 AIMedia 项目 `根目录` 下执行以下命令
+Be sure to execute the following command in the AIMedia project `root directory`.
 
 ###### Windows
 
@@ -111,47 +120,45 @@ pip install -r requirements.txt
 conda activate AIMedia
 streamlit run main.py
 ```
-#### ① 使用venv (请确定 python 版本 3.12.4)
+#### ① Using venv (Ensure Python version 3.12.4)
 
 ```shell
 git clone https://github.com/Anning01/AIMedia.git
 cd AIMedia
-python -m venv .venv
-.\.venv\Scripts\activate
+python -m venv venv
+.\venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-#### ② 启动Web界面 🌐
+#### ② Start the Web Interface 🌐
 
-注意需要到 AIMedia 项目 `根目录` 下执行以下命令
+Be sure to execute the following command in the AIMedia project `root directory`.
 
 ###### Windows
 
 ```bat
 streamlit run main.py
-或者
-.\webui.bat（conda不可以这样执行）
+Or
+.\webui.bat（not supported with Conda）
 ```
 
-> 注意：我们自动发布依赖chrome测试版，需要手动下载
+> Note：Our auto-publish feature depends on the Chrome beta version, which must be downloaded manually.
 
-下载地址：
+Download link:：
 
-- 百度网盘: 链接：https://pan.baidu.com/s/1x6J3K4KdWrI9vOG8yvSSBw  提取码：7jyw
+- Baidu Drive: Link:：https://pan.baidu.com/s/1x6J3K4KdWrI9vOG8yvSSBw  Code：7jyw
 
+After downloading and extracting the model, place the entire directory in `.\AIMedia`,
+so the final file path should look like this: `.\AIMedia\chrome`.
 
-模型下载后解压，整个目录放到 `.\AIMedia` 里面，
-最终的文件路径应该是这样: `.\AIMedia\chrome`
+## Feedback & Suggestions 📢
 
-## 反馈建议 📢
+- You can submit an [issue](https://github.com/Anning01/AIMedia/issues)
+  or a [pull request](https://github.com/Anning01/AIMedia/pulls).
 
-- 可以提交 [issue](https://github.com/Anning01/AIMedia/issues)
-  或者 [pull request](https://github.com/Anning01/AIMedia/pulls)。
+## License 📝
 
-
-## 许可证 📝
-
-点击查看 [`LICENSE`](LICENSE) 文件
+Click to view the [`LICENSE`](LICENSE) file.
 
 ## Star History
 

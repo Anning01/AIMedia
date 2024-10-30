@@ -24,13 +24,12 @@ if exist "%folder_to_delete%" (
 )
 
 REM 进入虚拟环境
-set venv_path=.\.venv\Scripts\activate
+set venv_path=.\venv\Scripts\activate
 echo 进入虚拟环境: %venv_path%
 call %venv_path%
 
-
 REM 运行 streamlit run main.py
 echo 运行 streamlit run main.py
-streamlit run main.py
+python -m streamlit run main.py
 
 pause

@@ -4,15 +4,23 @@ from manage.account import get_account_list
 from utils.auth import auth_level_expiry_time, is_login
 from utils.get_hot_data import hot_data, hot_item, wangyi
 import requests
-
+import threading
 from utils.sql_data import create_task
-
+from utils.auto_tools import AutoTools
+from utils.local_storage import *
 
 # 模拟数据
 def get_hot_data(category, page):
-    # print(category, page)
-    data = hot_data(category, page)
-    return data
+    try:
+        sessionid_token = get_sessionid()
+    except:
+        sessionid_token = None
+    if sessionid_token:
+        data = hot_data(category, page,sessionid_token)
+        return data,sessionid_token
+    else:
+        return None,None
+
 
 
 @st.dialog("任务配置")
@@ -45,12 +53,14 @@ def vote(video_list, sentence, sentence_tag_name):
             opt_status = create_task(
                 sentence_tag_name, sentence, selected_account, img_list
             )
-    if opt_status:
+    if opt_status is True:
         srt_ = "配置成功"
         st.markdown(f"<span style='color:green;'>{srt_}</span>", unsafe_allow_html=True)
-    else:
+    elif opt_status is False:
         srt_ = "您旗下已有或者已发布相同配置，为提高账号权重，无法为您重复配置"
         st.markdown(f"<span style='color:red;'>{srt_}</span>", unsafe_allow_html=True)
+    else:
+        pass
 
     st.write(f"事件：{sentence}，分类：{sentence_tag_name}")
     st.write(f"相关视频：")
@@ -106,7 +116,7 @@ def vote_wangyi(video_list, sentence, img_list):
         # st.write(img)
 
 
-def show_data(hot_data):
+def show_data(hot_data,sessionid_token):
     # 显示列名
     st.write("### 热点具体数据")
     warn_srt_ = "部分视频数据因不符合制作要求已经过滤，如视频中只有音乐，即使没有视频也不影响配置使用"
@@ -153,7 +163,8 @@ def show_data(hot_data):
         if cols[5].button("配置", key=f"config_{item['num']}", use_container_width=True):
             result, message = auth_level_expiry_time()
             if result:
-                video_list = hot_item(item["sentence_id"], item["video_count"])
+
+                video_list = hot_item(item["sentence_id"], item["video_count"],sessionid_token)
                 vote(video_list, item["sentence"], item["sentence_tag_name"])
             else:
                 st.write(message)
@@ -196,6 +207,18 @@ def show_data_wangyi(hot_data):
             else:
                 st.write(message)
 
+# @st.cache_resource
+@st.dialog("扫码登录")
+def get_scrt_douyin():
+    auto = AutoTools()
+    cookies = auto.get_cookies_douy_hot('抖音热点宝')
+    for item in  cookies:
+        if item['name'] == 'sessionid_douhot':
+            sessionid = item['value']
+            save_data('sessionid_token',sessionid)
+            st.rerun()
+
+
 
 def page_douyin():
     # 页面布局
@@ -226,13 +249,18 @@ def page_douyin():
         "科技",
         "财经",
     ]
-
     # 创建按钮
     category_buttons = []
     cols = st.columns(12)  # 每行12个按钮
     for i, category in enumerate(categories):
         with cols[i % 12]:
             category_buttons.append(st.button(category, use_container_width=True))
+
+    st.write("### 获取抖音密钥,网页打开后登录扫码")
+    cols = st.columns([0.9, 0.1])
+    with cols[1]:
+        if st.button("点击扫码"):
+            get_scrt_douyin()
 
     # 获取选中的分类
     for i, button in enumerate(category_buttons):
@@ -243,8 +271,11 @@ def page_douyin():
             break
 
     # 获取数据
-    hot_data = get_hot_data(st.session_state.selected_category, st.session_state.page_)
-    show_data(hot_data)
+    hot_data,sessionid_token = get_hot_data(st.session_state.selected_category, st.session_state.page_)
+    if hot_data:
+        show_data(hot_data,sessionid_token)
+    else:
+        st.write('请扫码')
 
     # 底部：页码
     page_count = 20
@@ -290,6 +321,7 @@ if "selected_category" not in st.session_state:
     st.session_state.selected_category = "全部"
 if "selected_platform" not in st.session_state:
     st.session_state.selected_platform = "抖音"
+
 
 # 判断是否登录
 token = is_login()

@@ -1,3 +1,5 @@
+import time
+
 import streamlit as st
 from st_pages import add_page_title, get_nav_from_toml
 from utils.auth import is_login
@@ -10,6 +12,7 @@ def vote(phone, password):
     if status:
         st.success(message)
         del st.session_state["page"]
+        time.sleep(2)
         st.switch_page("pages/hots.py")
     else:
         if isinstance(message, dict) and "non_field_errors" in message:
@@ -46,6 +49,7 @@ def register_page():
                 if status:
                     st.success("登录成功！")
                     del st.session_state["page"]
+                    time.sleep(2)
                     st.switch_page("pages/hots.py")
                 else:
                     st.error(message)
@@ -64,7 +68,7 @@ if __name__ == "__main__":
 
     nav = get_nav_from_toml(".streamlit/pages.toml")
 
-    # st.logo("logo.png")
+    st.logo("docs/logo.png")
 
     pg = st.navigation(nav)
 

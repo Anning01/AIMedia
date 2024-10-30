@@ -13,7 +13,6 @@ from utils.sql_data import (
 # 模拟登录函数
 def login(platform):
     # 这里可以替换为实际的登录接口请求代码
-    print(f"登录到 {platform}")
     auto = AutoTools()
     nickName, cookies, uid = auto.get_cookies(platform)
     login_account(nickName, cookies, uid, platform)
@@ -99,7 +98,6 @@ if filtered_data:
     cols[6].write("数据分析")
     # cols[6].write("操作")
     for account in filtered_data:
-        print()
         cols = st.columns(7)
         cols[0].write(account["nickname"])
         cols[1].write(account["uid"])

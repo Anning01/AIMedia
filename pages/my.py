@@ -26,7 +26,6 @@ user_data = {
 def activate_membership(card_key):
     # 这里可以替换为实际的兑换卡密接口请求代码
     response = use_activation_code(card_key)
-    print(response["message"])
     return response["result"]
 
 

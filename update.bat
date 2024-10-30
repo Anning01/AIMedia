@@ -27,7 +27,7 @@ echo 执行 git pull
 git pull
 
 REM 进入虚拟环境
-set venv_path=.\.venv\Scripts\activate
+set venv_path=.\venv\Scripts\activate
 echo 进入虚拟环境: %venv_path%
 call %venv_path%
 

@@ -1,14 +1,9 @@
-# config.py
-
 import os
 
 # 检查是否存在 local_config.py 文件
 if os.path.exists("local_config.py"):
     from local_config import *
 else:
-    # 抖音接口秘钥
-    sessionid = ""
-
     # 智普秘钥
     zhipu_aip_key = ''
 

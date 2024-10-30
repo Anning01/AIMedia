@@ -53,9 +53,9 @@ def save_image_from_url(img_list, ids, content):
             save_path = rf"{root}/{img_list.index(image_url)}.jpg"
             num = 0
             while True:
-                print("图片生成...")
+                # print("图片生成...")
                 if not os.path.exists(save_path):
-                    print("需要生成")
+                    # print("需要生成")
                     headers = {
                         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
                     }
@@ -73,7 +73,6 @@ def save_image_from_url(img_list, ids, content):
                     break
     else:
         if enable:
-            print("图片生成...")
             StableDiffusion().handle(content, 3, root)
 
     return root
@@ -158,7 +157,6 @@ def task_logs():
                     imgs_path = save_image_from_url(img_list, task_ev["id"], content)
                     result = publish_tool.publish(cookie, content, platform, imgs_path)
                     if result["status"]:
-                        print(result['status'])
                         update_account_task(task_ev["id"], "已发布")
                         shutil.rmtree(imgs_path)
                 else:
