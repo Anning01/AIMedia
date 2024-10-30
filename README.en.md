@@ -40,7 +40,7 @@ Automatically capture trending topics, auto-generate news, and automatically pub
 
 ## Video Demonstration 📺
 
-ps: In progress `(*>﹏<*)′~
+Bilibili video link：https://www.bilibili.com/video/BV1oYSVYaEaa/?share_source=copy_web&vd_source=998582dcaa6c1a862619086e9dda59cb
 
 ## Requirements 📦
 
@@ -95,7 +95,7 @@ git clone https://github.com/Anning01/AIMedia.git
 
 > Video Tutorial
 
-- Full usage demonstration: In progress `(*>﹏<*)′~
+- Full usage demonstration: Bilibili video link：https://www.bilibili.com/video/BV1oYSVYaEaa/?share_source=copy_web&vd_source=998582dcaa6c1a862619086e9dda59cb
 - How to deploy on Windows: In progress `(*>﹏<*)′~
 
 #### ① Create a Virtual Environment (Conda)

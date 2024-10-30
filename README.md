@@ -40,7 +40,7 @@
 
 ## 视频演示 📺
 
-ps: 抓紧制作中 (*>﹏<*)′~
+B站视频链接：https://www.bilibili.com/video/BV1oYSVYaEaa/?share_source=copy_web&vd_source=998582dcaa6c1a862619086e9dda59cb
 
 ## 配置要求 📦
 
@@ -96,7 +96,7 @@ git clone https://github.com/Anning01/AIMedia.git
 
 > 视频教程
 
-- 完整的使用演示：抓紧制作中 (*>﹏<*)′~
+- 完整的使用演示：B站视频链接：https://www.bilibili.com/video/BV1oYSVYaEaa/?share_source=copy_web&vd_source=998582dcaa6c1a862619086e9dda59cb
 - 如何在Windows上部署：抓紧制作中 (*>﹏<*)′~
 
 #### ① 创建虚拟环境 （Conda）
