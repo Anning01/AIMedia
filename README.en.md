@@ -10,29 +10,29 @@
 <br>
 <h3>简体中文 | <a href="README-en.md">English</a></h3>
 <div align="center">
-  <a href="https://github.com/Anning01/AIMedia" target="_blank"><img src="docs/logo.png" style="width: 55px; height: 55px; border-radius: 50%; object-fit: cover;"/></a>
+  <a href="https://github.com/Anning01/AIMedia" target="_blank"><img src="docs/logo.png" style="width: 120px; height: 120px; border-radius: 50%;"/></a>
 </div>
 <br>
-自动抓取热点，自动生成新闻，自动发布各大平台。  <b>全自动托管AI媒体软件</b> 
+Automatically crawl hot topics, generate news, and publish to various platforms.  <b>Fully automated AI media software</b> 
 <br>
 </div>
 
 ## 功能特性 🎯
 
-- [x] 支持 **热点新闻抓取**，自动抓取各大平台的热点新闻
-    - [x] 抖音热点
-    - [x] 网易新闻
-    - [ ] 微博热点
-- [x] 支持 **根据新闻AI自动创作**，自动发布各个平台
-    - [x] 今日头条
-    - [ ] 小红书
-    - [ ] 公众号
-    - [ ] 百家平台
-- [x] 针对无图纯文本，使用AI生成图像，增加原创率，阅读体验
+- [x] Support **hot news crawling**, automatically crawl hot news from various platforms
+    - [x] Douyin hot topics
+    - [x] NetEase News
+    - [ ] Weibo hot topics
+- [x] Support **AI-generated news creation**, automatically publish to various platforms
+    - [x] Toutiao
+    - [ ] Xiaohongshu
+    - [ ] WeChat Official Account
+    - [ ] Baijia Platform
+- [x] For text-only content without images, use AI to generate images, increase originality, and improve reading experience
 
 ### 后期计划 📅
 
-- [ ] 自动生成视频发布各个平台
+- [ ] Automatically generate videos and publish to various platforms
 
 ## 交流讨论 💬
 
@@ -40,28 +40,37 @@
 
 ## 视频演示 📺
 
-ps: 抓紧制作中 `(*>﹏<*)′~
+ps: Coming soon `(>﹏<)′~
 
 ## 配置要求 📦
 
-- 建议最低 CPU 4核或以上，内存 8G 或以上，显卡非必须
-- Windows 10 或以上
+- Recommended minimum CPU 4 cores or above, memory 8G or above, GPU not required
+- Windows 10 or above
 
 ## 快速开始 🚀
 
-下载一键启动包，解压直接使用（路径不要有 **中文**、**特殊字符**、**空格**）
+ownload the one-click startup package, unzip and use directly (path should not contain **Chinese**、**characters**、**special characters**, or spaces）
 
 ### Windows
-- 百度网盘: https://pan.baidu.com/s/ 提取码: 
-- 夸克网盘：https://pan.quark.cn/s/
+- Baidu Netdisk: https://pan.baidu.com/s/1YIV2avc_i5V8IcltWoFh1g  Extraction Code：99k1
 
-下载后，建议先**双击执行** `update.bat` 更新到**最新代码**，然后右键点击 **以管理员权限运行** `webui.bat` 启动
 
-启动后，会自动打开浏览器（如果打开是空白，建议换成 **Chrome** 或者 **Edge** 打开）
+After downloading, first unzip venv.tar.gz to the current directory venv, with the following structure:
+```
+AIMedia  
+  ├─venv
+  ├─main.py
+  ├─chrome
+  ├─...
+```
+
+It is recommended to **double-click** `update.bat` to update to the **latest code** (requires git installation), then right-click and **run as administrator** `webui.bat` to start.
+
+After starting, the browser will automatically open (if it opens blank, it is recommended to switch to **Chrome** or **Edge**)
 
 ### 其他系统
 
-不支持，仅支持window
+Not supported, only supports Windows
 
 ## 安装部署 📥
 
@@ -79,7 +88,7 @@ git clone https://github.com/Anning01/AIMedia.git
 #### ② 修改配置文件
 
 - 将 `config.py` 文件复制一份，命名为 `local_config.py`
-- 按照 `config.py` 文件中的说明，配置好 `sessionid` 和 `zhipu_aip_key`，如需要AI配图，打开enable 配置相关的 stable diffusion api
+- 按照 `config.py` 文件中的说明，配置好 `zhipu_aip_key`，如需要AI配图，打开enable 配置相关的 stable diffusion api
 
 
 ### 手动部署 📦
@@ -89,9 +98,9 @@ git clone https://github.com/Anning01/AIMedia.git
 - 完整的使用演示：抓紧制作中 `(*>﹏<*)′~
 - 如何在Windows上部署：抓紧制作中 `(*>﹏<*)′~
 
-#### ① 创建虚拟环境
+#### ① 创建虚拟环境 （Conda）
 
-建议使用 [conda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) 创建 python 虚拟环境
+建议使用 [conda](https://www.anaconda.com/download/success) 创建 python 虚拟环境
 
 ```shell
 git clone https://github.com/Anning01/AIMedia.git
@@ -101,7 +110,7 @@ conda activate AIMedia
 pip install -r requirements.txt
 ```
 
-#### ③ 启动Web界面 🌐
+#### ② 启动Web界面 🌐
 
 注意需要到 AIMedia 项目 `根目录` 下执行以下命令
 
@@ -111,13 +120,34 @@ pip install -r requirements.txt
 conda activate AIMedia
 streamlit run main.py
 ```
+#### ① 使用venv (请确定 python 版本 3.12.4)
+
+```shell
+git clone https://github.com/Anning01/AIMedia.git
+cd AIMedia
+python -m venv venv
+.\venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+#### ② 启动Web界面 🌐
+
+注意需要到 AIMedia 项目 `根目录` 下执行以下命令
+
+###### Windows
+
+```bat
+streamlit run main.py
+或者
+.\webui.bat（conda不可以这样执行）
+```
 
 > 注意：我们自动发布依赖chrome测试版，需要手动下载
 
 下载地址：
 
-- 百度网盘: https://pan.baidu.com/s/
-- 夸克网盘：https://pan.quark.cn/s/
+- 百度网盘: 链接：https://pan.baidu.com/s/1x6J3K4KdWrI9vOG8yvSSBw  提取码：7jyw
+
 
 模型下载后解压，整个目录放到 `.\AIMedia` 里面，
 最终的文件路径应该是这样: `.\AIMedia\chrome`
