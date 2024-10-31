@@ -65,7 +65,6 @@ AIMedia
   ├─...
 ```
 
-
 It is recommended to **double-click** `update.bat` first to update to the **latest code** (requires Git). Then right-click to **run as administrator** `webui.bat` to start.
 
 After startup, the browser will open automatically (if a blank page opens, try using **Chrome** or **Edge**).
