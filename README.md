@@ -17,6 +17,8 @@
 <br>
 </div>
 
+<a href="https://aimedia.daniu7.cn/" target="_blank"> 点击进入官网 </a>
+
 ## 功能特性 🎯
 
 - [x] 支持 **热点新闻抓取**，自动抓取各大平台的热点新闻
