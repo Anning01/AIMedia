@@ -16,20 +16,23 @@
 自动抓取热点，自动生成新闻，自动发布各大平台。  <b>全自动托管AI媒体软件</b> 
 <br>
 </div>
+<h3>由于项目已经开始商业化，plus版本不开源<a href="https://aimedia.daniu7.cn/" target="_blank"> 点击进入官网 </a></h3>
 
-<a href="https://aimedia.daniu7.cn/" target="_blank"> 点击进入官网 </a>
 
 ## 功能特性 🎯
 
 - [x] 支持 **热点新闻抓取**，自动抓取各大平台的热点新闻
     - [x] 抖音热点
     - [x] 网易新闻
-    - [ ] 微博热点
+    - [x] 微博热点
+    - [x] 澎湃新闻
+    - [x] 中国日报
+    - [x] 搜狐新闻
 - [x] 支持 **根据新闻AI自动创作**，自动发布各个平台
     - [x] 今日头条
-    - [ ] 小红书
-    - [ ] 公众号
-    - [ ] 百家平台
+    - [x] 企鹅号
+    - [x] 公众号
+    - [x] 百家平台
 - [x] 针对无图纯文本，使用AI生成图像，增加原创率，阅读体验
 
 ### 后期计划 📅
@@ -42,7 +45,7 @@
 
 ## 视频演示 📺
 
-B站视频链接：https://www.bilibili.com/video/BV1oYSVYaEaa/?share_source=copy_web&vd_source=998582dcaa6c1a862619086e9dda59cb
+B站视频链接：https://www.bilibili.com/video/BV1HABgYKE6H
 
 ## 配置要求 📦
 
@@ -98,7 +101,7 @@ git clone https://github.com/Anning01/AIMedia.git
 
 > 视频教程
 
-- 完整的使用演示：B站视频链接：https://www.bilibili.com/video/BV1oYSVYaEaa/?share_source=copy_web&vd_source=998582dcaa6c1a862619086e9dda59cb
+- 完整的使用演示：B站视频链接：hhttps://www.bilibili.com/video/BV1HABgYKE6H
 - 如何在Windows上部署：抓紧制作中 (*>﹏<*)′~
 
 #### ① 创建虚拟环境 （Conda）
