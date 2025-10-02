@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+
+{% block title %}AiMediaPlus - 智能文章管理平台{% endblock %}
+
+{% block extra_css %}
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background: #0a0b1e;
+    }
+
+    .hero {
+        background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1432821596592-e2c18b78144f?ixlib=rb-4.0.3') center/cover;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        text-align: center;
+        color: white;
+        padding: 0 2rem;
+    }
+
+    .hero-content {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .hero h1 {
+        font-size: 3.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .hero p {
+        font-size: 1.25rem;
+        margin-bottom: 2rem;
+        opacity: 0.9;
+    }
+
+    .cta-button, .cta-button2 {
+        display: inline-block;
+        padding: 1rem 2rem;
+        border-radius: 5px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: background 0.3s;
+        margin: 0 1rem;
+        min-width: 160px;
+        color: white;
+    }
+
+    .cta-button {
+        background: #6366f1;
+    }
+
+    .cta-button:hover {
+        background: #4f46e5;
+    }
+
+    .cta-button2 {
+        background: #9157f6;
+    }
+
+    .cta-button2:hover {
+        background: #a452f7;
+    }
+
+    @media screen and (max-width: 768px) {
+        .cta-button, .cta-button2 {
+            margin: 0.5rem;
+            padding: 0.875rem 1.75rem;
+            min-width: 140px;
+        }
+    }
+
+    @media screen and (max-width: 480px) {
+        .cta-button, .cta-button2 {
+            margin: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            min-width: 120px;
+            font-size: 0.9rem;
+        }
+    }
+
+    .features {
+        padding: 5rem 2rem;
+        max-width: 1200px;
+        margin: 0 auto;
+        color: white;
+    }
+
+    .features h2 {
+        text-align: center;
+        font-size: 2.5rem;
+        margin-bottom: 3rem;
+        background: linear-gradient(120deg, #6366f1, #a855f7);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        position: relative;
+    }
+
+    .features h2::after {
+        content: '';
+        position: absolute;
+        bottom: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100px;
+        height: 3px;
+        background: linear-gradient(90deg, #6366f1, #a855f7);
+    }
+
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+    }
+
+    .feature-card {
+        padding: 2rem;
+        border-radius: 15px;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        text-align: center;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .feature-card i {
+        font-size: 3rem;
+        color: #6366f1;
+        margin-bottom: 1.5rem;
+        transition: transform 0.5s ease;
+    }
+
+    .feature-card:hover i {
+        transform: scale(1.2) rotate(360deg);
+    }
+
+    .feature-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(45deg, transparent, rgba(99, 102, 241, 0.1), transparent);
+        transform: translateX(-100%);
+        transition: transform 0.6s;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(99, 102, 241, 0.2);
+    }
+
+    .feature-card:hover::before {
+        transform: translateX(100%);
+    }
+
+    .feature-card h3 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        color: #6366f1;
+        text-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
+    }
+
+    .feature-card p {
+        color: #b4b4b4;
+    }
+
+    @keyframes float {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+        100% { transform: translateY(0px); }
+    }
+
+    .feature-card {
+        animation: float 4s ease-in-out infinite;
+    }
+
+    .feature-card:hover {
+        animation-play-state: paused;
+    }
+
+    /* 移动端适配 */
+    @media (max-width: 768px) {
+        .hero h1 {
+            font-size: 2.5rem;
+        }
+
+        .hero p {
+            font-size: 1rem;
+        }
+
+        .features h2 {
+            font-size: 2rem;
+        }
+
+        .features-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .feature-card {
+            padding: 1.5rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .hero h1 {
+            font-size: 2rem;
+        }
+
+        .features {
+            padding: 3rem 1rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.2rem;
+        }
+
+        .feature-card p {
+            font-size: 0.9rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <section class="hero">
+        <div class="hero-content">
+            <h1>全自动托管AI媒体软件</h1>
+            <p>专业的文章采集、改写与发布工具，让内容运营更轻松</p>
+            <div>
+                <a href="{{ download_link }}" class="cta-button">下载客户端</a>
+                <a href="/crawler/online" class="cta-button2">在线使用</a>
+            </div>
+
+        </div>
+    </section>
+
+    <section id="features" class="features">
+        <h2>产品特点</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <i class="fas fa-share-nodes"></i>
+                <h3>多平台发布</h3>
+                <p>涵盖公众号、头条号、百家号等主流平台，一键实现全平台内容管理</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-robot"></i>
+                <h3>全自动账号托管</h3>
+                <p>账号管理无需手动操作，实现托管化运营</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-brain"></i>
+                <h3>AI智能支持</h3>
+                <p>兼容多种AI模型，包括本地部署模型，提供灵活的AI自动化能力</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-users-gear"></i>
+                <h3>多账号配置</h3>
+                <p>单台电脑即可操作多个账号、多平台，轻松实现挂收益</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-money-bill"></i>
+                <h3>快速收益</h3>
+                <p>挂载运行简单易用，为用户提供稳定收入来源</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="features">
+        <h2>核心功能</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <i class="fas fa-chart-line"></i>
+                <h3>实时监控</h3>
+                <p>覆盖十余家主流新闻平台，实时监控超过200个分类栏目，确保内容来源广泛且丰富</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-gears"></i>
+                <h3>AI智能托管</h3>
+                <p>具备自动抓取、自动改写、自动发布功能，开启托管模式后，平台全程自动操作</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-filter-circle-xmark"></i>
+                <h3>高效内容筛选</h3>
+                <p>源平台发布5秒内即可检测，自动丢弃发布时间超过5分钟的新闻内容，确保时效性和内容质量</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-share-from-square"></i>
+                <h3>多平台内容发布</h3>
+                <p>支持多个账号在多个平台上自动发布内容，实现批量化的高效内容分发</p>
+            </div>
+        </div>
+    </section>
+{% endblock %}

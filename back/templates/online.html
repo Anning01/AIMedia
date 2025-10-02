@@ -1,0 +1,698 @@
+{% extends "base.html" %}
+
+{% block title %}在线使用{% endblock %}
+
+{% block extra_css %}
+<style>
+    .container {
+        width: 95%;
+        max-width: 1200px;
+        margin: 120px auto 0;
+        padding: 1rem;
+        color: white;
+    }
+
+    .header-text {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .header-text h1 {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .header-text p {
+        color: #9ca3af;
+        font-size: 1.2rem;
+    }
+
+    .input-section {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .input-section h3 {
+        color: white;
+        margin-bottom: 1rem;
+        font-size: 1.2rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .input-section p {
+        color: #9ca3af;
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+        padding-left: calc(24px + 0.5rem);
+    }
+
+    .input-box {
+        width: 100%;
+        padding: 1rem;
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        border-radius: 5px;
+        background: rgba(255, 255, 255, 0.05);
+        color: white;
+        font-size: 1rem;
+        margin-bottom: 1rem;
+        transition: border-color 0.3s;
+    }
+
+    .input-box:focus {
+        outline: none;
+        border-color: #a855f7;
+    }
+
+    .submit-btn {
+        background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+        color: white;
+        padding: 1rem 2rem;
+        border: none;
+        border-radius: 5px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: opacity 0.3s;
+        width: 100%;
+        max-width: 200px;
+    }
+
+    .submit-btn:hover {
+        opacity: 0.9;
+    }
+
+    .content-boxes {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        margin-top: 2rem;
+        min-height: 700px;
+    }
+
+    .content-box {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .step-number {
+        width: 24px;
+        height: 24px;
+        background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 0.5rem;
+        font-weight: bold;
+        font-size: 0.9rem;
+    }
+
+    .message-tips{
+        font-size: 12px;
+        color: #9ca3af;
+        margin-top: 0.5rem;
+        margin-left: 2rem;
+        line-height: 1.4;
+        word-wrap: break-word;
+        white-space: normal;
+    }
+
+    .content-box h3 {
+        color: white;
+        margin-bottom: 0.5rem;
+        font-size: 1.2rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .content-box p {
+        color: #9ca3af;
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+        padding-left: calc(24px + 0.5rem);
+    }
+
+    .content-box textarea {
+        width: 100%;
+        height: 600px;
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 5px;
+        padding: 1rem;
+        color: #9ca3af;
+        font-family: monospace;
+        resize: vertical;
+        margin-bottom: 1rem;
+        line-height: 1.5;
+        font-size: 14px;
+        flex: 1;
+        min-height: 400px;
+    }
+
+    .content-box textarea:focus {
+        outline: none;
+        border-color: #a855f7;
+    }
+
+    .supported-platforms {
+        display: flex;
+        gap: .5rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .platform-link {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #9ca3af;
+        text-decoration: none;
+        padding: 0.5rem 1rem;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 5px;
+        transition: background 0.3s;
+        font-size: 0.9rem;
+        white-space: nowrap;
+    }
+
+    .platform-link:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .platform-link img {
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+    }
+
+    .platform-link span {
+        font-size: 0.9rem;
+    }
+
+    .content-box .button-container {
+        display: flex;
+        gap: 1rem;
+        width: 100%;
+    }
+
+    .content-box .main-button,
+    .content-box .secondary-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .content-box .main-button i,
+    .content-box .secondary-button i {
+        font-size: 1.1rem;
+    }
+
+    .content-box .main-button {
+        flex: 6;
+        padding: 0.8rem;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1rem;
+        background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
+        color: white;
+        transition: opacity 0.3s;
+    }
+
+    .content-box .main-button:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
+        opacity: 0.7;
+    }
+
+    .content-box .secondary-button {
+        flex: 3;
+        padding: 0.8rem;
+        border: 1px solid #a855f7;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1rem;
+        background: transparent;
+        color: #a855f7;
+        transition: all 0.3s;
+    }
+
+    .content-box .main-button:hover {
+        opacity: 0.9;
+    }
+
+    .content-box .secondary-button:hover {
+        background: rgba(168, 85, 247, 0.1);
+    }
+
+    .tooltip {
+        position: relative;
+    }
+    
+    .tooltip:disabled:hover::after {
+        content: "今日可用次数已达上限";
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 5px 10px;
+        background-color: rgba(0, 0, 0, 0.8);
+        color: white;
+        border-radius: 4px;
+        font-size: 14px;
+        white-space: nowrap;
+        z-index: 1000;
+        margin-bottom: 5px;
+    }
+
+    @media (min-height: 1000px) {
+        .content-box textarea {
+            height: 800px;
+        }
+    }
+
+    @media (max-height: 800px) {
+        .content-box textarea {
+            height: 400px;
+        }
+    }
+
+    /* 移动端适配 */
+    @media screen and (max-width: 768px) {
+        .container {
+            margin-top: 80px;
+            width: 100%;
+            padding: 1rem;
+        }
+
+        .header-text h1 {
+            font-size: 2rem;
+        }
+
+        .header-text p {
+            font-size: 1rem;
+        }
+
+        .content-boxes {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            min-height: auto;
+        }
+
+        .content-box {
+            padding: 1rem;
+        }
+
+        .content-box textarea {
+            height: 400px;
+            min-height: 300px;
+            font-size: 13px;
+        }
+
+        .input-section {
+            padding: 1rem;
+        }
+
+        .input-section h3 {
+            font-size: 1.1rem;
+        }
+
+        .input-section p {
+            font-size: 0.85rem;
+            padding-left: calc(20px + 0.5rem);
+        }
+
+        .step-number {
+            width: 20px;
+            height: 20px;
+            font-size: 0.8rem;
+        }
+
+        .supported-platforms {
+            gap: 0.5rem;
+            justify-content: flex-start;
+        }
+
+        .platform-link {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.9rem;
+            flex: 0 1 auto;
+            min-width: calc(33.33% - 0.5rem);
+        }
+
+        .message-tips {
+            margin-left: 1rem;
+            font-size: 11px;
+        }
+
+        .action-buttons {
+            flex-wrap: wrap;
+        }
+
+        .action-button {
+            flex: 1;
+            min-width: 120px;
+            text-align: center;
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+        }
+    }
+
+    @media screen and (max-width: 480px) {
+        .container {
+            margin-top: 70px;
+        }
+
+        .header-text h1 {
+            font-size: 1.75rem;
+        }
+
+        .header-text p {
+            font-size: 0.9rem;
+        }
+
+        .content-box textarea {
+            height: 300px;
+            min-height: 200px;
+            font-size: 12px;
+        }
+
+        .input-section h3 {
+            font-size: 1rem;
+        }
+
+        .input-section p {
+            font-size: 0.8rem;
+        }
+
+        .platform-link {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.8rem;
+            min-width: calc(50% - 0.5rem);
+            justify-content: center;
+        }
+
+        .platform-link i {
+            font-size: 0.9em;
+        }
+
+        .message-tips {
+            margin-left: 0.5rem;
+            font-size: 10px;
+        }
+
+        .action-button {
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+
+        .submit-btn {
+            width: 100%;
+            max-width: none;
+            padding: 0.875rem 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="header-text">
+        <h1>模仿 爆款文案 只需要几秒钟</h1>
+        <p>提供新闻链接 就够了</p>
+    </div>
+
+    <div class="input-section">
+        <h3><span class="step-number">1</span>提取新闻文案 <span class="message-tips">支持以下平台</span> </h3>
+        <div class="supported-platforms">
+            <a href="https://www.163.com" target="_blank" class="platform-link">
+                <img src="/static/docs/platform-icons/网易.png" alt="网易新闻">
+                <span>网易新闻</span>
+            </a>
+            <a href="https://www.thepaper.cn" target="_blank" class="platform-link">
+                <img src="/static/docs/platform-icons/澎湃网.png" alt="澎湃新闻">
+                <span>澎湃新闻</span>
+            </a>
+            <a href="http://www.chinadaily.com.cn" target="_blank" class="platform-link">
+                <img src="/static/docs/platform-icons/notify.png" alt="中国日报">
+                <span>中国日报</span>
+            </a>
+            <a href="https://www.sohu.com" target="_blank" class="platform-link">
+                <img src="/static/docs/platform-icons/搜狐.png" alt="搜狐新闻">
+                <span>搜狐新闻</span>
+            </a>
+            <a href="https://news.qq.com" target="_blank" class="platform-link">
+                <img src="/static/docs/platform-icons/腾讯新闻.png" alt="腾讯新闻">
+                <span>腾讯新闻</span>
+            </a>
+        </div>
+        <input type="text" class="input-box" placeholder="这里输入文案笔记链接分享链接" id="noteUrl">
+        <button class="submit-btn" onclick="processNote()">提取笔记文案</button>
+    </div>
+
+    <div class="content-boxes">
+        <div class="content-box">
+            <h3><span class="step-number">2</span>获取的文案</h3>
+            <textarea id="originalContent" placeholder="这里将显示获取到的原始文案内容..."></textarea>
+            <div class="button-container">
+                <button class="main-button tooltip" {% if not create %}disabled{% endif %} onclick="generateArticle()">
+                    <i class="fas fa-magic"></i>
+                    生成文章
+                </button>
+                <button class="secondary-button" onclick="downloadImages()">
+                    <i class="fas fa-download"></i>
+                    下载图片
+                </button>
+                <button class="secondary-button" onclick="openMembership()">
+                    <i class="fas fa-crown"></i>
+                    开通会员
+                </button>
+            </div>
+        </div>
+        <div class="content-box">
+            <h3><span class="step-number">3</span>新的笔记文案</h3>
+            <textarea id="modifiedContent" placeholder="这里将显示生成的新文案内容..."></textarea>
+            <div class="button-container">
+                <button class="main-button" onclick="copyText('modifiedContent')">
+                    <i class="fas fa-copy"></i>
+                    复制文本
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block bottom_js %}
+<script>
+    // 存储当前文章的图片列表
+    let currentImageList = [];
+
+    function parseContent(content) {
+        const lines = content.trim().split('\n');
+        let title = '';
+        let mainContent = '';
+        
+        if (lines.length > 0) {
+            title = lines[0].trim();
+            mainContent = lines.slice(1).join('\n').trim();
+        }
+        
+        return { title, content: mainContent };
+    }
+
+    function processNote() {
+        const noteUrl = document.getElementById('noteUrl').value;
+        if (!noteUrl) {
+            alert('请输入笔记链接');
+            return;
+        }
+        const cookies = document.cookie.split(';');
+        const hasAccessToken = cookies.some(cookie => cookie.trim().startsWith('access_token='));
+        
+        if (!hasAccessToken) {
+            alert('请先登录');
+            return;
+        }
+
+        // 显示加载状态
+        document.getElementById('originalContent').value = '正在获取文案内容...';
+        document.getElementById('modifiedContent').value = '';
+        currentImageList = []; // 清空图片列表
+
+        fetch('/crawler/online/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ url: noteUrl })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status !== 'success') {
+                document.getElementById('originalContent').value = '获取失败，请稍后重试';
+                console.error('Error:', data.message);
+                return;
+            }
+            
+            // 保存图片列表
+            currentImageList = data.result.img_list || [];
+            
+            // 组合标题、内容和图片链接
+            let fullContent = '';
+            
+            // 添加标题
+            if (data.result.title) {
+                fullContent += `${data.result.title}\n\n`;
+            }
+            
+            // 添加正文内容
+            if (data.result.article_info) {
+                fullContent += `${data.result.article_info}\n\n`;
+            }
+            
+            document.getElementById('originalContent').value = fullContent;
+            
+            // 自动开始生成新文案
+            // regenerateContent();
+        })
+        .catch(error => {
+            document.getElementById('originalContent').value = '获取失败，请稍后重试';
+            console.error('Error:', error);
+        });
+    }
+
+    function copyText(elementId) {
+        const textarea = document.getElementById(elementId);
+        textarea.select();
+        document.execCommand('copy');
+        
+        // 显示复制成功提示
+        const button = event.target;
+        const originalText = button.textContent;
+        button.textContent = '已复制';
+        setTimeout(() => {
+            button.textContent = originalText;
+        }, 2000);
+    }
+
+    async function downloadImages() {
+        if (!currentImageList || currentImageList.length === 0) {
+            alert('没有可下载的图片');
+            return;
+        }
+
+        const downloadButton = event.target;
+        const originalText = downloadButton.innerHTML;
+        downloadButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在下载...';
+        downloadButton.disabled = true;
+
+        try {
+            // 创建一个临时的link元素用于触发下载
+            const link = document.createElement('a');
+            link.style.display = 'none';
+            document.body.appendChild(link);
+
+            // 下载每张图片
+            for (let i = 0; i < currentImageList.length; i++) {
+                const imageUrl = currentImageList[i];
+                try {
+                    // 获取图片数据
+                    const response = await fetch(imageUrl);
+                    const blob = await response.blob();
+
+                    // 创建下载链接
+                    const url = window.URL.createObjectURL(blob);
+                    link.href = url;
+                    
+                    // 从URL中提取文件名，如果没有则使用默认名称
+                    const fileName = imageUrl.split('/').pop().split('?')[0] || `image${i + 1}.jpg`;
+                    link.download = fileName;
+
+                    // 触发下载
+                    link.click();
+                    window.URL.revokeObjectURL(url);
+
+                    // 添加小延迟，避免浏览器限制
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                } catch (error) {
+                    console.error(`下载图片 ${i + 1} 失败:`, error);
+                }
+            }
+
+            document.body.removeChild(link);
+            downloadButton.innerHTML = '<i class="fas fa-check"></i> 下载完成';
+            setTimeout(() => {
+                downloadButton.innerHTML = originalText;
+                downloadButton.disabled = false;
+            }, 2000);
+        } catch (error) {
+            console.error('下载图片时出错:', error);
+            downloadButton.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 下载失败';
+            setTimeout(() => {
+                downloadButton.innerHTML = originalText;
+                downloadButton.disabled = false;
+            }, 2000);
+        }
+    }
+
+    function regenerateContent() {
+        const originalContent = document.getElementById('originalContent').value;
+        if (!originalContent) {
+            alert('请先获取原始文案');
+            return;
+        }
+
+        document.getElementById('modifiedContent').value = '正在生成新文案...';
+
+        // 智能提取标题和内容
+        const { title, content } = parseContent(originalContent);
+        
+        fetch('/user/ai_article/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                'title': title,
+                'content': content,
+                'image_list': currentImageList // 使用processNote中获取的图片列表
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                document.getElementById('modifiedContent').value = data.data.modifiedContent;
+            }else {
+                document.getElementById('modifiedContent').value = '生成失败，请稍后重试';
+            }
+        })
+        .catch(error => {
+            document.getElementById('modifiedContent').value = '生成失败，请稍后重试';
+            console.error('Error:', error);
+        });
+    }
+
+    function generateArticle() {
+        const originalContent = document.getElementById('originalContent').value;
+        if (!originalContent) {
+            alert('请先获取原始文案');
+            return;
+        }
+        regenerateContent();
+    }
+
+    function openMembership() {
+        window.location.href = '/user/package';
+    }
+</script>
+{% endblock %}

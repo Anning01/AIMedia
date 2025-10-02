@@ -1,5 +1,5 @@
 <div align="center">
-<h1 align="center"> AIMedia 🤖 </h1>
+<h1 align="center"> AIMediaPlus 🤖 </h1>
 
 <p align="center">
   <a href="https://github.com/Anning01/AIMedia/stargazers"><img src="https://img.shields.io/github/stars/Anning01/AIMedia.svg?style=for-the-badge" alt="Stargazers"></a>
@@ -13,11 +13,17 @@
   <a href="https://github.com/Anning01/AIMedia" target="_blank"><img src="docs/logo.png" style="width: 120px; height: 120px; border-radius: 50%;"/></a>
 </div>
 <br>
-自动抓取热点，自动生成新闻，自动发布各大平台。  <b>全自动托管AI媒体软件</b> 
+自动抓取热点，自动生成新闻，自动发布各大平台。  <b>全自动托管AI媒体软件</b>
+<br>
+全新架构: Django后台 + PySide6桌面端，提供更稳定的服务和更优秀的用户体验
 <br>
 </div>
-<h3>在线查看<a href="https://aimedia.daniu7.cn/" target="_blank"> 点击进入官网 </a></h3>
 
+## 架构特点 🏗️
+
+- **后端服务 (Django)**: 位于 `back/` 目录，提供 RESTful API、数据管理、任务调度
+- **桌面客户端 (PySide6)**: 位于 `pyside/` 目录，提供友好的图形界面和本地功能
+- **前后端分离**: 支持多客户端连接，可扩展性强
 
 ## 功能特性 🎯
 
@@ -34,10 +40,14 @@
     - [x] 公众号
     - [x] 百家平台
 - [x] 针对无图纯文本，使用AI生成图像，增加原创率，阅读体验
+- [x] **Django后台管理**: 文章管理、用户管理、系统配置
+- [x] **PySide6桌面应用**: 直观的图形界面操作
 
 ### 后期计划 📅
 
 - [ ] 自动生成视频发布各个平台
+- [ ] 移动端客户端开发
+- [ ] 更多平台接入
 
 ## 交流讨论 💬
 
@@ -45,7 +55,7 @@
 
 ## 视频演示 📺
 
-B站视频链接：https://www.bilibili.com/video/BV1HABgYKE6H
+B站视频链接：https://www.bilibili.com/video/BV1oYSVYaEaa/?share_source=copy_web&vd_source=998582dcaa6c1a862619086e9dda59cb
 
 ## 配置要求 📦
 
@@ -101,7 +111,7 @@ git clone https://github.com/Anning01/AIMedia.git
 
 > 视频教程
 
-- 完整的使用演示：B站视频链接：hhttps://www.bilibili.com/video/BV1HABgYKE6H
+- 完整的使用演示：B站视频链接：https://www.bilibili.com/video/BV1oYSVYaEaa/?share_source=copy_web&vd_source=998582dcaa6c1a862619086e9dda59cb
 - 如何在Windows上部署：抓紧制作中 (*>﹏<*)′~
 
 #### ① 创建虚拟环境 （Conda）

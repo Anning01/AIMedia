@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}使用文档{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.12.0/tocbot.css">
+<style>
+    .content-wrapper {
+        display: flex;
+        max-width: 1400px;
+        margin: 80px auto 0;
+        padding: 2rem;
+        gap: 2rem;
+    }
+
+    .sidebar {
+        width: 300px;
+        position: fixed;
+        top: 100px;
+        bottom: 0;
+        overflow-y: auto;
+        padding: 2rem;
+        background: rgba(30, 32, 43, 0.95);
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    .markdown-body {
+        flex: 1;
+        margin-left: 320px;
+        padding: 2rem;
+        background: rgba(30, 32, 43, 0.95);
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        color: #e6e6e6;
+    }
+
+    .toc-list {
+        list-style: none;
+    }
+
+    .toc-link {
+        color: #fff !important;
+        text-decoration: none;
+        display: block;
+        padding: 4px 8px;
+        font-size: 14px;
+        transition: all 0.2s;
+        border-radius: 4px;
+    }
+
+    .toc-link:hover {
+        color: #6366f1;
+    }
+
+    .is-active-link {
+        color: #6366f1 !important;
+        font-weight: bold;
+    }
+
+    .toc-list-item {
+        margin: 4px 0;
+    }
+
+    .toc-list-item ol {
+        padding-left: 15px;
+    }
+
+    /* 自定义滚动条样式 */
+    .sidebar::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .sidebar::-webkit-scrollbar-track {
+        background: rgba(30, 32, 43, 0.95);
+    }
+
+    .sidebar::-webkit-scrollbar-thumb {
+        background: rgba(99, 102, 241, 0.3);
+        border-radius: 3px;
+    }
+
+    .sidebar::-webkit-scrollbar-thumb:hover {
+        background: rgba(99, 102, 241, 0.5);
+    }
+
+    @media (max-width: 768px) {
+        .content-wrapper {
+            flex-direction: column;
+            padding: 1rem;
+            position: relative;
+        }
+
+        .sidebar {
+            display: none;
+            position: fixed;
+            top: 60px;
+            left: 0;
+            right: 0;
+            bottom: auto;
+            width: 100%;
+            max-height: 50vh;
+            margin: 0;
+            z-index: 99;
+            border-radius: 0;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar.active {
+            display: block;
+        }
+
+        .markdown-body {
+            margin-left: 0;
+            padding: 1rem;
+        }
+
+        .toc-toggle {
+            display: block;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+    }
+
+    @media (max-width: 480px) {
+        .content-wrapper {
+            padding: 0.5rem;
+        }
+
+        .markdown-body {
+            padding: 0.8rem;
+        }
+    }
+
+    /* 移除 tocbot 默认的 before 伪元素 */
+    .toc-link::before {
+        display: none !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <aside class="sidebar">
+        <div class="js-toc"></div>
+    </aside>
+    <main class="markdown-body js-toc-content">
+        {{ markdown_content|safe }}
+    </main>
+</div>
+
+<button class="toc-toggle" onclick="toggleToc()">
+    <i class="fas fa-list"></i>
+</button>
+{% endblock %}
+
+{% block bottom_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.12.0/tocbot.min.js"></script>
+<script>
+    tocbot.init({
+        tocSelector: '.js-toc',
+        contentSelector: '.js-toc-content',
+        headingSelector: 'h1, h2, h3',
+        hasInnerContainers: true,
+        collapseDepth: 6,
+    });
+
+    function toggleToc() {
+        document.querySelector('.sidebar').classList.toggle('active');
+    }
+</script>
+{% endblock %}

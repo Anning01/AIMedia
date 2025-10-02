@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+
+{% block title %}关于我们 - AiMediaPlus{% endblock %}
+
+{% block extra_css %}
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background: #0a0b1e;
+        overflow-x: hidden;
+    }
+
+    .team-section {
+        padding: 120px 2rem 5rem;
+        max-width: 1400px;
+        margin: 0 auto;
+        color: white;
+    }
+
+    .team-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 5rem;
+        margin-bottom: 6rem;
+    }
+
+    .team-member {
+        text-align: left;
+        padding: 3rem;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 30px;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(99, 102, 241, 0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        animation: fadeInUp 1s ease-out;
+    }
+
+    .team-member:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 20px 40px rgba(99, 102, 241, 0.1);
+    }
+
+    .avatar {
+        width: 180px;
+        height: 180px;
+        border-radius: 30px;
+        margin-bottom: 2rem;
+        border: 3px solid #6366f1;
+        transition: transform 0.3s ease;
+    }
+
+    .avatar:hover {
+        transform: rotate(5deg);
+    }
+
+    .member-name {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, #6366f1, #a855f7);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .member-bio {
+        margin-bottom: 2rem;
+        opacity: 0.9;
+        font-size: 1.1rem;
+        line-height: 1.8;
+    }
+
+    .social-links {
+        display: flex;
+        gap: 2rem;
+        margin-top: 1.5rem;
+    }
+
+    .social-links a {
+        color: white;
+        font-size: 1.8rem;
+        transition: all 0.3s ease;
+    }
+
+    .social-links a:hover {
+        color: #6366f1;
+        transform: translateY(-5px);
+    }
+
+    .join-section {
+        text-align: left;
+        padding: 4rem;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 30px;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(99, 102, 241, 0.1);
+        animation: fadeIn 1s ease-out;
+    }
+
+    .join-section h2 {
+        font-size: 2.5rem;
+        margin-bottom: 3rem;
+        background: linear-gradient(135deg, #6366f1, #a855f7);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .qr-grid {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 4rem;
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .qr-code {
+        position: relative;
+        transition: transform 0.3s ease;
+    }
+
+    .qr-code:hover {
+        transform: scale(1.05);
+    }
+
+    .qr-code:first-child img {
+        width: 280px;
+    }
+
+    .qr-code:last-child img {
+        width: 200px;
+    }
+
+    .qr-code img {
+        height: auto;
+        border-radius: 20px;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 10px 30px rgba(99, 102, 241, 0.2);
+    }
+
+    .qr-code p {
+        font-size: 1.4rem;
+        background: linear-gradient(135deg, #6366f1, #a855f7);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: bold;
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+
+    @media (max-width: 768px) {
+        .team-grid {
+            grid-template-columns: 1fr;
+            gap: 3rem;
+        }
+
+        .team-member {
+            padding: 2rem;
+        }
+
+        .avatar {
+            width: 140px;
+            height: 140px;
+        }
+
+        .member-name {
+            font-size: 1.8rem;
+        }
+
+        .member-bio {
+            font-size: 1rem;
+        }
+
+        .qr-grid {
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        .join-section {
+            padding: 2rem;
+        }
+
+        .join-section h2 {
+            font-size: 2rem;
+        }
+
+        .qr-code:first-child img,
+        .qr-code:last-child img {
+            width: 100%;
+            max-width: 200px;
+        }
+
+        .qr-code p {
+            font-size: 1.2rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .team-member {
+            padding: 1.5rem;
+        }
+
+        .avatar {
+            width: 120px;
+            height: 120px;
+        }
+
+        .member-name {
+            font-size: 1.5rem;
+        }
+
+        .member-bio {
+            font-size: 0.9rem;
+        }
+
+        .join-section h2 {
+            font-size: 1.8rem;
+        }
+
+        .social-links {
+            gap: 1.5rem;
+        }
+
+        .social-links a {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="team-section">
+    <div class="team-grid">
+        <div class="team-member animate__animated animate__fadeInLeft">
+            <img src="/static/docs/anning.png" alt="Anning" class="avatar">
+            <h3 class="member-name">Anning</h3>
+            <p class="member-bio">全栈开发工程师，负责项目架构设计与核心功能开发。热爱开源，致力于为社区贡献优质项目。</p>
+            <div class="social-links">
+                <a href="https://github.com/Anning01" target="_blank"><i class="fab fa-github"></i></a>
+                <a href="https://space.bilibili.com/50125441" target="_blank"><i class="fab fa-bilibili"></i></a>
+                <a href="https://blog.csdn.net/Python_anning" target="_blank"><i class="fas fa-blog"></i></a>
+            </div>
+        </div>
+        
+        <div class="team-member animate__animated animate__fadeInRight">
+            <img src="/static/docs/gong.png" alt="DNQTech" class="avatar">
+            <h3 class="member-name">DNQTech</h3>
+            <p class="member-bio">AI算法工程师，专注于自然语言处理与内容生成领域。负责项目的AI相关功能开发与优化。</p>
+            <div class="social-links">
+                <a href="https://github.com/poorant" target="_blank"><i class="fab fa-github"></i></a>
+                <a href="https://space.bilibili.com/3537117248490025" target="_blank"><i class="fab fa-bilibili"></i></a>
+            </div>
+        </div>
+    </div>
+
+    <div class="join-section animate__animated animate__fadeInUp">
+        <h2>加入我们的社区</h2>
+        <div class="qr-grid">
+            <div class="qr-code">
+                <img src="/static/docs/qq.png" alt="QQ群二维码">
+                <p>QQ交流群</p>
+            </div>
+            <div class="qr-code">
+                <img src="/static/docs/wechat.png" alt="微信群二维码">
+                <p>微信交流群</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

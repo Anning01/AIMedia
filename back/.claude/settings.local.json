@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/anning/PycharmProjects/AIMedia/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

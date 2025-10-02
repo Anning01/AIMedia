@@ -1,0 +1,555 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %} - AiMediaPlus</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/fontawesome.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/solid.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/brands.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #0a0b1e;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            padding: 1rem 0;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+
+        .logo {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            z-index: 102;
+        }
+
+        .logo img {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: opacity 0.3s ease;
+            font-size: 1rem;
+            padding: 0.5rem;
+        }
+
+        .nav-links a:hover {
+            opacity: 0.8;
+        }
+
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            z-index: 102;
+        }
+
+        @media screen and (max-width: 768px) {
+            .header {
+                padding: 0.5rem 0;
+            }
+
+            .nav-container {
+                padding: 0 1rem;
+            }
+
+            .menu-toggle {
+                display: block;
+                margin-left: auto;
+            }
+
+            .nav-links {
+                position: fixed;
+                top: 0;
+                right: -100%;
+                width: 150px;
+                height: 100vh;
+                background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+                flex-direction: column;
+                justify-content: flex-start;
+                gap: 0.5rem;
+                transition: right 0.3s ease;
+                z-index: 101;
+                padding: 4rem 1rem 1rem 1rem;
+            }
+
+            .nav-links.active {
+                right: 0;
+                box-shadow: -2px 0 10px rgba(0,0,0,0.2);
+            }
+
+            .nav-links a {
+                font-size: 1rem;
+                width: 100%;
+                text-align: left;
+                padding: 0.75rem 1rem;
+                border-radius: 8px;
+            }
+
+            .nav-links a:hover {
+                background: rgba(255,255,255,0.1);
+            }
+
+            .logo {
+                font-size: 1.2rem;
+            }
+
+            .logo img {
+                width: 28px;
+                height: 28px;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            .nav-links {
+                width: 240px;
+            }
+
+            .logo {
+                font-size: 1rem;
+            }
+
+            .logo img {
+                width: 24px;
+                height: 24px;
+            }
+        }
+
+        footer {
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            color: white;
+            text-align: center;
+            padding: 2rem 0;
+            position: relative;
+            margin-top: 4rem;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+
+        footer p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        /* User Avatar Styles */
+        .user-avatar {
+            position: relative;
+            cursor: pointer;
+            margin-left: 2rem;
+        }
+
+        .avatar-img {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: border-color 0.3s;
+            object-fit: cover;
+        }
+
+        .user-avatar:hover .avatar-img {
+            border-color: #a855f7;
+        }
+
+        .user-popup {
+            position: absolute;
+            top: calc(100% + 10px);
+            right: 0;
+            width: 240px;
+            background: #1a1a1a;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 1rem;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .user-avatar:hover .user-popup {
+            display: block;
+        }
+
+        .user-popup::before {
+            content: '';
+            position: absolute;
+            top: -6px;
+            right: 20px;
+            width: 12px;
+            height: 12px;
+            background: #1a1a1a;
+            transform: rotate(45deg);
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .user-info {
+            text-align: center;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 1rem;
+        }
+
+        .user-nickname {
+            color: white;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .expiry-date {
+            color: #9ca3af;
+            font-size: 0.9rem;
+        }
+
+        .checkin-btn {
+            width: 100%;
+            padding: 0.8rem;
+            border: none;
+            border-radius: 5px;
+            background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
+            color: white;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: opacity 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .checkin-btn:hover {
+            opacity: 0.9;
+        }
+
+
+        /* Login Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a1c2d 0%, #2a2d3d 100%);
+            padding: 2rem;
+            border-radius: 12px;
+            position: relative;
+            width: 400px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .close-button {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: #9ca3af;
+            cursor: pointer;
+            font-size: 1.5rem;
+            padding: 0.5rem;
+            transition: color 0.3s;
+        }
+
+        .close-button:hover {
+            color: #ffffff;
+        }
+
+        .modal h3 {
+            color: #ffffff;
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .qr-code-container {
+            width: 280px;
+            height: 280px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .qr-code-text {
+            color: #9ca3af;
+            margin-top: 1.5rem;
+            font-size: 1rem;
+        }
+
+        .qr-timeout {
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .qr-timeout p {
+            color: #ef4444;
+            margin-bottom: 1rem;
+        }
+
+        .qr-timeout button {
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: opacity 0.3s;
+        }
+
+        .qr-timeout button:hover {
+            opacity: 0.9;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+    {% block extra_js %}{% endblock %}
+</head>
+<body>
+    <header class="header">
+        <nav class="nav-container">
+            <a href="/" class="logo">
+                <img src="{% static 'docs/logo.png' %}" alt="AiMediaPlus Logo">
+                AiMediaPlus
+            </a>
+            <button class="menu-toggle" onclick="toggleMenu()">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="nav-links">
+                <a href="/crawler/online">在线使用</a>
+                <a href="/user/package">开通会员</a>
+                <a href="/crawler/docs">使用文档</a>
+                <a href="/crawler/about">关于我们</a>
+            </div>
+
+            <div class="user-avatar">
+                {% if user.is_authenticated %}
+                <img src="{{ user.avatar|default:'/static/docs/默认头像.png' }}" alt="用户头像" class="avatar-img">
+                <div class="user-popup">
+                    <div class="user-info">
+                        <div class="user-nickname">{{ user.nickname }}</div>
+
+                        {% if user.level == None %}
+                            <div class="expiry-date">等级：普通用户</div>
+                        {% else %}
+                            <div class="expiry-date">等级：<span style="color: gold">{{ user.level }}</span></div>
+                        {% endif %}
+
+                        {% if user.expiry_time > now %}
+                            <div class="expiry-date">到期时间：{{ user.expiry_time.date }}</div>
+                        {% else %}
+                            <div class="expiry-date">到期时间：已过期</div>
+                        {% endif %}
+
+                    </div>
+                    <button class="checkin-btn" onclick="handleCheckin()">
+                        <i class="fas fa-calendar-check"></i>
+                        退出登录
+                    </button>
+                </div>
+                {% else %}
+                <img src="{% static 'docs/会员登录.png' %}" alt="登录" class="avatar-img" onclick="showLoginModal()">
+                {% endif %}
+            </div>
+        </nav>
+    </header>
+
+    {% block content %}{% endblock %}
+    <footer>
+        <p>&copy; 2024 AiMediaPlus. All rights reserved.</p>
+    </footer>
+    <div id="loginModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <button class="close-button" onclick="hideLoginModal()">
+                <i class="fas fa-times"></i>
+            </button>
+            <h3>微信扫码登录</h3>
+            <div id="qrcode" class="qr-code-container"></div>
+            <p class="qr-code-text">请使用微信扫描二维码登录</p>
+        </div>
+    </div>
+    <script>
+        function toggleMenu() {
+            const navLinks = document.querySelector('.nav-links');
+            const menuToggle = document.querySelector('.menu-toggle');
+            
+            navLinks.classList.toggle('active');
+            
+            if (navLinks.classList.contains('active')) {
+                menuToggle.innerHTML = '<i class="fas fa-times"></i>';
+                document.body.style.overflow = 'hidden';
+            } else {
+                menuToggle.innerHTML = '<i class="fas fa-bars"></i>';
+                document.body.style.overflow = '';
+            }
+        }
+
+        // 点击导航链接时关闭菜单
+        document.querySelectorAll('.nav-links a').forEach(link => {
+            link.addEventListener('click', () => {
+                const navLinks = document.querySelector('.nav-links');
+                const menuToggle = document.querySelector('.menu-toggle');
+                
+                if (navLinks.classList.contains('active')) {
+                    navLinks.classList.remove('active');
+                    menuToggle.innerHTML = '<i class="fas fa-bars"></i>';
+                    document.body.style.overflow = '';
+                }
+            });
+        });
+
+        let loginCheckInterval;
+        let checkCount = 0;
+        const MAX_CHECKS = 30;
+        const CHECK_INTERVAL = 2000;
+
+        function showLoginModal() {
+            document.getElementById('loginModal').style.display = 'flex';
+            getLoginQRCode();
+        }
+
+        function hideLoginModal() {
+            document.getElementById('loginModal').style.display = 'none';
+            if (loginCheckInterval) {
+                clearInterval(loginCheckInterval);
+            }
+            document.getElementById('qrcode').innerHTML = '';
+        }
+
+        function getLoginQRCode() {
+            document.getElementById('qrcode').innerHTML = '';
+            fetch('/api/crawler/qr_code/')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('QR code data:', data);
+                    if (data.code === 0) {
+                        new QRCode(document.getElementById("qrcode"), {
+                            text: data.result.authorize_url,
+                            width: 250,
+                            height: 250,
+                            colorDark: "#000000",
+                            colorLight: "#ffffff",
+                            correctLevel: QRCode.CorrectLevel.M
+                        });
+
+                        checkCount = 0;
+                        if (loginCheckInterval) {
+                            clearInterval(loginCheckInterval);
+                        }
+                        loginCheckInterval = setInterval(() => checkLoginStatus(data.result.state), CHECK_INTERVAL);
+                    } else {
+                        console.error('No authorize_url in response:', data);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('qrcode').innerHTML = `
+                        <div class="qr-timeout">
+                            <p>获取二维码失败</p>
+                            <button onclick="getLoginQRCode()">重试</button>
+                        </div>
+                    `;
+                });
+        }
+
+        function checkLoginStatus(state) {
+            checkCount++;
+            if (checkCount >= MAX_CHECKS) {
+                clearInterval(loginCheckInterval);
+                document.getElementById('qrcode').innerHTML = `
+                    <div class="qr-timeout">
+                        <p>二维码已过期</p>
+                        <button onclick="getLoginQRCode()">刷新二维码</button>
+                    </div>
+                `;
+                return;
+            }
+
+            fetch(`/api/crawler/checkin/?state=${state}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data)
+                    if (data.result.status === 'success') {
+                        clearInterval(loginCheckInterval);
+                        hideLoginModal();
+                        window.location.reload()
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+    
+        function handleCheckin() {
+            // Clear cookie
+            document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
+            document.cookie = "csrftoken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
+            document.cookie = "sessionid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
+            // Clear localStorage
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('csrftoken');
+            localStorage.removeItem('sessionid');
+            // Redirect to home page
+            window.location.reload();
+        }
+    </script>
+    {% block bottom_js %}{% endblock %}
+</body>
+</html>

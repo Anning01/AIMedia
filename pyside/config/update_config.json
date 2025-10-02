@@ -1,0 +1,8 @@
+{
+    "update_server": {
+        "base_url": "/api/crawler/client_version",
+        "version_path": "/versions/latest/",
+        "download_path": "/download"
+    },
+    "check_interval": 3600
+}

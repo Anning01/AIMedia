@@ -1,0 +1,331 @@
+{% extends 'base.html' %}
+
+{% block title %}会员套餐{% endblock %}
+
+{% block extra_css %}
+<style>
+    .container {
+        width: 90%;
+        max-width: 1200px;
+        margin: 80px auto 0;  
+        padding: 60px 0;
+    }
+    .title {
+        text-align: center;
+        font-size: 42px;
+        margin-bottom: 60px;
+        text-transform: uppercase;
+        background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+    .packages {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 80px;
+        position: relative;
+        flex-wrap: wrap;
+    }
+    .packages::after {
+        content: "VS";
+        position: absolute;
+        font-size: 48px;
+        font-weight: bold;
+        color: #ff6b6b;
+        text-shadow: 0 0 20px rgba(255,107,107,0.5);
+        display: none;
+    }
+    .package {
+        width: 100%;
+        max-width: 420px;
+        background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 40px;
+        transition: transform 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    .package:hover {
+        transform: translateY(-10px);
+    }
+    .package::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 5px;
+        background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
+    }
+    .package-title {
+        font-size: 32px;
+        text-align: center;
+        margin-bottom: 30px;
+        color: #fff;
+    }
+    .price {
+        text-align: center;
+        margin-bottom: 40px;
+        position: relative;
+    }
+    .original-price {
+        color: #999;
+        text-decoration: line-through;
+        font-size: 24px;
+        display: block;
+        margin-bottom: 10px;
+    }
+    .current-price {
+        background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-size: 48px;
+        font-weight: bold;
+    }
+    .features {
+        margin-bottom: 40px;
+    }
+    .feature {
+        line-height: 2.2;
+        padding-left: 30px;
+        position: relative;
+        font-size: 16px;
+        color: #fff;
+    }
+    .feature:before {
+        content: "✦";
+        color: #4ecdc4;
+        position: absolute;
+        left: 0;
+        font-size: 20px;
+    }
+    .buy-btn {
+        display: block;
+        width: 100%;
+        background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+        color: white;
+        border: none;
+        padding: 20px 0;
+        border-radius: 10px;
+        font-size: 20px;
+        cursor: pointer;
+        text-align: center;
+        text-decoration: none;
+        text-transform: uppercase;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+    .buy-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 20px rgba(78,205,196,0.5);
+    }
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        z-index: 1000;
+    }
+    .modal-content {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+        padding: 50px;
+        border-radius: 20px;
+        text-align: center;
+        width: 400px;
+        border: 1px solid rgba(255,255,255,0.1);
+        box-shadow: 0 0 30px rgba(0,0,0,0.5);
+    }
+    .modal-content #qrCanvas {
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        margin: 0 auto 30px;
+        width: 300px;
+        height: 300px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    }
+    .modal-content p {
+        color: #fff;
+        font-size: 20px;
+        margin: 0;
+        font-weight: 500;
+        background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .close {
+        position: absolute;
+        right: 20px;
+        top: 20px;
+        font-size: 30px;
+        cursor: pointer;
+        color: #fff;
+        opacity: 0.7;
+        transition: all 0.3s ease;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.1);
+    }
+    .close:hover {
+        opacity: 1;
+        background: rgba(255,255,255,0.2);
+        transform: rotate(90deg);
+    }
+    
+    /* 响应式布局样式 */
+    @media screen and (max-width: 768px) {
+        .container {
+            padding: 30px 0;
+            margin-top: 60px;
+        }
+        
+        .title {
+            font-size: 32px;
+            margin-bottom: 40px;
+        }
+        
+        .packages {
+            gap: 30px;
+        }
+        
+        .package {
+            padding: 30px;
+        }
+        
+        .price {
+            font-size: 36px !important;
+        }
+        
+        .features li {
+            font-size: 14px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            font-size: 16px;
+        }
+    }
+    
+    @media screen and (max-width: 480px) {
+        .title {
+            font-size: 28px;
+            margin-bottom: 30px;
+        }
+        
+        .packages {
+            gap: 20px;
+        }
+        
+        .package {
+            padding: 20px;
+        }
+        
+        .price {
+            font-size: 32px !important;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            font-size: 14px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="title">尊享会员套餐</h1>
+    <div class="packages">
+        {% for subscription in subscriptions %}
+        <div class="package">
+            <h2 class="package-title">{{ subscription.name }}</h2>
+            <div class="price">
+                <span class="original-price">¥{{ subscription.original_price }}</span>
+                <span class="current-price">¥{{ subscription.price }}</span>
+            </div>
+            <div class="features">
+                {% for content in subscription.contents %}
+                <div class="feature">{{ content }}</div>
+                {% endfor %}
+            </div>
+            <button onclick="handleSubscription('{{ pay_url }}?subscription={{ subscription.id }}&user_id={{ user_id }}')" class="buy-btn">立即开通</button>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div id="qrModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <div id="qrCanvas"></div>
+        <p>请使用微信扫码支付</p>
+    </div>
+</div>
+
+    <div style="height: 100px">
+        <!-- 空盒子目的把底部footer顶到下面 -->
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+    function showQRCode(url) {
+        // 清除旧的二维码
+        document.getElementById('qrCanvas').innerHTML = '';
+        
+        // 生成新的二维码
+        new QRCode(document.getElementById('qrCanvas'), {
+            text: url,
+            width: 300,
+            height: 300,
+            colorDark : "#000000",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.H
+        });
+        
+        document.getElementById('qrModal').style.display = 'block';
+    }
+
+    function closeModal() {
+        document.getElementById('qrModal').style.display = 'none';
+    }
+
+    function handleSubscription(payUrl) {
+        // Check if user is logged in by checking access_token in cookie
+        const cookies = document.cookie.split(';');
+        const hasAccessToken = cookies.some(cookie => cookie.trim().startsWith('access_token='));
+        
+        if (hasAccessToken) {
+            // User is logged in, show QR code for payment
+            showQRCode(payUrl);
+        } else {
+            // User is not logged in, show login modal
+            showLoginModal();
+        }
+    }
+
+    window.onclick = function(event) {
+        if (event.target == document.getElementById('qrModal')) {
+            closeModal();
+        }
+    }
+</script>
+{% endblock %}

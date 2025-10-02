@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微信支付</title>
+</head>
+<body>
+    <script src="https://res.wx.qq.com/open/js/jweixin-1.6.0.js"></script>
+    <script>
+        function onBridgeReady() {
+            WeixinJSBridge.invoke('getBrandWCPayRequest', {
+                "appId": "{{ appId }}",
+                "timeStamp": "{{ timeStamp }}", 
+                "nonceStr": "{{ nonceStr }}", 
+                "package": "{{ package }}",
+                "signType": "{{ signType }}", 
+                "paySign": "{{ paySign }}"
+            }, function(res) {
+                if(res.err_msg == "get_brand_wcpay_request:ok") {
+                    // 支付成功
+                    alert("支付成功!");
+                    window.location.href = "{{ main_url }}"; // 支付成功后跳转到套餐页
+                } else if(res.err_msg == "get_brand_wcpay_request:cancel") {
+                    alert("支付已取消");
+                } else {
+                    alert("支付失败");
+                }
+            });
+        }
+
+        if (typeof WeixinJSBridge == "undefined") {
+            if(document.addEventListener) {
+                document.addEventListener('WeixinJSBridgeReady', onBridgeReady, false);
+            } else if(document.attachEvent) {
+                document.attachEvent('WeixinJSBridgeReady', onBridgeReady);
+                document.attachEvent('onWeixinJSBridgeReady', onBridgeReady);
+            }
+        } else {
+            onBridgeReady();
+        }
+    </script>
+</body>
+</html>

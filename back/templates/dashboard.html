@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>控制面板</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://adminlte.io/themes/AdminLTE/bower_components/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://adminlte.io/themes/AdminLTE/dist/css/AdminLTE.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        .small-box {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+        .small-box .inner {
+            padding: 20px;
+        }
+        .small-box .icon {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 50px;
+            opacity: 0.3;
+        }
+        .wrapper {
+            padding: 50px;
+        }
+        .row {
+            margin: 0 -10px;
+        }
+        .col-sm-3 {
+            padding: 0 10px;
+        }
+        /* 取消hover效果 */
+        .small-box:hover {
+            text-decoration: none;
+            color: inherit !important;
+        }
+        .small-box:hover .icon {
+            font-size: 50px !important;
+        }
+        .refresh-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+<button onclick="refreshData()" class="btn btn-primary refresh-btn">
+    <i class="fas fa-sync-alt"></i> 刷新数据
+</button>
+<div class="wrapper">
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-sm-3">
+                    <div class="small-box bg-info">
+                        <div class="inner">
+                            <h3>{{ user_count }}</h3>
+                            <p>总用户数量</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-3">
+                    <div class="small-box bg-success">
+                        <div class="inner">
+                            <h3>{{ member_count }}</h3>
+                            <p>会员数量</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-user-shield"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-3">
+                    <div class="small-box bg-warning">
+                        <div class="inner">
+                            <h3>¥{{ total_income }}</h3>
+                            <p>总收款</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-3">
+                    <div class="small-box bg-danger">
+                        <div class="inner">
+                            <h3>¥{{ today_income }}</h3>
+                            <p>今日收款</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-coins"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-3">
+                    <div class="small-box bg-primary">
+                        <div class="inner">
+                            <h3>{{ news_count }}</h3>
+                            <p>新闻总数量</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-newspaper"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-3">
+                    <div class="small-box bg-success">
+                        <div class="inner">
+                            <h3>{{ published_news_count }}</h3>
+                            <p>已发布新闻数量</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-3">
+                    <div class="small-box bg-warning">
+                        <div class="inner">
+                            <h3>{{ unpublished_news_count }}</h3>
+                            <p>待发布新闻数量</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-3">
+                    <div class="small-box bg-warning">
+                        <div class="inner">
+                            <h3>{{ today_news_count }}</h3>
+                            <p>今日发布新闻数量</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-3">
+                    <div class="small-box bg-warning">
+                        <div class="inner">
+                            <h3>{{ token_count }}</h3>
+                            <p>token总使用量</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-3">
+                    <div class="small-box bg-warning">
+                        <div class="inner">
+                            <h3>{{ today_token_count }}</h3>
+                            <p>今日token使用量</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script>
+function refreshData() {
+    window.location.reload();
+}
+</script>
+
+</body>

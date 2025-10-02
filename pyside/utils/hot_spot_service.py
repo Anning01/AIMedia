@@ -1,0 +1,498 @@
+import requests
+from typing import List, Dict, Optional
+from .auth_service import AuthService
+
+class HotSpotService:
+    """热点数据服务"""
+    
+    PLATFORM_CONFIG = [
+        {
+            "name": "网易新闻",
+            "code": "2",
+            "children": [
+                {
+                    "name": "时事热点",
+                    "code": "https://news.163.com/special/cm_yaowen20200213/?callback=data_callback",
+                    "classify": "16",
+                },
+                {
+                    "name": "军事",
+                    "code": "https://news.163.com/special/cm_war/?callback=data_callback",
+                    "classify": "8",
+                },
+                {
+                    "name": "社会",
+                    "code": "https://news.163.com/special/cm_guonei/?callback=data_callback",
+                    "classify": "3",
+                },
+                {
+                    "name": "科技",
+                    "code": "https://tech.163.com/special/00097UHL/tech_datalist.js?callback=data_callback",
+                    "classify": "4",
+                },
+                {
+                    "name": "娱乐",
+                    "code": "https://ent.163.com/special/000381Q1/newsdata_movieidx.js?callback=data_callback",
+                    "classify": "6",
+                },
+                {
+                    "name": "经济",
+                    "code": "https://money.163.com/special/00259K2L/data_stock_redian.js?callback=data_callback",
+                    "classify": "2",
+                },
+                {
+                    "name": "教育",
+                    "code": "https://edu.163.com/special/002987KB/newsdata_edu_hot.js?callback=data_callback",
+                    "classify": "11",
+                },
+                {
+                    "name": "生活",
+                    "code": "https://baby.163.com/special/003687OS/newsdata_hot.js?callback=data_callback",
+                    "classify": "10",
+                },
+            ],
+        },
+        {
+            "name": "澎湃新闻",
+            "code": "3",
+            "children": [
+                {"name": "中国政库", "code": "25462", "classify": "1"},
+                # {"name": "中南海", "code": "25488", "classify": "1"},
+                {"name": "舆论场", "code": "25489", "classify": "3"},
+                {"name": "打虎记", "code": "25490", "classify": "1"},
+                {"name": "人事风向", "code": "25423", "classify": "1"},
+                {"name": "法治中国", "code": "25426", "classify": "3"},
+                {"name": "一号专案", "code": "25424", "classify": "1"},
+                {"name": "港台来信", "code": "25463", "classify": "7"},
+                {"name": "长三角政商", "code": "25491", "classify": "2"},
+                {"name": "直击现场", "code": "25428", "classify": "3"},
+                {"name": "公益湃", "code": "68750", "classify": "3"},
+                # {"name": "暖闻", "code": "27604", "classify": "3"},
+                {"name": "澎湃质量观", "code": "25464", "classify": "3"},
+                {"name": "绿政公署", "code": "25425", "classify": "13"},
+                {"name": "国防聚焦", "code": "137534", "classify": "8"},
+                {"name": "澎湃人物", "code": "25427", "classify": "3"},
+                {"name": "画外", "code": "143036", "classify": "6"},
+                {"name": "浦江头条", "code": "25422", "classify": "3"},
+                {"name": "上海大调研", "code": "127425", "classify": "3"},
+                {"name": "教育家", "code": "25487", "classify": "11"},
+                {"name": "全景现场", "code": "25634", "classify": "3"},
+                {"name": "美数课", "code": "25635", "classify": "11"},
+                {"name": "对齐Lab", "code": "138033", "classify": "4"},
+                {"name": "快看", "code": "25600", "classify": "6"},
+                {"name": "全球速报", "code": "25429", "classify": "7"},
+                {"name": "澎湃世界观", "code": "122903", "classify": "7"},
+                {"name": "澎湃明查", "code": "122904", "classify": "3"},
+                {"name": "澎湃防务", "code": "25430", "classify": "8"},
+                {"name": "外交学人", "code": "25481", "classify": "7"},
+                {"name": "唐人街", "code": "25678", "classify": "7"},
+                {"name": "大国外交", "code": "122905", "classify": "7"},
+                {"name": "World全知道", "code": "122906", "classify": "7"},
+                {"name": "寰宇开放麦", "code": "122907", "classify": "7"},
+                {"name": "10%公司", "code": "25434", "classify": "2"},
+                {"name": "能见度", "code": "25436", "classify": "13"},
+                {"name": "地产界", "code": "25433", "classify": "13"},
+                {"name": "财经上下游", "code": "25438", "classify": "2"},
+                {"name": "区域经纬", "code": "124129", "classify": "2"},
+                {"name": "金改实验室", "code": "25435", "classify": "2"},
+                {"name": "牛市点线面", "code": "25437", "classify": "2"},
+                {"name": "IPO最前线", "code": "119963", "classify": "2"},
+                {"name": "澎湃商学院", "code": "25485", "classify": "2"},
+                {"name": "自贸区连线", "code": "25432", "classify": "2"},
+                {"name": "新引擎", "code": "145902", "classify": "2"},
+                {"name": "进博会在线", "code": "37978", "classify": "2"},
+                {"name": "科学湃", "code": "27234", "classify": "4"},
+                {"name": "生命科学", "code": "119445", "classify": "4"},
+                {"name": "未来2%", "code": "119447", "classify": "16"},
+                {"name": "元宇宙观察", "code": "119446", "classify": "4"},
+                {"name": "科创101", "code": "119448", "classify": "4"},
+                {"name": "科学城邦", "code": "119449", "classify": "4"},
+                {"name": "澎湃研究所", "code": "25445", "classify": "16"},
+                {"name": "全球智库", "code": "25446", "classify": "7"},
+                {"name": "城市漫步", "code": "26915", "classify": "10"},
+                {"name": "市政厅", "code": "25456", "classify": "3"},
+                {"name": "世界会客厅", "code": "104191", "classify": "7"},
+                {"name": "社论", "code": "25444", "classify": "9"},
+                {"name": "澎湃评论", "code": "27224", "classify": "9"},
+                {"name": "思想湃", "code": "26525", "classify": "17"},
+                {"name": "上海书评", "code": "26878", "classify": "9"},
+                {"name": "思想市场", "code": "25483", "classify": "17"},
+                {"name": "私家历史", "code": "25457", "classify": "9"},
+                {"name": "上海文艺", "code": "135619", "classify": "9"},
+                {"name": "翻书党", "code": "25574", "classify": "9"},
+                {"name": "艺术评论", "code": "25455", "classify": "9"},
+                {"name": "古代艺术", "code": "26937", "classify": "9"},
+                {"name": "文化课", "code": "25450", "classify": "9"},
+                {"name": "逝者", "code": "25482", "classify": "9"},
+                {"name": "专栏", "code": "25536", "classify": "9"},
+                {"name": "异次元", "code": "26506", "classify": "9"},
+                {"name": "海平面", "code": "97313", "classify": "9"},
+                {"name": "一问三知", "code": "103076", "classify": "9"},
+                {"name": "有戏", "code": "25448", "classify": "6"},
+                {"name": "文艺范", "code": "26609", "classify": "9"},
+                {"name": "身体", "code": "25942", "classify": "12"},
+                {"name": "私·奔", "code": "26015", "classify": "5"},
+                {"name": "运动家", "code": "25599", "classify": "5"},
+                {"name": "非常品", "code": "80623", "classify": "6"},
+                {"name": "城势", "code": "26862", "classify": "13"},
+                {"name": "生活方式", "code": "25769", "classify": "10"},
+                {"name": "澎湃联播", "code": "25990", "classify": "16"},
+                {"name": "视界", "code": "26173", "classify": "3"},
+                {"name": "亲子学堂", "code": "26202", "classify": "10"},
+                {"name": "赢家", "code": "26404", "classify": "5"},
+                {"name": "汽车圈", "code": "26490", "classify": "13"},
+                {"name": "IP SH", "code": "115327", "classify": "25"},
+                {"name": "酒业", "code": "117340", "classify": "2"},
+            ],
+        },
+        {
+            "name": "中国日报",
+            "code": "4",
+            "children": [
+                {
+                    "name": "时政要闻",
+                    "code": "https://china.chinadaily.com.cn/5bd5639ca3101a87ca8ff636",
+                    "classify": "1",
+                },
+                {
+                    "name": "台海动态",
+                    "code": "https://china.chinadaily.com.cn/5e1ea9f6a3107bb6b579a144",
+                    "classify": "1",
+                },
+                {
+                    "name": "台湾政策",
+                    "code": "https://china.chinadaily.com.cn/5e1ea9f6a3107bb6b579a147",
+                    "classify": "1",
+                },
+                {
+                    "name": "两岸人生",
+                    "code": "https://china.chinadaily.com.cn/5e23b3dea3107bb6b579ab68",
+                    "classify": "9",
+                },
+                {
+                    "name": "国际资讯",
+                    "code": "https://china.chinadaily.com.cn/5bd55927a3101a87ca8ff618",
+                    "classify": "7",
+                },
+                {
+                    "name": "中国日报专稿",
+                    "code": "https://cn.chinadaily.com.cn/5b753f9fa310030f813cf408/5bd54dd6a3101a87ca8ff5f8/5bd54e59a3101a87ca8ff606",
+                    "classify": "3",
+                },
+                {
+                    "name": "传媒动态",
+                    "code": "https://cn.chinadaily.com.cn/5b753f9fa310030f813cf408/5bd549f1a3101a87ca8ff5e0",
+                    "classify": "9",
+                },
+                {
+                    "name": "财经大事",
+                    "code": "https://caijing.chinadaily.com.cn/stock/5f646b7fa3101e7ce97253d3",
+                    "classify": "2",
+                },
+                {
+                    "name": "权威发布",
+                    "code": "https://caijing.chinadaily.com.cn/stock/5f646b7fa3101e7ce97253d6",
+                    "classify": "2",
+                },
+                {
+                    "name": "公告解读",
+                    "code": "https://caijing.chinadaily.com.cn/stock/5f646b7fa3101e7ce97253d9",
+                    "classify": "2",
+                },
+                {
+                    "name": "深度报道",
+                    "code": "https://caijing.chinadaily.com.cn/stock/5f646b7fa3101e7ce97253dc",
+                    "classify": "2",
+                },
+                {
+                    "name": "信息披露",
+                    "code": "https://caijing.chinadaily.com.cn/stock/5f646b7fa3101e7ce97253df",
+                    "classify": "2",
+                },
+                {
+                    "name": "头条新闻",
+                    "code": "https://cn.chinadaily.com.cn/wenlv/5b7628dfa310030f813cf495",
+                    "classify": "10",
+                },
+                {
+                    "name": "旅游要闻",
+                    "code": "https://cn.chinadaily.com.cn/wenlv/5b7628c6a310030f813cf48f",
+                    "classify": "10",
+                },
+                {
+                    "name": "酒店",
+                    "code": "https://cn.chinadaily.com.cn/wenlv/5b7628c6a310030f813cf48b",
+                    "classify": "10",
+                },
+                {
+                    "name": "旅游原创",
+                    "code": "https://cn.chinadaily.com.cn/wenlv/5b7628c6a310030f813cf492",
+                    "classify": "10",
+                },
+                {
+                    "name": "业界资讯",
+                    "code": "https://cn.chinadaily.com.cn/wenlv/5b7628c6a310030f813cf493",
+                    "classify": "10",
+                },
+                {
+                    "name": "时尚",
+                    "code": "https://fashion.chinadaily.com.cn/5b762404a310030f813cf467",
+                    "classify": "10",
+                },
+                {
+                    "name": "健康频道",
+                    "code": "https://cn.chinadaily.com.cn/jiankang",
+                    "classify": "12",
+                },
+                {
+                    "name": "教育",
+                    "code": "https://fashion.chinadaily.com.cn/5b762404a310030f813cf461",
+                    "classify": "11",
+                },
+                {
+                    "name": "体育",
+                    "code": "https://fashion.chinadaily.com.cn/5b762404a310030f813cf462",
+                    "classify": "5",
+                },
+            ],
+        },
+        {
+            "name": "搜狐新闻",
+            "code": "5",
+            "children": [
+                {"name": "时政", "code": "438647_15", "classify": "16"},
+                {"name": "国际", "code": "1649_13", "classify": "7"},
+                {"name": "财经", "code": "54401_15", "classify": "2"},
+                {"name": "明星新闻", "code": "55955_15", "classify": "6"},
+                {"name": "综艺新闻", "code": "438682_15", "classify": "6"},
+                {"name": "影视音乐", "code": "55968_15", "classify": "6"},
+                {"name": "网红", "code": "55962_15", "classify": "6"},
+                {"name": "幼儿教育", "code": "659_13", "classify": "11"},
+                {"name": "中小学", "code": "657_13", "classify": "11"},
+                {"name": "高考", "code": "653_13", "classify": "11"},
+                {"name": "高校", "code": "656_13", "classify": "11"},
+                {"name": "考研考公", "code": "978_13", "classify": "11"},
+                {"name": "教资法考", "code": "979_13", "classify": "11"},
+                {"name": "留学", "code": "661_13", "classify": "11"},
+                {"name": "学习资料", "code": "977_13", "classify": "11"},
+                {"name": "时尚", "code": "55103_15", "classify": "10"},
+                {"name": "明星", "code": "55105_15", "classify": "10"},
+                {"name": "格调生活", "code": "57749_15", "classify": "10"},
+                {"name": "美容", "code": "55107_15", "classify": "10"},
+                {"name": "奢品", "code": "54954_15", "classify": "10"},
+                {"name": "男士", "code": "723_13", "classify": "10"},
+                {"name": "生活方式", "code": "1510_13", "classify": "10"},
+                {"name": "通讯", "code": "667_13", "classify": "4"},
+                {"name": "数码", "code": "672_13", "classify": "4"},
+                {"name": "手机", "code": "56306_15", "classify": "4"},
+                {"name": "互联网", "code": "666_13", "classify": "16"},
+                {"name": "5G", "code": "677_13", "classify": "16"},
+                {"name": "智能硬件", "code": "676_13", "classify": "16"},
+                {"name": "宇宙发现", "code": "1107_13", "classify": "16"},
+                {"name": "世界未解之谜", "code": "53812_15", "classify": "17"},
+                {"name": "科学发现", "code": "1108_13", "classify": "4"},
+                {"name": "物理帝国", "code": "52796_15", "classify": "4"},
+                {"name": "搜狐科学feed流", "code": "52990_15", "classify": "17"},
+                {"name": "经济解码", "code": "706_13", "classify": "2"},
+                {"name": "股票", "code": "707_13", "classify": "2"},
+                {"name": "基金", "code": "1351_13", "classify": "2"},
+                {"name": "IPO", "code": "46857_15", "classify": "2"},
+                {"name": "新赛道", "code": "52519_15", "classify": "2"},
+                {"name": "搜狐酒业", "code": "7176_13", "classify": "2"},
+                {"name": "备孕指南", "code": "879_13", "classify": "12"},
+                {"name": "怀胎十月", "code": "880_13", "classify": "12"},
+                {"name": "生产必备", "code": "881_13", "classify": "3"},
+                {"name": "月子", "code": "882_13", "classify": "12"},
+                {"name": "新生儿", "code": "883_13", "classify": "12"},
+                {"name": "历史", "code": "396_13", "classify": "9"},
+                {"name": "国内资讯", "code": "2027_13", "classify": "8"},
+                {"name": "国际资讯", "code": "2028_13", "classify": "7"},
+                {"name": "风云人物", "code": "2036_13", "classify": "8"},
+                {"name": "战争历史", "code": "2037_13", "classify": "9"},
+                {"name": "军情纵横", "code": "275_13", "classify": "8"},
+                {"name": "网红餐厅", "code": "2085_13", "classify": "10"},
+                {"name": "行业聚焦", "code": "2099_13", "classify": "10"},
+                {"name": "餐饮界", "code": "2100_13", "classify": "10"},
+                {"name": "休闲食品", "code": "474_13", "classify": "10"},
+                {"name": "流行餐单", "code": "455_13", "classify": "10"},
+                {"name": "读书", "code": "419_13", "classify": "9"},
+                {"name": "人物", "code": "420_13", "classify": "9"},
+                {"name": "收藏", "code": "423_13", "classify": "9"},
+                {"name": "影视", "code": "422_13", "classify": "9"},
+                {"name": "艺术", "code": "421_13", "classify": "9"},
+                {"name": "运势", "code": "43827_15", "classify": "25"},
+                {"name": "情感", "code": "46018_15", "classify": "25"},
+                {"name": "性格解读", "code": "53716_15", "classify": "25"},
+                {"name": "生肖风水", "code": "53710_15", "classify": "25"},
+                {"name": "心理测试", "code": "53709_15", "classify": "25"},
+                {"name": "电竞", "code": "57629_15", "classify": "26"},
+                {"name": "手游", "code": "56214_15", "classify": "26"},
+                {"name": "单机", "code": "56215_15", "classify": "26"},
+                {"name": "网游", "code": "56216_15", "classify": "26"},
+                {"name": "攻略", "code": "56217_15", "classify": "26"},
+                {"name": "赛事追踪", "code": "56211_15", "classify": "26"},
+                {"name": "职业选手", "code": "56212_15", "classify": "26"},
+                {"name": "赛圈八卦", "code": "56213_15", "classify": "26"},
+                {"name": "搞笑feed流", "code": "51219_15", "classify": "17"},
+                {"name": "搞笑美女", "code": "51228_15", "classify": "17"},
+                {"name": "国漫推荐", "code": "947_13", "classify": "6"},
+                {"name": "日漫推荐", "code": "948_13", "classify": "6"},
+                {"name": "美漫推荐", "code": "949_13", "classify": "6"},
+                {"name": "养宠经验", "code": "303_13", "classify": "10"},
+                {"name": "喵星人", "code": "304_13", "classify": "10"},
+                {"name": "汪星人", "code": "305_13", "classify": "10"},
+            ],
+        },
+        {
+            "name": "腾讯体育",
+            "code": "6",
+            "children": [{"name": "体育", "code": "", "classify": "5"}],
+        },
+        {
+            "name": "腾讯新闻",
+            "code": "7",
+            "children": [
+                {"name": "经济", "code": "news_news_finance", "classify": "2"},
+                {"name": "科技", "code": "news_news_tech", "classify": "4"},
+                {"name": "娱乐", "code": "news_news_ent", "classify": "6"},
+                {"name": "国际", "code": "news_news_world", "classify": "7"},
+                {"name": "军事", "code": "news_news_mil", "classify": "8"},
+                {"name": "游戏", "code": "news_news_game", "classify": "26"},
+                {"name": "民生", "code": "news_news_auto", "classify": "13"},
+                {"name": "房地产", "code": "news_news_house", "classify": "13"},
+                {"name": "健康", "code": "news_news_antip", "classify": "12"},
+                {"name": "教育", "code": "news_news_edu", "classify": "11"},
+                {"name": "文化", "code": "news_news_history", "classify": "9"},
+                {"name": "生活", "code": "news_news_baby", "classify": "10"},
+            ],
+        },
+        {
+            "name": "新浪国际",
+            "code": "8",
+            "children": [{"name": "新浪国际", "code": "https://news.sina.com.cn/world/", "classify": "7"}]
+        },
+        {
+            "name": "IT之家",
+            "code": "9",
+            "children": [{"name": "数码3C", "code": "https://www.ithome.com/", "classify": "14"}]
+        }
+
+
+    ]
+    
+    @staticmethod
+    def get_hot_spots() -> List[Dict]:
+        """获取实时热点数据"""
+        token = AuthService.get_token()
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept': 'application/json',
+            'Authorization': f'Bearer {token}' if token else ''
+        }
+        
+        try:
+            response = requests.get(
+                f"{AuthService.BASE_URL}/hot-spots/",
+                headers=headers,
+                timeout=10,
+                verify=False
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if isinstance(data, list):
+                    return data
+                elif isinstance(data, dict) and 'data' in data:
+                    return data['data']
+                return []
+            else:
+                print(f"获取热点数据失败: HTTP {response.status_code}")
+                print(f"响应内容: {response.text}")
+                return []
+                
+        except Exception as e:
+            print(f"获取热点数据时发生错误: {str(e)}")
+            return []
+            
+    @staticmethod
+    def get_hot_spot_detail(hot_spot_id: str) -> Optional[Dict]:
+        """获取热点详细信息"""
+        token = AuthService.get_token()
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept': 'application/json',
+            'Authorization': f'Bearer {token}' if token else ''
+        }
+        
+        try:
+            response = requests.get(
+                f"{AuthService.BASE_URL}/hot-spots/{hot_spot_id}/",
+                headers=headers,
+                timeout=10,
+                verify=False
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            else:
+                print(f"获取热点详情失败: HTTP {response.status_code}")
+                print(f"响应内容: {response.text}")
+                return None
+                
+        except Exception as e:
+            print(f"获取热点详情时发生错误: {str(e)}")
+            return None
+            
+    @staticmethod
+    def get_mock_data():
+        """获取模拟数据"""
+        return [
+            {
+                "id": "1",
+                "title": "2024年全国两会即将召开",
+                "content": "2024年全国两会将于3月初在北京召开，会议将讨论国家重要政策和发展方向。两会期间，来自全国各地的代表委员将围绕经济发展、民生改善、科技创新等重要议题展开讨论.",
+                "platform": "网易新闻",
+                "category": "时政",
+                "time": "2024-02-28 10:00"
+            },
+            {
+                "id": "2",
+                "title": "中国与多国加强经贸合作",
+                "content": "中国继续扩大对外开放，与多个国家签署新的经贸协议。这些协议涵盖了贸易、投资、技术等多个领域，将为各方经济发展带来新的机遇.",
+                "platform": "中国日报",
+                "category": "财经",
+                "time": "2024-02-28 09:30"
+            },
+            {
+                "id": "3",
+                "title": "上海推出新一轮城市更新计划",
+                "content": "上海市政府发布新一轮城市更新计划，将在未来五年投入大量资金改善城市基础设施，提升市民生活品质。该计划包括旧区改造、公共空间优化等多个方面.",
+                "platform": "澎湃新闻",
+                "category": "民生",
+                "time": "2024-02-28 09:00"
+            },
+            {
+                "id": "4",
+                "title": "人工智能在教育领域应用获突破",
+                "content": "多家教育科技公司推出基于AI的个性化学习系统，通过智能算法为学生提供定制化的学习方案。专家表示，AI技术将显著改变传统教育模式.",
+                "platform": "搜狐新闻",
+                "category": "科技",
+                "time": "2024-02-28 08:30"
+            },
+            {
+                "id": "5",
+                "title": "新能源汽车市场持续增长",
+                "content": "最新数据显示，今年一季度新能源汽车销量同比增长50%，多家车企加大研发投入。业内专家预计，新能源汽车市场将继续保持快速增长态势.",
+                "platform": "腾讯新闻",
+                "category": "财经",
+                "time": "2024-02-28 08:00"
+            },
+            {
+                "id": "6",
+                "title": "亚洲杯赛事回顾：中国队表现分析",
+                "content": "本届亚洲杯中国队虽未能突破八强，但年轻球员表现亮眼。专家分析了球队存在的问题和未来发展方向，建议加强青训体系建设.",
+                "platform": "腾讯体育",
+                "category": "体育",
+                "time": "2024-02-28 07:30"
+            }
+        ]
