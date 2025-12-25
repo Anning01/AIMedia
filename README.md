@@ -10,7 +10,7 @@
 <br>
 <h3>简体中文 | <a href="README.en.md">English</a></h3>
 <div align="center">
-  <a href="https://github.com/Anning01/AIMedia" target="_blank"><img src="docs/logo.png" style="width: 120px; height: 120px; border-radius: 50%;"/></a>
+  <a href="https://github.com/Anning01/AIMedia" target="_blank"><img src="pyside/docs/logo.png" style="width: 120px; height: 120px; border-radius: 50%;"/></a>
 </div>
 <br>
 自动抓取热点，自动生成新闻，自动发布各大平台。  <b>全自动托管AI媒体软件</b> 
