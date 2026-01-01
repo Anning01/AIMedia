@@ -169,3 +169,6 @@ pyside/localData.db
 pyside/config.json
 back/ArticleManagePlus/.env
 migrations
+
+.serena
+.claude
