@@ -1,184 +1,256 @@
-<div align="center">
-<h1 align="center"> AIMediaPlus 🤖 </h1>
+# AIMediaPlus 后端服务
 
-<p align="center">
-  <a href="https://github.com/Anning01/AIMedia/stargazers"><img src="https://img.shields.io/github/stars/Anning01/AIMedia.svg?style=for-the-badge" alt="Stargazers"></a>
-  <a href="https://github.com/Anning01/AIMedia/issues"><img src="https://img.shields.io/github/issues/Anning01/AIMedia.svg?style=for-the-badge" alt="Issues"></a>
-  <a href="https://github.com/Anning01/AIMedia/network/members"><img src="https://img.shields.io/github/forks/Anning01/AIMedia.svg?style=for-the-badge" alt="Forks"></a>
-  <a href="https://github.com/Anning01/AIMedia/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Anning01/AIMedia.svg?style=for-the-badge" alt="License"></a>
-</p>
-<br>
-<h3>简体中文 | <a href="README.en.md">English</a></h3>
-<div align="center">
-  <a href="https://github.com/Anning01/AIMedia" target="_blank"><img src="docs/logo.png" style="width: 120px; height: 120px; border-radius: 50%;"/></a>
-</div>
-<br>
-自动抓取热点，自动生成新闻，自动发布各大平台。  <b>全自动托管AI媒体软件</b>
-<br>
-全新架构: Django后台 + PySide6桌面端，提供更稳定的服务和更优秀的用户体验
-<br>
-</div>
+Django 后端服务，提供 RESTful API、数据管理、任务调度等功能。
 
-## 架构特点 🏗️
+## 技术栈
 
-- **后端服务 (Django)**: 位于 `back/` 目录，提供 RESTful API、数据管理、任务调度
-- **桌面客户端 (PySide6)**: 位于 `pyside/` 目录，提供友好的图形界面和本地功能
-- **前后端分离**: 支持多客户端连接，可扩展性强
+- **Django 5.1.3** - Web 框架
+- **Django REST Framework** - API 框架
+- **SimpleUI** - Django Admin 美化
+- **MySQL / SQLite** - 数据库
+- **Redis** - 缓存
+- **Channels + Daphne** - WebSocket 支持
 
-## 功能特性 🎯
+## 快速开始
 
-- [x] 支持 **热点新闻抓取**，自动抓取各大平台的热点新闻
-    - [x] 抖音热点
-    - [x] 网易新闻
-    - [x] 微博热点
-    - [x] 澎湃新闻
-    - [x] 中国日报
-    - [x] 搜狐新闻
-- [x] 支持 **根据新闻AI自动创作**，自动发布各个平台
-    - [x] 今日头条
-    - [x] 企鹅号
-    - [x] 公众号
-    - [x] 百家平台
-- [x] 针对无图纯文本，使用AI生成图像，增加原创率，阅读体验
-- [x] **Django后台管理**: 文章管理、用户管理、系统配置
-- [x] **PySide6桌面应用**: 直观的图形界面操作
+### 1. 环境要求
 
-### 后期计划 📅
+- Python >= 3.12
+- MySQL 8.0+ (可选，默认使用 SQLite)
+- Redis (可选，用于缓存)
 
-- [ ] 自动生成视频发布各个平台
-- [ ] 移动端客户端开发
-- [ ] 更多平台接入
+### 2. 克隆项目
 
-## 交流讨论 💬
-
-<img src="docs/wechat.png" width="250">
-
-## 视频演示 📺
-
-B站视频链接：https://www.bilibili.com/video/BV1oYSVYaEaa/?share_source=copy_web&vd_source=998582dcaa6c1a862619086e9dda59cb
-
-## 配置要求 📦
-
-- 建议最低 CPU 4核或以上，内存 8G 或以上，显卡非必须
-- Windows 10 或以上
-
-## 快速开始 🚀
-
-下载一键启动包，解压直接使用（路径不要有 **中文**、**特殊字符**、**空格**）
-
-### Windows
-- 百度网盘: https://pan.baidu.com/s/1YIV2avc_i5V8IcltWoFh1g  提取码：99k1
-
-
-下载后，首先解压 venv.tar.gz 到当前目录venv下,结构如下
-
-```
-AIMedia  
-  ├─venv
-  ├─main.py
-  ├─chrome
-  ├─...
-```
-
-建议先**双击执行** update.bat 更新到**最新代码**(需要安装git)，然后右键点击 **以管理员权限运行** webui.bat 启动
-
-启动后，会自动打开浏览器（如果打开是空白，建议换成 **Chrome** 或者 **Edge** 打开）
-
-### 其他系统
-
-不支持，仅支持window
-
-## 安装部署 📥
-
-### 前提条件
-
-- 尽量不要使用 **中文路径**，避免出现一些无法预料的问题
-- 请确保你的 **网络** 是正常的，VPN需要打开全局流量模式
-
-#### ① 克隆代码
-
-```shell
+```bash
 git clone https://github.com/Anning01/AIMedia.git
+cd AIMedia/back
 ```
 
-#### ② 修改配置文件
+### 3. 创建虚拟环境
 
-- 将 config.py 文件复制一份，命名为 local_config.py
-- 按照 config.py 文件中的说明，配置好 zhipu_aip_key，如需要AI配图，打开enable 配置相关的 stable diffusion api
+**方式一：使用 uv (推荐)**
 
+```bash
+# 安装 uv
+pip install uv
 
-### 手动部署 📦
+# 创建虚拟环境并安装依赖
+uv sync
+```
 
-> 视频教程
+**方式二：使用 venv**
 
-- 完整的使用演示：B站视频链接：https://www.bilibili.com/video/BV1oYSVYaEaa/?share_source=copy_web&vd_source=998582dcaa6c1a862619086e9dda59cb
-- 如何在Windows上部署：抓紧制作中 (*>﹏<*)′~
+```bash
+python -m venv .venv
 
-#### ① 创建虚拟环境 （Conda）
+# Windows
+.venv\Scripts\activate
 
-建议使用 [conda](https://www.anaconda.com/download/success) 创建 python 虚拟环境
+# macOS/Linux
+source .venv/bin/activate
 
-```shell
-git clone https://github.com/Anning01/AIMedia.git
-cd AIMedia
-conda create -n AIMedia python=3.12.4
+pip install -r requirements.txt
+```
+
+**方式三：使用 conda**
+
+```bash
+conda create -n AIMedia python=3.12
 conda activate AIMedia
 pip install -r requirements.txt
 ```
 
-#### ② 启动Web界面 🌐
+### 4. 配置环境变量
 
-注意需要到 AIMedia 项目 根目录 下执行以下命令
+复制环境变量示例文件：
 
-###### Windows
-
-```bat
-conda activate AIMedia
-streamlit run main.py
+```bash
+cp ArticleManagePlus/.example.env ArticleManagePlus/.env
 ```
 
-#### ① 使用venv (请确定 python 版本 3.12.4)
+编辑 `.env` 文件，配置以下内容：
 
-```shell
-git clone https://github.com/Anning01/AIMedia.git
-cd AIMedia
-python -m venv venv
-.\venv\Scripts\activate
-pip install -r requirements.txt
+```ini
+# 数据库配置 (二选一)
+
+# 方式1: 使用 SQLite (开发环境推荐，无需额外配置)
+DEFAULT_DATABASE='sqlite:///db.sqlite3'
+
+# 方式2: 使用 MySQL (生产环境推荐)
+# DEFAULT_DATABASE='mysql://用户名:密码@127.0.0.1:3306/数据库名?charset=utf8mb4'
+
+# Redis 缓存配置 (可选)
+# 如果不使用 Redis，需要修改 settings.py 中的 CACHES 配置
+REDIS_URL='redis://127.0.0.1:6379/0'
+
+# 智谱 AI API Key (用于 AI 创作功能)
+GML_KEY='your_zhipu_api_key'
+
+# 以下为可选配置 (微信相关)
+WECHAT_APPID=''
+WECHAT_SECRET=''
+WECHAT_REDIRECT_URI=''
+CSRF_TRUSTED_ORIGINS=['http://localhost:8000']
+WECHAT_PAY_MCHID=''
+WECHAT_PAY_CERT_SERIAL_NO=''
+WECHAT_PAY_APIV3_KEY=''
+WECHAT_PAY_NOTIFY_URL=''
 ```
 
-#### ② 启动Web界面 🌐
+**如果不使用 Redis**，需要修改 `ArticleManagePlus/settings.py`，将缓存配置改为本地内存缓存：
 
-注意需要到 AIMedia 项目 根目录 下执行以下命令
+```python
+# 将这行注释掉
+# CACHES = {
+#     "default": env.cache_url("REDIS_URL"),
+# }
 
-###### Windows
-
-```bat
-streamlit run main.py
-或者
-.\webui.bat（conda不可以这样执行）
+# 使用本地内存缓存
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+    }
+}
 ```
 
-> 注意：我们自动发布依赖chrome测试版，需要手动下载
+### 5. 数据库迁移
 
-下载地址：
+```bash
+# 生成迁移文件
+python manage.py makemigrations
 
-- 百度网盘: 链接：https://pan.baidu.com/s/1x6J3K4KdWrI9vOG8yvSSBw  提取码：7jyw
+# 执行迁移
+python manage.py migrate
+```
 
+### 6. 创建超级用户
 
-模型下载后解压，整个目录放到 .\AIMedia 里面，
-最终的文件路径应该是这样: .\AIMedia\chrome
+```bash
+python manage.py createsuperuser
+```
 
-## 反馈建议 📢
+按提示输入用户名、邮箱和密码。
 
-- 可以提交 [issue](https://github.com/Anning01/AIMedia/issues)
-  或者 [pull request](https://github.com/Anning01/AIMedia/pulls)。
+### 7. 启动开发服务器
 
+```bash
+python manage.py runserver
+```
 
-## 许可证 📝
+服务启动后访问：
 
-点击查看 [LICENSE](LICENSE) 文件
+- **首页**: http://127.0.0.1:8000/
+- **管理后台**: http://127.0.0.1:8000/admin/
+- **API 文档 (Swagger)**: http://127.0.0.1:8000/swagger/
+- **API 文档 (ReDoc)**: http://127.0.0.1:8000/docs/
 
-## Star History
+## 项目结构
 
-[![Star History Chart](https://api.star-history.com/svg?repos=Anning01/AIMedia&type=Date)](https://star-history.com/#Anning01/AIMedia&Date)
+```
+back/
+├── ArticleManagePlus/      # Django 项目配置
+│   ├── settings.py         # 项目设置
+│   ├── urls.py             # 路由配置
+│   ├── wsgi.py             # WSGI 入口
+│   └── asgi.py             # ASGI 入口
+├── apps/                   # 应用目录
+│   ├── users/              # 用户模块
+│   └── crawlers/           # 爬虫模块
+├── utils/                  # 工具函数
+├── templates/              # 模板文件
+├── manage.py               # Django 管理脚本
+├── requirements.txt        # 依赖列表
+└── pyproject.toml          # 项目配置
+```
+
+## 常用命令
+
+```bash
+# 启动开发服务器
+python manage.py runserver
+
+# 启动开发服务器（指定端口）
+python manage.py runserver 0.0.0.0:8000
+
+# 生成迁移文件
+python manage.py makemigrations
+
+# 执行迁移
+python manage.py migrate
+
+# 创建超级用户
+python manage.py createsuperuser
+
+# 收集静态文件（生产环境）
+python manage.py collectstatic
+
+# 进入 Django Shell
+python manage.py shell
+
+# 运行爬虫命令
+python manage.py crawler
+```
+
+## 生产环境部署
+
+生产环境建议使用 Daphne 或 Gunicorn + Nginx：
+
+```bash
+# 使用 Daphne (支持 WebSocket)
+daphne -b 0.0.0.0 -p 8000 ArticleManagePlus.asgi:application
+
+# 使用 Gunicorn (仅 HTTP)
+gunicorn ArticleManagePlus.wsgi:application -b 0.0.0.0:8000
+```
+
+## 常见问题
+
+### 1. mysqlclient 安装失败
+
+**macOS:**
+```bash
+brew install mysql pkg-config
+pip install mysqlclient
+```
+
+**Ubuntu/Debian:**
+```bash
+sudo apt-get install python3-dev default-libmysqlclient-dev build-essential
+pip install mysqlclient
+```
+
+**Windows:**
+下载预编译的 wheel 文件: https://www.lfd.uci.edu/~gohlke/pythonlibs/#mysqlclient
+
+或者使用 SQLite 数据库开发。
+
+### 2. Redis 连接失败
+
+如果不需要 Redis，按照上述说明修改 settings.py 使用本地内存缓存。
+
+如果需要 Redis：
+```bash
+# macOS
+brew install redis
+brew services start redis
+
+# Ubuntu
+sudo apt install redis-server
+sudo systemctl start redis
+```
+
+### 3. 静态文件 404
+
+开发模式下确保 `DEBUG = True`，生产环境需要运行：
+```bash
+python manage.py collectstatic
+```
+
+## 反馈建议
+
+- 提交 [Issue](https://github.com/Anning01/AIMedia/issues)
+- 提交 [Pull Request](https://github.com/Anning01/AIMedia/pulls)
+
+## 许可证
+
+查看 [LICENSE](../LICENSE) 文件

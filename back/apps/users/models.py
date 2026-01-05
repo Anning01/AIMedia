@@ -22,7 +22,7 @@ class CustomUserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, phone, password=None, **extra_fields):
+    def create_superuser(self, open_id, password=None, **extra_fields):
         """
         创建超级用户
         """
@@ -34,7 +34,7 @@ class CustomUserManager(BaseUserManager):
         if not extra_fields.get("is_superuser"):
             raise ValueError("Superuser must have is_superuser=True.")
 
-        return self.create_user(phone, password, **extra_fields)
+        return self.create_user(open_id, password, **extra_fields)
 
 
 # 扩展用户表

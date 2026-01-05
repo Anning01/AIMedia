@@ -168,7 +168,10 @@ pyside/chrome-mac-arm64
 pyside/localData.db
 pyside/config.json
 back/ArticleManagePlus/.env
-migrations
+**/migrations/*
+
+# 2. 唯独不忽略 __init__.py
+!**/migrations/__init__.py
 
 .serena
 .claude

@@ -1,7 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Read(//Users/anning/PycharmProjects/AIMedia/**)"
+      "Read(//Users/anning/PycharmProjects/AIMedia/**)",
+      "Bash(mkdir:*)",
+      "Bash(python manage.py makemigrations:*)",
+      "Bash(.venv/bin/python:*)",
+      "Bash(touch:*)",
+      "Bash(rm:*)"
     ],
     "deny": [],
     "ask": []
