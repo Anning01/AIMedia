@@ -174,46 +174,19 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-#### 3. 配置项目
-
-- 将 `config.py` 文件复制一份，命名为 `local_config.py`
-- 按照 `config.py` 文件中的说明，配置好 `zhipu_aip_key`
-- 如需要 AI 配图，启用并配置 Stable Diffusion API
-
-#### 4. 下载 Chrome 浏览器（自动发布功能需要）
+#### 3. 下载 Chrome 浏览器（自动发布功能需要）
 
 下载地址：
 - 百度网盘: https://pan.baidu.com/s/1x6J3K4KdWrI9vOG8yvSSBw  提取码：7jyw
 
 下载后解压，整个目录放到 `.\AIMedia\pyside` 里面，最终的文件路径应该是这样: `.\AIMedia\pyside\chrome`
 
-#### 5. 启动项目
+#### 4. 启动项目
 
-**启动 Django 后端**
+请分别查看后端和前端的说明文档：
 
-```shell
-cd back
-python manage.py migrate
-python manage.py runserver
-```
-
-**启动 PySide6 前端**
-
-```shell
-cd pyside
-python main.py
-```
-
-或者使用一键启动脚本：
-
-```bat
-# Windows
-.\webui.bat
-
-# 或者（如果使用 Conda）
-conda activate AIMedia
-streamlit run main.py
-```
+- **Django 后端**：查看 [back/README.md](back/README.md)
+- **PySide6 前端**：查看 [pyside/README.md](pyside/README.md)
 
 ## 项目结构 📁
 
