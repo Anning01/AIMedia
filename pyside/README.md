@@ -20,7 +20,7 @@
 
 ## 安装依赖
 
-```bash
+```bash[README.md](../../../../ai-media-plus/README.md)
 # 使用 pip
 pip install -r requirements.txt
 
