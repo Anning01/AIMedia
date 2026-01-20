@@ -1,26 +1,37 @@
-import shutil
 import os
+import shutil
 import time
-
-from PySide6.QtCore import Qt, QThread, Signal, QTimer
-from PySide6.QtGui import QColor
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
-                               QPushButton, QLabel, QTableWidget, QTableWidgetItem, QComboBox,
-                               QHeaderView, QFrame, QDialog, QTextEdit)
-from utils.task_service import TaskService
-from utils.token_check import check_user_token
-
-from api.api_all import get_news_list, get_account_info, partial_update_news, check_vip
-from utils.precess_image import precess_image
 
 # 添加时间戳
 from datetime import datetime
 
+from PySide6.QtCore import Qt, QThread, QTimer, Signal
+from PySide6.QtGui import QColor
+from PySide6.QtWidgets import (
+    QComboBox,
+    QDialog,
+    QFrame,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QPushButton,
+    QTableWidget,
+    QTableWidgetItem,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
+
+from api.api_all import check_vip, get_account_info, get_news_list
 from utils.get_user_ope import user_opt
+from utils.precess_image import precess_image
+from utils.task_service import TaskService
+from utils.token_check import check_user_token
 
 
 class LogWindow(QDialog):
     """日志窗口"""
+
     def __init__(self, title, position=None, parent=None):
         super().__init__(parent)
         self.setWindowTitle(title)
@@ -136,7 +147,6 @@ class LogWindow(QDialog):
     def append_log(self, log):
         """添加日志"""
 
-
         timestamp = datetime.now().strftime("%H:%M:%S")
         formatted_log = f"[{timestamp}] {log}\n"
 
@@ -170,11 +180,11 @@ class TaskThread(QThread):
         try:
             code = check_vip()
             if code == 2000:
-                print('会员过期')
-                self.production_window.append_log('会员过期')
+                print("会员过期")
+                self.production_window.append_log("会员过期")
                 return
 
-            selected_model, api_key,config = user_opt()
+            selected_model, api_key, config = user_opt()
             if False in [selected_model, api_key]:
                 self.production_window.append_log("请先配置模型和api_key")
                 time.sleep(10)
@@ -186,37 +196,40 @@ class TaskThread(QThread):
                     if not self.production_window or not self.production_window.isVisible():
                         break
 
-                    self.production_window.append_log('检测用户信息')
-                    is_publish,is_not_full, api_key, selected_model, prompt = check_user_token()
+                    self.production_window.append_log("检测用户信息")
+                    is_publish, is_not_full, api_key, selected_model, prompt = check_user_token()
                     print("是否可以发布：", is_publish)
                     print("是否使用我们的key：", is_not_full)
-                    
+
                     if not is_publish:
-                        self.production_window.append_log('用户配置无效')
+                        self.production_window.append_log("用户配置无效")
                         break
 
-                    self.production_window.append_log('开始任务')
+                    self.production_window.append_log("开始任务")
                     data = get_news_list()
                     if not data:
-                        self.production_window.append_log('获取任务列表失败')
+                        self.production_window.append_log("获取任务列表失败")
                         break
 
-                    task = [{
-                        'id': t['id'],
-                        'account': t['account'],
-                        'platform': t['account_platform_name'],
-                        'title': t['title'],
-                        'article_info': t['article_info'],
-                        'img_list': t['img_list'],
-                        'status': t['status'],
-                    }
-                    for t in data if t["status"] in [0, 1]]
+                    task = [
+                        {
+                            "id": t["id"],
+                            "account": t["account"],
+                            "platform": t["account_platform_name"],
+                            "title": t["title"],
+                            "article_info": t["article_info"],
+                            "img_list": t["img_list"],
+                            "status": t["status"],
+                        }
+                        for t in data
+                        if t["status"] in [0, 1]
+                    ]
 
                     task_num = len(task)
-                    self.production_window.append_log('任务数量：' + str(task_num))
-                    
+                    self.production_window.append_log("任务数量：" + str(task_num))
+
                     if task_num == 0:
-                        self.production_window.append_log('配置任务已经全部完成')
+                        self.production_window.append_log("配置任务已经全部完成")
                         break
 
                     for item in task:
@@ -225,48 +238,52 @@ class TaskThread(QThread):
 
                         img_list = None
                         try:
-                            self.production_window.append_log(f'任务平台：{item["platform"]}')
-                            topic = item['title'] + '\n' + item['article_info']
+                            self.production_window.append_log(f"任务平台：{item['platform']}")
+                            topic = item["title"] + "\n" + item["article_info"]
 
-                            if item['status'] in [0, 1]:
-                                self.production_window.append_log('开始生产内容')
+                            if item["status"] in [0, 1]:
+                                self.production_window.append_log("开始生产内容")
                                 print("222")
                                 is_create, article = self.task_service.produce_content(
-                                    topic, selected_model, api_key, prompt, item['id'], is_not_full
+                                    topic, selected_model, api_key, prompt, item["id"], is_not_full
                                 )
                                 print("444")
                                 if not self._running:
                                     break
                                 if not is_create or not article:
-                                    self.production_window.append_log('内容生成失败')
+                                    self.production_window.append_log("内容生成失败")
                                     continue
                                 if not self._running:
                                     break
-                                self.production_window.append_log('开始处理图片')
-                                img_list = precess_image(item['img_list'], item['id'], self.production_window, article)
+                                self.production_window.append_log("开始处理图片")
+                                img_list = precess_image(
+                                    item["img_list"], item["id"], self.production_window, article
+                                )
 
                                 if is_create:
-                                    self.production_window.append_log('检测到文章已经生成，获取文章')
-                                    cookies = get_account_info(item['account'])
-                                    if not self._running:
-                                        break
-                                    if not cookies or 'cookie' not in cookies:
-                                        self.production_window.append_log('获取账号信息失败')
-                                        continue
-                                        
-                                    cookie = cookies['cookie']
-                                    self.production_window.append_log('开始发布，等待浏览器启动')
-                                    
-                                    if not self._running:
-                                        break
-                                        
-                                    self.task_service.publish_content(
-                                        article, cookie, img_list, item['platform'], item['id']
+                                    self.production_window.append_log(
+                                        "检测到文章已经生成，获取文章"
                                     )
-                                    self.production_window.append_log('发布完成')
+                                    cookies = get_account_info(item["account"])
+                                    if not self._running:
+                                        break
+                                    if not cookies or "cookie" not in cookies:
+                                        self.production_window.append_log("获取账号信息失败")
+                                        continue
+
+                                    cookie = cookies["cookie"]
+                                    self.production_window.append_log("开始发布，等待浏览器启动")
+
+                                    if not self._running:
+                                        break
+
+                                    self.task_service.publish_content(
+                                        article, cookie, img_list, item["platform"], item["id"]
+                                    )
+                                    self.production_window.append_log("发布完成")
 
                         except Exception as e:
-                            self.production_window.append_log(f'处理任务出错: {str(e)}')
+                            self.production_window.append_log(f"处理任务出错: {str(e)}")
                         finally:
                             if img_list:
                                 try:
@@ -278,17 +295,18 @@ class TaskThread(QThread):
                     time.sleep(1)  # 避免CPU过度使用
 
                 except Exception as e:
-                    self.production_window.append_log(f'任务处理出错: {str(e)}')
+                    self.production_window.append_log(f"任务处理出错: {str(e)}")
                     time.sleep(5)  # 出错后等待一段时间再继续
 
         except Exception as e:
-            self.production_window.append_log(f'任务线程出错: {str(e)}')
+            self.production_window.append_log(f"任务线程出错: {str(e)}")
         finally:
             self.finished.emit()
 
 
 class TaskCenterWidget(QWidget):
     """任务中心组件"""
+
     def __init__(self):
         super().__init__()
         self.task_service = TaskService()
@@ -350,7 +368,9 @@ class TaskCenterWidget(QWidget):
         self.table = QTableWidget()
         self.table.setObjectName("taskTable")
         self.table.setColumnCount(7)
-        self.table.setHorizontalHeaderLabels(["昵称", "UID", "标题", "平台", "任务进度", "开始时间", "操作"])
+        self.table.setHorizontalHeaderLabels(
+            ["昵称", "UID", "标题", "平台", "任务进度", "开始时间", "操作"]
+        )
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)  # 禁用编辑
 
         # 设置表格样式
@@ -475,7 +495,7 @@ class TaskCenterWidget(QWidget):
             "生产中": "#F1C40F",
             "已生产": "#2ECC71",
             "已发布": "#27AE60",
-            "任务失败": "#E74C3C"
+            "任务失败": "#E74C3C",
         }
 
         for row, task in enumerate(tasks):
@@ -587,20 +607,23 @@ class TaskCenterWidget(QWidget):
 
     def check_window_status(self):
         """检查窗口状态"""
-        if self.task_thread and self.task_thread.isRunning() and \
-           (not self.production_window or not self.production_window.isVisible()):
+        if (
+            self.task_thread
+            and self.task_thread.isRunning()
+            and (not self.production_window or not self.production_window.isVisible())
+        ):
             self.cleanup_resources()
 
     def cleanup_resources(self):
         """清理所有资源"""
         if self.status_timer.isActive():
             self.status_timer.stop()
-        
+
         if self.task_thread:
             if self.task_thread.isRunning():
                 self.task_thread.stop()  # 这会等待线程结束
             self.task_thread = None
-        
+
         if self.production_window:
             self.production_window.close()
             self.production_window = None

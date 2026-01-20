@@ -9,35 +9,34 @@ from io import BytesIO
 import requests
 from PIL import Image
 from selenium import webdriver
-from selenium.webdriver import ActionChains
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from auto_browser.baijiahao import publish_baijiahao
 from webdriver_manager.chrome import ChromeDriverManager
 
+from auto_browser.baijiahao import publish_baijiahao
 from auto_browser.qiehao import publish_qiehao
 from auto_browser.weixin import publish_weixin
 
 if platform.system() == "Windows":
-    import win32clipboard
     import pyperclip
-    from win32com import client as win_client
     import pythoncom
+    import win32clipboard
+    from win32com import client as win_client
 
 elif platform.system() == "Darwin":  # macOS
-    from AppKit import NSPasteboard, NSImage
+    from AppKit import NSImage, NSPasteboard
 
 
-class AutoTools(object):
+class AutoTools:
     def __init__(self):
         self.platform_url = {
             "头条号": "https://mp.toutiao.com/auth/page/login",
             "抖音热点宝": "https://douhot.douyin.com/welcome",
             "百家号": "https://baijiahao.baidu.com/builder/theme/bjh/login",
-            "微信公众号":"https://mp.weixin.qq.com/",
-            "企鹅号":"https://om.qq.com/main/creation/article"
+            "微信公众号": "https://mp.weixin.qq.com/",
+            "企鹅号": "https://om.qq.com/main/creation/article",
         }
 
     def get_driver(self):
@@ -77,9 +76,7 @@ class AutoTools(object):
         )
         driver.execute_cdp_cmd(
             "Page.addScriptToEvaluateOnNewDocument",
-            {
-                "source": 'Object.defineProperty(navigator, "webdriver", {get: () => undefined})'
-            },
+            {"source": 'Object.defineProperty(navigator, "webdriver", {get: () => undefined})'},
         )
         screen_width = driver.execute_script("return window.screen.width")
         screen_height = driver.execute_script("return window.screen.height")
@@ -94,9 +91,7 @@ class AutoTools(object):
         chrome_options.add_argument("--disable-plugins-discovery")
         chrome_options.add_argument("--no-sandbox")  # 禁用沙盒模式
         chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_experimental_option(
-            "debuggerAddress", f"127.0.0.1:{random_number}"
-        )
+        chrome_options.add_experimental_option("debuggerAddress", f"127.0.0.1:{random_number}")
         if platform.system() == "Windows":
             pythoncom.CoInitialize()
             chrome_options.add_argument(rf"--user-data-dir={user_data_dir}")
@@ -203,11 +198,12 @@ class AutoTools(object):
         return cookies
 
     def publish(self, cookie, content, platform_, imgs_path):
-        urls = {"头条号": "https://mp.toutiao.com/profile_v4/graphic/publish",
-                "百家号":"https://baijiahao.baidu.com/builder/rc/edit?type=news&is_from_cms=1",
-                "微信公众号":"https://mp.weixin.qq.com/",
-                "企鹅号":"https://om.qq.com/main/creation/article"
-                }
+        urls = {
+            "头条号": "https://mp.toutiao.com/profile_v4/graphic/publish",
+            "百家号": "https://baijiahao.baidu.com/builder/rc/edit?type=news&is_from_cms=1",
+            "微信公众号": "https://mp.weixin.qq.com/",
+            "企鹅号": "https://om.qq.com/main/creation/article",
+        }
         if platform_ == "头条号":
             url = urls[platform_]
             current_path = os.path.dirname(__file__)
@@ -305,9 +301,7 @@ class AutoTools(object):
                                         output.close()
                                         win32clipboard.OpenClipboard()
                                         win32clipboard.EmptyClipboard()
-                                        win32clipboard.SetClipboardData(
-                                            win32clipboard.CF_DIB, data
-                                        )
+                                        win32clipboard.SetClipboardData(win32clipboard.CF_DIB, data)
                                         win32clipboard.CloseClipboard()
                                         info_tag.send_keys(Keys.CONTROL, "v")
                                         time.sleep(0.5)
@@ -320,9 +314,7 @@ class AutoTools(object):
                                         output = BytesIO()
                                         image.save(output, "BMP")
                                         output.seek(0)
-                                        ns_image = NSImage.alloc().initWithData_(
-                                            output.getvalue()
-                                        )
+                                        ns_image = NSImage.alloc().initWithData_(output.getvalue())
                                         # 获取系统剪贴板
                                         pasteboard = NSPasteboard.generalPasteboard()
                                         pasteboard.clearContents()
@@ -364,9 +356,7 @@ class AutoTools(object):
                             driver.execute_script("arguments[0].scrollIntoView();", i)
                             if "授权平台自动维权" not in txt:
                                 try:
-                                    i.find_element(
-                                        By.CLASS_NAME, "byte-checkbox-wrapper"
-                                    ).click()
+                                    i.find_element(By.CLASS_NAME, "byte-checkbox-wrapper").click()
                                 except:
                                     pass
                         # if "发布得更多收益" in txt:
@@ -383,9 +373,7 @@ class AutoTools(object):
                         if "个人观点" in txt:
                             try:
                                 source = i.find_element(By.CLASS_NAME, "source-info-wrap")
-                                labels = source.find_element(
-                                    By.CLASS_NAME, "byte-checkbox-group"
-                                )
+                                labels = source.find_element(By.CLASS_NAME, "byte-checkbox-group")
                                 child_elements = labels.find_elements(By.TAG_NAME, "label")
                                 for info_e in child_elements:
                                     if info_e.text == "个人观点，仅供参考":
@@ -518,11 +506,12 @@ class AutoTools(object):
             return res
 
     def get_acconut_data(self, cookie, platform_):
-        urls = {"头条号": "https://mp.toutiao.com/profile_v4/index",
-                "百家号": "https://baijiahao.baidu.com/builder/rc/analysiscontent",
-                "微信公众号":"https://mp.weixin.qq.com",
-                "企鹅号":"https://om.qq.com/main"
-                }
+        urls = {
+            "头条号": "https://mp.toutiao.com/profile_v4/index",
+            "百家号": "https://baijiahao.baidu.com/builder/rc/analysiscontent",
+            "微信公众号": "https://mp.weixin.qq.com",
+            "企鹅号": "https://om.qq.com/main",
+        }
         driver = self.get_driver()
         driver.get(urls[platform_])
         driver.delete_all_cookies()
@@ -532,7 +521,7 @@ class AutoTools(object):
         except Exception as e:
             print(e)
         driver.get(urls[platform_])
-        time.sleep(60*30)
+        time.sleep(60 * 30)
         return driver
 
 

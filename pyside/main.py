@@ -1,12 +1,16 @@
 import sys
-from PySide6.QtWidgets import QApplication
-from views.login_window import LoginWindow
-from views.main_window import MainWindow
-from utils.local_data import LocalData
+
 from PySide6.QtCore import QSettings
 from PySide6.QtGui import QFont
+from PySide6.QtWidgets import QApplication, QDialog
+
 from api.api_all import get_user
 from utils.auth_service import AuthService
+from utils.local_data import LocalData
+from views.login_mode_selector import LoginModeSelector
+from views.login_window import LoginWindow
+from views.main_window import MainWindow
+
 
 def main():
     app = QApplication(sys.argv)
@@ -20,7 +24,7 @@ def main():
         font_families = ["PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "SimSun", "Arial"]
     else:  # Windows
         font_families = ["Microsoft YaHei", "SimSun", "Arial"]
-    
+
     # 设置第一个可用的字体
     font_set = False
     for font_family in font_families:
@@ -28,10 +32,10 @@ def main():
         if default_font.exactMatch():  # 检查字体是否真实可用
             font_set = True
             break
-    
+
     if not font_set:
         default_font.setFamily("Arial")  # 如果没有找到合适的字体，使用 Arial 作为后备
-    
+
     default_font.setPointSize(9)
     app.setFont(default_font)
 
@@ -166,7 +170,7 @@ def main():
     token = settings.value("token", None)
     if token:
         try:
-            openid = get_user()['open_id']
+            openid = get_user()["open_id"]
             settings = QSettings("AiMedia", "ai-media")
             settings.setValue("openid", openid)
             main_window = MainWindow()
@@ -177,10 +181,16 @@ def main():
             login_window = LoginWindow()
             login_window.show()
     else:
-        # 正常模式：从登录界面开始
+        # 正常模式：先选择登录方式
         AuthService().delete_token()
-        login_window = LoginWindow()
-        login_window.show()
+        selector = LoginModeSelector()
+        if selector.exec() == QDialog.Accepted:
+            mode = selector.get_mode()
+            login_window = LoginWindow(mode=mode)
+            login_window.show()
+        else:
+            # 用户关闭了选择框，退出程序
+            sys.exit(0)
 
     # 初始化数据库
     local_data = LocalData()
@@ -189,6 +199,7 @@ def main():
     local_data.close()
 
     sys.exit(app.exec())
+
 
 if __name__ == "__main__":
     main()

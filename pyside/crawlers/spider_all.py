@@ -1,20 +1,20 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # @Time    : 2024/12/11 04:38
 # @Author  : DNQTeach
 # @File    : spider_all.py
 import json
 
-from crawlers.pengpai import pengpai
-from crawlers.wangyi import wangyi
-from crawlers.zhongguoribao import ChineseDayNews
-from crawlers.souhu import SouHu
-from crawlers.tengxuxinwen import TenXuNews
-from crawlers.tengxuntiyu import TenXun
 from crawlers.ithome import ITHome
+from crawlers.pengpai import pengpai
+from crawlers.souhu import SouHu
+from crawlers.tengxuntiyu import TenXun
+from crawlers.tengxuxinwen import TenXuNews
+from crawlers.wangyi import wangyi
 from crawlers.xinlang import XinLangGuoJi
+from crawlers.zhongguoribao import ChineseDayNews
 
-def get_lsit(current_platform,code):
+
+def get_lsit(current_platform, code):
     if current_platform == "网易新闻":
         try:
             articles = wangyi().get_news_list(code)
@@ -67,8 +67,7 @@ def get_lsit(current_platform,code):
     return articles
 
 
-
-def get_lsit_info(current_platform,code):
+def get_lsit_info(current_platform, code):
     if current_platform == "网易新闻":
         try:
             articles = wangyi().get_news_info(code)
@@ -132,7 +131,7 @@ def is_less_than_2_minutes(datetime_str):
     """
     # 解析 datetime 字符串
     try:
-        input_time = datetime.strptime(datetime_str, '%Y-%m-%d %H:%M:%S')
+        input_time = datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S")
     except ValueError:
         # print(datetime_str)
         # print("日期时间格式不正确，应为 '%Y-%m-%d %H:%M:%S'")
@@ -159,10 +158,10 @@ def is_less_than_user_minutes(datetime_str):
     :return: True 如果时间小于2分钟，否则 False
     """
     try:
-        file_path = 'opt.json'
-        with open(file_path, 'r', encoding='utf-8') as file:
+        file_path = "opt.json"
+        with open(file_path, encoding="utf-8") as file:
             content = json.load(file)
-            publishNum = int(content['publishNum'])
+            publishNum = int(content["publishNum"])
     except:
         publishNum = 5
 
@@ -173,8 +172,8 @@ def is_less_than_user_minutes(datetime_str):
         dt_object = datetime.fromisoformat(datetime_str)
 
         # 将 datetime 对象格式化为字符串
-        input_time = dt_object.strftime('%Y-%m-%d %H:%M:%S')
-        input_time = datetime.strptime(input_time, '%Y-%m-%d %H:%M:%S')
+        input_time = dt_object.strftime("%Y-%m-%d %H:%M:%S")
+        input_time = datetime.strptime(input_time, "%Y-%m-%d %H:%M:%S")
     except ValueError:
         # print(datetime_str)
         # print("日期时间格式不正确，应为 '%Y-%m-%d %H:%M:%S'")

@@ -11,9 +11,10 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 import os
+import sys
 from datetime import timedelta
 from pathlib import Path
-import sys
+
 import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -177,13 +178,13 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(days=7),
 }
 
-SIMPLEUI_HOME_PAGE = '/user/dashboard/'
-SIMPLEUI_HOME_TITLE = '仪表盘'
-SIMPLEUI_HOME_ICON = 'fa fa-tachometer'
+SIMPLEUI_HOME_PAGE = "/user/dashboard/"
+SIMPLEUI_HOME_TITLE = "仪表盘"
+SIMPLEUI_HOME_ICON = "fa fa-tachometer"
 # 设置右上角Home图标跳转链接，会以另外一个窗口打开
-SIMPLEUI_INDEX = '/user/dashboard/'
+SIMPLEUI_INDEX = "/user/dashboard/"
 
-SIMPLEUI_LOGO = '/static/docs/logo.png'
+SIMPLEUI_LOGO = "/static/docs/logo.png"
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "AiMediaPlus API",
@@ -197,7 +198,7 @@ WECHAT_APPID = env("WECHAT_APPID")
 WECHAT_SECRET = env("WECHAT_SECRET")
 WECHAT_REDIRECT_URI = env("WECHAT_REDIRECT_URI")  # 微信授权回调URL
 
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 CSRF_TRUSTED_ORIGINS = env("CSRF_TRUSTED_ORIGINS")
 

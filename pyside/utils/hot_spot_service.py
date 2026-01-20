@@ -1,10 +1,11 @@
 import requests
-from typing import List, Dict, Optional
+
 from .auth_service import AuthService
+
 
 class HotSpotService:
     """热点数据服务"""
-    
+
     PLATFORM_CONFIG = [
         {
             "name": "网易新闻",
@@ -369,80 +370,77 @@ class HotSpotService:
         {
             "name": "新浪国际",
             "code": "8",
-            "children": [{"name": "新浪国际", "code": "https://news.sina.com.cn/world/", "classify": "7"}]
+            "children": [
+                {"name": "新浪国际", "code": "https://news.sina.com.cn/world/", "classify": "7"}
+            ],
         },
         {
             "name": "IT之家",
             "code": "9",
-            "children": [{"name": "数码3C", "code": "https://www.ithome.com/", "classify": "14"}]
-        }
-
-
+            "children": [{"name": "数码3C", "code": "https://www.ithome.com/", "classify": "14"}],
+        },
     ]
-    
+
     @staticmethod
-    def get_hot_spots() -> List[Dict]:
+    def get_hot_spots() -> list[dict]:
         """获取实时热点数据"""
         token = AuthService.get_token()
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            'Accept': 'application/json',
-            'Authorization': f'Bearer {token}' if token else ''
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+            "Accept": "application/json",
+            "Authorization": f"Bearer {token}" if token else "",
         }
-        
+
         try:
             response = requests.get(
-                f"{AuthService.BASE_URL}/hot-spots/",
-                headers=headers,
-                timeout=10,
-                verify=False
+                f"{AuthService.BASE_URL}/hot-spots/", headers=headers, timeout=10, verify=False
             )
-            
+
             if response.status_code == 200:
                 data = response.json()
                 if isinstance(data, list):
                     return data
-                elif isinstance(data, dict) and 'data' in data:
-                    return data['data']
+                elif isinstance(data, dict) and "data" in data:
+                    return data["data"]
                 return []
             else:
                 print(f"获取热点数据失败: HTTP {response.status_code}")
                 print(f"响应内容: {response.text}")
                 return []
-                
+
         except Exception as e:
             print(f"获取热点数据时发生错误: {str(e)}")
             return []
-            
+
     @staticmethod
-    def get_hot_spot_detail(hot_spot_id: str) -> Optional[Dict]:
+    def get_hot_spot_detail(hot_spot_id: str) -> dict | None:
         """获取热点详细信息"""
         token = AuthService.get_token()
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            'Accept': 'application/json',
-            'Authorization': f'Bearer {token}' if token else ''
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+            "Accept": "application/json",
+            "Authorization": f"Bearer {token}" if token else "",
         }
-        
+
         try:
             response = requests.get(
                 f"{AuthService.BASE_URL}/hot-spots/{hot_spot_id}/",
                 headers=headers,
                 timeout=10,
-                verify=False
+                verify=False,
             )
-            
+
             if response.status_code == 200:
                 return response.json()
             else:
                 print(f"获取热点详情失败: HTTP {response.status_code}")
                 print(f"响应内容: {response.text}")
                 return None
-                
+
         except Exception as e:
             print(f"获取热点详情时发生错误: {str(e)}")
             return None
-            
+
     @staticmethod
     def get_mock_data():
         """获取模拟数据"""
@@ -453,7 +451,7 @@ class HotSpotService:
                 "content": "2024年全国两会将于3月初在北京召开，会议将讨论国家重要政策和发展方向。两会期间，来自全国各地的代表委员将围绕经济发展、民生改善、科技创新等重要议题展开讨论.",
                 "platform": "网易新闻",
                 "category": "时政",
-                "time": "2024-02-28 10:00"
+                "time": "2024-02-28 10:00",
             },
             {
                 "id": "2",
@@ -461,7 +459,7 @@ class HotSpotService:
                 "content": "中国继续扩大对外开放，与多个国家签署新的经贸协议。这些协议涵盖了贸易、投资、技术等多个领域，将为各方经济发展带来新的机遇.",
                 "platform": "中国日报",
                 "category": "财经",
-                "time": "2024-02-28 09:30"
+                "time": "2024-02-28 09:30",
             },
             {
                 "id": "3",
@@ -469,7 +467,7 @@ class HotSpotService:
                 "content": "上海市政府发布新一轮城市更新计划，将在未来五年投入大量资金改善城市基础设施，提升市民生活品质。该计划包括旧区改造、公共空间优化等多个方面.",
                 "platform": "澎湃新闻",
                 "category": "民生",
-                "time": "2024-02-28 09:00"
+                "time": "2024-02-28 09:00",
             },
             {
                 "id": "4",
@@ -477,7 +475,7 @@ class HotSpotService:
                 "content": "多家教育科技公司推出基于AI的个性化学习系统，通过智能算法为学生提供定制化的学习方案。专家表示，AI技术将显著改变传统教育模式.",
                 "platform": "搜狐新闻",
                 "category": "科技",
-                "time": "2024-02-28 08:30"
+                "time": "2024-02-28 08:30",
             },
             {
                 "id": "5",
@@ -485,7 +483,7 @@ class HotSpotService:
                 "content": "最新数据显示，今年一季度新能源汽车销量同比增长50%，多家车企加大研发投入。业内专家预计，新能源汽车市场将继续保持快速增长态势.",
                 "platform": "腾讯新闻",
                 "category": "财经",
-                "time": "2024-02-28 08:00"
+                "time": "2024-02-28 08:00",
             },
             {
                 "id": "6",
@@ -493,6 +491,6 @@ class HotSpotService:
                 "content": "本届亚洲杯中国队虽未能突破八强，但年轻球员表现亮眼。专家分析了球队存在的问题和未来发展方向，建议加强青训体系建设.",
                 "platform": "腾讯体育",
                 "category": "体育",
-                "time": "2024-02-28 07:30"
-            }
+                "time": "2024-02-28 07:30",
+            },
         ]

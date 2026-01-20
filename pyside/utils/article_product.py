@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # @Time    : 2024/12/10 14:19
 # @Author  : DNQTeach
 # @File    : articl_product.py
@@ -47,19 +46,19 @@ def article_create(topic, selected_model, api_key, prompt, is_not_full):
             return False, None, False
 
         # 生成文章
-        if not assistant or not hasattr(assistant, 'generate_article'):
+        if not assistant or not hasattr(assistant, "generate_article"):
             print("Invalid WritingAssistant instance")
             return False, None, False
 
         result = assistant.generate_article(topic)
-        
-        if not result or 'content' not in result:
+
+        if not result or "content" not in result:
             print("No content in generation result")
             return False, None, False
 
-        article = result["content"].replace("**", "").replace('### ', '').replace('标题：', '')
-        usetokens = result.get('token_usage', {}).get('total_tokens', 0)
-        
+        article = result["content"].replace("**", "").replace("### ", "").replace("标题：", "")
+        usetokens = result.get("token_usage", {}).get("total_tokens", 0)
+
         if not article or len(article.strip()) == 0:
             print("Empty article generated")
             return False, None, False

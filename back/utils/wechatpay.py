@@ -1,10 +1,8 @@
-import json
 import os
-from random import sample
-from string import ascii_letters, digits
-from wechatpayv3 import WeChatPay as wecaht, WeChatPayType
 
 from django.conf import settings
+from wechatpayv3 import WeChatPay as wecaht
+from wechatpayv3 import WeChatPayType
 
 
 class WeChatPay:
@@ -12,10 +10,12 @@ class WeChatPay:
     MCHID = settings.WECHAT_PAY_MCHID
 
     # 判断是否存在商户证书文件
-    if not os.path.exists('./apiclient_key.pem'):
-        raise FileNotFoundError('缺少商户证书文件 apiclient_key.pem，请将商户证书文件放在 back/ 目录下')
+    if not os.path.exists("./apiclient_key.pem"):
+        raise FileNotFoundError(
+            "缺少商户证书文件 apiclient_key.pem，请将商户证书文件放在 back/ 目录下"
+        )
     # 商户证书私钥
-    with open('./apiclient_key.pem') as f:
+    with open("./apiclient_key.pem") as f:
         PRIVATE_KEY = f.read()
 
     # 商户证书序列号
@@ -56,18 +56,19 @@ class WeChatPay:
             cert_dir=self.CERT_DIR,
             partner_mode=self.PARTNER_MODE,
             proxy=self.PROXY,
-            timeout=self.TIMEOUT)
+            timeout=self.TIMEOUT,
+        )
 
     def pay_jsapi(self, out_trade_no, money, openid):
-        description = '会员充值'
+        description = "会员充值"
         amount = money * 100
-        payer = {'openid': openid}
+        payer = {"openid": openid}
         code, message = self.wechatpay.pay(
             description=description,
             out_trade_no=out_trade_no,
-            amount={'total': amount},
+            amount={"total": amount},
             pay_type=WeChatPayType.JSAPI,
-            payer=payer
+            payer=payer,
         )
         return code, message
 

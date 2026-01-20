@@ -1,23 +1,38 @@
 from datetime import datetime, timedelta
 
-from PySide6.QtCore import Qt, Signal, QThread
+from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
-                               QComboBox, QPushButton, QTableWidget, QTableWidgetItem, QLabel,
-                               QDialog, QLineEdit, QHeaderView, QFrame, QMessageBox, QSpinBox, QDialogButtonBox)
-from utils.account_service import AccountService
-from utils.local_data import LocalData
-from utils.message_popup import MessagePopup
+from PySide6.QtWidgets import (
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QFrame,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QPushButton,
+    QSpinBox,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
 
 from api.api_all import create_account, delete_account, get_account_info, update_account
 from auto_browser.auto_base import AutoTools
 from auto_browser.baijiahao import get_cookie_baijiahao
 from auto_browser.qiehao import get_cookie_qiehao
 from auto_browser.weixin import get_cookie_weixin
+from utils.account_service import AccountService
+from utils.local_data import LocalData
+from utils.message_popup import MessagePopup
 
 
 class AddAccountDialog(QDialog):
     """添加账号对话框"""
+
     account_added = Signal()  # 新增信号
 
     def __init__(self, parent=None):
@@ -48,7 +63,7 @@ class AddAccountDialog(QDialog):
         platform_layout = QHBoxLayout()
         platform_label = QLabel("平台:")
         self.platform_combo = QComboBox()
-        self.platform_combo.addItems(["头条号", "百家号","微信公众号",'企鹅号'])
+        self.platform_combo.addItems(["头条号", "百家号", "微信公众号", "企鹅号"])
         self.platform_combo.setFixedHeight(32)
         platform_layout.addWidget(platform_label)
         platform_layout.addWidget(self.platform_combo)
@@ -57,19 +72,19 @@ class AddAccountDialog(QDialog):
         # 按钮布局
         btn_layout = QHBoxLayout()
         btn_layout.setSpacing(10)
-        
+
         # 取消按钮
         cancel_btn = QPushButton("取消")
         cancel_btn.setFixedSize(80, 32)
         cancel_btn.setObjectName("secondaryBtn")
         cancel_btn.clicked.connect(self.reject)
-        
+
         # 确认按钮
         confirm_btn = QPushButton("确认")
         confirm_btn.setFixedSize(80, 32)
         confirm_btn.setObjectName("primaryBtn")
         confirm_btn.clicked.connect(self.accept)
-        
+
         btn_layout.addStretch()
         btn_layout.addWidget(cancel_btn)
         btn_layout.addWidget(confirm_btn)
@@ -130,11 +145,10 @@ class AddAccountDialog(QDialog):
                 "platform": self.platform,
                 "nickname": nickname,
                 "uid": uid,
-                "cookie": cookie
+                "cookie": cookie,
             }
 
             self.data_fetched.emit(account_data)  # 发射信号，传递数据
-
 
     def get_account_data(self):
         """获取账号数据"""
@@ -143,7 +157,6 @@ class AddAccountDialog(QDialog):
         self.thread = self.GetAccountDataThread(platform)
         self.thread.data_fetched.connect(self.handle_data_fetched)  # 连接信号
         self.thread.start()  # 启动线程
-
 
     def handle_data_fetched(self, account_data):
         """处理获取到的数据"""
@@ -154,20 +167,15 @@ class AddAccountDialog(QDialog):
         # 计算 15 天后的时间
         future_time = current_time + timedelta(days=30)
         # 格式化输出
-        formatted_future_time = future_time.strftime('%Y-%m-%d %H:%M:%S')
-        platform_dict = {
-            "头条号": 0,
-            "百家号": 1,
-            "企鹅号":2,
-            "微信公众号":3
-        }
+        formatted_future_time = future_time.strftime("%Y-%m-%d %H:%M:%S")
+        platform_dict = {"头条号": 0, "百家号": 1, "企鹅号": 2, "微信公众号": 3}
         data = {
             "nickname": account_data["nickname"],
             "uid": account_data["uid"],
             "platform": platform_dict[account_data["platform"]],
             "expiry_time": formatted_future_time,
             "cookie": account_data["cookie"],
-            "status": 0
+            "status": 0,
         }
         create_account(data)
         self.account_added.emit()  # 发射信号通知账号已添加
@@ -177,8 +185,10 @@ class AddAccountDialog(QDialog):
         """重新加载数据"""
         self.accept()
 
+
 class AccountManagerWidget(QWidget):
     """账号管理组件"""
+
     def __init__(self):
         super().__init__()
         self.account_service = AccountService()
@@ -202,17 +212,17 @@ class AccountManagerWidget(QWidget):
         # 平台筛选
         filter_layout = QHBoxLayout()
         filter_layout.setSpacing(10)
-        
+
         filter_label = QLabel("平台:")
         filter_label.setObjectName("filterLabel")
         filter_layout.addWidget(filter_label)
-        
+
         self.platform_combo = QComboBox()
-        self.platform_combo.addItems(["全部", "头条号", "百家号","微信公众号","企鹅号"])
+        self.platform_combo.addItems(["全部", "头条号", "百家号", "微信公众号", "企鹅号"])
         self.platform_combo.setFixedSize(120, 32)
         self.platform_combo.currentTextChanged.connect(self.filter_accounts)
         filter_layout.addWidget(self.platform_combo)
-        
+
         toolbar_layout.addLayout(filter_layout)
         toolbar_layout.addStretch()
 
@@ -229,16 +239,18 @@ class AccountManagerWidget(QWidget):
         add_btn.setFixedSize(100, 32)
         add_btn.clicked.connect(self.show_add_dialog)
         toolbar_layout.addWidget(add_btn)
-        
+
         layout.addWidget(toolbar)
 
         # 账号列表
         self.table = QTableWidget()
         self.table.setObjectName("accountTable")
         self.table.setColumnCount(7)  # 增加一列
-        self.table.setHorizontalHeaderLabels(["昵称", "UID", "平台", "失效时间", "设置发布量", "账号删除", "数据分析"])
+        self.table.setHorizontalHeaderLabels(
+            ["昵称", "UID", "平台", "失效时间", "设置发布量", "账号删除", "数据分析"]
+        )
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)  # 禁用编辑
-        
+
         # 设置表格样式
         self.table.setShowGrid(False)
         self.table.setAlternatingRowColors(True)
@@ -389,15 +401,14 @@ class AccountManagerWidget(QWidget):
 
         def run(self):
             """执行数据分析的耗时操作"""
-            platform = self.account['platform']
+            platform = self.account["platform"]
             # local_data = LocalData()
             # cookie = local_data.get_cooke(self.account['uid'])
-            cookies = get_account_info(self.account['id'])
-            cookie = cookies['cookie']
+            cookies = get_account_info(self.account["id"])
+            cookie = cookies["cookie"]
             auto = AutoTools()
             auto.get_acconut_data(cookie, platform)
             self.analysis_completed.emit()  # 发射信号，表示分析完成
-
 
     def load_data(self):
         """加载账号数据"""
@@ -408,44 +419,48 @@ class AccountManagerWidget(QWidget):
         """显示账号列表"""
         self.table.setRowCount(len(accounts))
         self.table.verticalHeader().setDefaultSectionSize(50)  # 设置行高
-        
+
         for row, account in enumerate(accounts):
             # 昵称
             nickname_item = QTableWidgetItem(account["nickname"])
             nickname_item.setTextAlignment(Qt.AlignVCenter)
             self.table.setItem(row, 0, nickname_item)
-            
+
             # UID
             uid_item = QTableWidgetItem(account["uid"])
             uid_item.setTextAlignment(Qt.AlignVCenter)
             self.table.setItem(row, 1, uid_item)
-            
+
             # 平台
             platform_item = QTableWidgetItem(account["platform"])
             platform_item.setTextAlignment(Qt.AlignVCenter)
             self.table.setItem(row, 2, platform_item)
-            
+
             # 是否过期
             expired_text = account["is_expired"]
             expired_item = QTableWidgetItem(expired_text)
             expired_item.setTextAlignment(Qt.AlignVCenter)
-            expired_item.setForeground(QColor("#E74C3C") if account["is_expired"] else QColor("#2ECC71"))
+            expired_item.setForeground(
+                QColor("#E74C3C") if account["is_expired"] else QColor("#2ECC71")
+            )
             self.table.setItem(row, 3, expired_item)
-            
+
             # 设置发布量按钮
             publish_limit_btn = QPushButton("设置")
-            publish_limit_btn.setProperty('type', 'setting')  # 添加type属性以应用橙色样式
+            publish_limit_btn.setProperty("type", "setting")  # 添加type属性以应用橙色样式
             publish_limit_btn.setFixedSize(80, 28)
-            publish_limit_btn.clicked.connect(lambda checked, a=account: self.show_publish_limit_dialog(a))
+            publish_limit_btn.clicked.connect(
+                lambda checked, a=account: self.show_publish_limit_dialog(a)
+            )
             self.table.setCellWidget(row, 4, publish_limit_btn)
-            
+
             # 删除按钮
             delete_btn = QPushButton("删除")
             delete_btn.setObjectName("deleteBtn")
             delete_btn.setFixedSize(60, 28)
             delete_btn.clicked.connect(lambda checked, a=account: self.delete_account(a))
             self.table.setCellWidget(row, 5, delete_btn)
-            
+
             # 数据按钮
             data_btn = QPushButton("数据")
             data_btn.setObjectName("dataBtn")
@@ -457,10 +472,10 @@ class AccountManagerWidget(QWidget):
         """根据平台筛选账号"""
         platform = self.platform_combo.currentText()
         accounts = self.account_service.get_accounts()
-        
+
         if platform != "全部":
             accounts = [a for a in accounts if a["platform"] == platform]
-            
+
         self.display_accounts(accounts)
 
     def show_add_dialog(self):
@@ -473,8 +488,8 @@ class AccountManagerWidget(QWidget):
     def delete_account(self, account):
         """删除账号"""
         local_data = LocalData()
-        local_data.delete_publish_config(account['id'])
-        delete_account(account['id'])
+        local_data.delete_publish_config(account["id"])
+        delete_account(account["id"])
         self.load_data()
 
     def show_data_analysis(self, account):
@@ -494,19 +509,21 @@ class AccountManagerWidget(QWidget):
         dialog = QDialog(self)
         dialog.setWindowTitle("设置发布量")
         dialog.setFixedSize(300, 150)
-        
+
         layout = QVBoxLayout()
-        
+
         # 输入框
         input_layout = QHBoxLayout()
         label = QLabel("每日发布量限制:")
         self.limit_input = QLineEdit()
         self.limit_input.setPlaceholderText("请输入数字")
-        self.limit_input.setText(str(account.get("publish_limit", account['daily_publish_count'])))  # 显示当前设置
+        self.limit_input.setText(
+            str(account.get("publish_limit", account["daily_publish_count"]))
+        )  # 显示当前设置
         input_layout.addWidget(label)
         input_layout.addWidget(self.limit_input)
         layout.addLayout(input_layout)
-        
+
         # 按钮
         btn_layout = QHBoxLayout()
         cancel_btn = QPushButton("取消")
@@ -516,9 +533,9 @@ class AccountManagerWidget(QWidget):
         btn_layout.addWidget(cancel_btn)
         btn_layout.addWidget(confirm_btn)
         layout.addLayout(btn_layout)
-        
+
         dialog.setLayout(layout)
-        
+
         # 设置样式
         dialog.setStyleSheet("""
             QDialog {
@@ -552,7 +569,7 @@ class AccountManagerWidget(QWidget):
                 background-color: #7F8C8D;
             }
         """)
-        
+
         dialog.exec_()
 
     def save_publish_limit(self, account, dialog):
@@ -562,7 +579,7 @@ class AccountManagerWidget(QWidget):
 
             if limit < 0:
                 raise ValueError("发布量不能为负数")
-                
+
             # 保存到数据库
             try:
                 update_account(account["id"], {"daily_publish_count": limit})
@@ -573,14 +590,16 @@ class AccountManagerWidget(QWidget):
             except Exception as e:
                 # 显示数据库更新失败提示
                 MessagePopup(f"{str(e)}", parent=self, message_type="error").show()
-            
-        except ValueError as e:
+
+        except ValueError:
             MessagePopup("请输入有效的数字！", parent=self, message_type="warning").show()
-            
+
     def _init_table(self):
         self.table.setColumnCount(7)
-        self.table.setHorizontalHeaderLabels(['昵称', 'UID', '平台', '失效时间', '设置发布量', '账号删除', '数据分析'])
-        
+        self.table.setHorizontalHeaderLabels(
+            ["昵称", "UID", "平台", "失效时间", "设置发布量", "账号删除", "数据分析"]
+        )
+
         # 设置各列的宽度
         header = self.table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)  # 昵称
@@ -616,58 +635,58 @@ class AccountManagerWidget(QWidget):
     def _refresh_table(self):
         self.table.setRowCount(0)
         accounts = self.account_service.get_accounts()
-        
+
         button_width = 70  # 统一设置按钮宽度
         button_spacing = 15  # 统一设置按钮间距
-        
+
         for account in accounts:
             row = self.table.rowCount()
             self.table.insertRow(row)
-            
-            nickname_item = QTableWidgetItem(account['nickname'])
-            uid_item = QTableWidgetItem(account['uid'])
-            platform_item = QTableWidgetItem(account['platform'])
-            status_item = QTableWidgetItem(account['status'])
-            
+
+            nickname_item = QTableWidgetItem(account["nickname"])
+            uid_item = QTableWidgetItem(account["uid"])
+            platform_item = QTableWidgetItem(account["platform"])
+            status_item = QTableWidgetItem(account["status"])
+
             self.table.setItem(row, 0, nickname_item)
             self.table.setItem(row, 1, uid_item)
             self.table.setItem(row, 2, platform_item)
             self.table.setItem(row, 3, status_item)
-            
+
             # 设置发布量按钮
             limit_widget = QWidget()
             limit_layout = QHBoxLayout(limit_widget)
             limit_layout.setContentsMargins(button_spacing, 2, button_spacing, 2)
-            
-            limit_btn = QPushButton('设置')
-            limit_btn.setProperty('type', 'setting')  # 添加type属性以应用橙色样式
+
+            limit_btn = QPushButton("设置")
+            limit_btn.setProperty("type", "setting")  # 添加type属性以应用橙色样式
             limit_btn.setFixedWidth(button_width)
             limit_btn.clicked.connect(lambda checked, r=row: self._set_publish_limit(r))
-            
+
             limit_layout.addWidget(limit_btn, alignment=Qt.AlignmentFlag.AlignCenter)
             self.table.setCellWidget(row, 4, limit_widget)
-            
+
             # 删除按钮
             delete_widget = QWidget()
             delete_layout = QHBoxLayout(delete_widget)
             delete_layout.setContentsMargins(button_spacing, 2, button_spacing, 2)
-            
-            delete_btn = QPushButton('删除')
+
+            delete_btn = QPushButton("删除")
             delete_btn.setFixedWidth(button_width)
             delete_btn.clicked.connect(lambda checked, r=row: self._delete_account(r))
-            
+
             delete_layout.addWidget(delete_btn, alignment=Qt.AlignmentFlag.AlignCenter)
             self.table.setCellWidget(row, 5, delete_widget)
-            
+
             # 数据分析按钮
             analysis_widget = QWidget()
             analysis_layout = QHBoxLayout(analysis_widget)
             analysis_layout.setContentsMargins(button_spacing, 2, button_spacing, 2)
-            
-            analysis_btn = QPushButton('数据')
+
+            analysis_btn = QPushButton("数据")
             analysis_btn.setFixedWidth(button_width)
             analysis_btn.clicked.connect(lambda checked, r=row: self._show_data_analysis(r))
-            
+
             analysis_layout.addWidget(analysis_btn, alignment=Qt.AlignmentFlag.AlignCenter)
             self.table.setCellWidget(row, 6, analysis_widget)
 
@@ -675,35 +694,34 @@ class AccountManagerWidget(QWidget):
         """设置账号发布量限制"""
         uid = self.table.item(row, 1).text()
         current_limit = self.account_service.get_publish_limit(uid)
-        
+
         dialog = QDialog(self)
-        dialog.setWindowTitle('设置发布量限制')
+        dialog.setWindowTitle("设置发布量限制")
         layout = QVBoxLayout(dialog)
-        
+
         # 创建输入框和标签
         input_layout = QHBoxLayout()
-        label = QLabel('每日发布量限制:')
+        label = QLabel("每日发布量限制:")
         input_box = QSpinBox()
         input_box.setMinimum(0)
         input_box.setMaximum(999999)
         input_box.setValue(current_limit)
-        
+
         input_layout.addWidget(label)
         input_layout.addWidget(input_box)
         layout.addLayout(input_layout)
-        
+
         # 创建按钮
         button_box = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | 
-            QDialogButtonBox.StandardButton.Cancel
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         )
         button_box.accepted.connect(dialog.accept)
         button_box.rejected.connect(dialog.reject)
         layout.addWidget(button_box)
-        
+
         if dialog.exec() == QDialog.DialogCode.Accepted:
             new_limit = input_box.value()
             if self.account_service.update_publish_limit(uid, new_limit):
                 self._refresh_table()
             else:
-                QMessageBox.warning(self, '错误', '更新发布量限制失败')
+                QMessageBox.warning(self, "错误", "更新发布量限制失败")

@@ -8,7 +8,7 @@ import requests
 from PySide6.QtCore import QSettings
 from requests.exceptions import Timeout
 
-BASE_URL = "" # 后台base API
+BASE_URL = "http://127.0.0.1:8001/api"  # 后台base API
 
 
 class ApiRequest:
@@ -29,10 +29,12 @@ class ApiRequest:
 
     def _handle_response(self, response):
         """统一处理响应"""
+        print(f"3. 原始响应内容：{response.text}")  # 打印原始字符串（关键！看具体返回了什么）
+
         data = response.json()
-        if data['code'] == 2000:
-            return data['code']
-        if data['code'] == 0:
+        if data["code"] == 2000:
+            return data["code"]
+        if data["code"] == 0:
             return data.get("result")
         else:
             raise Exception(data["message"])
@@ -108,9 +110,7 @@ class ApiRequest:
         """DELETE 请求"""
         url = f"{self.base_url}/{endpoint}"
         try:
-            response = requests.delete(
-                url, headers=self._build_headers(), timeout=self.timeout
-            )
+            response = requests.delete(url, headers=self._build_headers(), timeout=self.timeout)
             return self._handle_response(response)
         except Timeout:
             print("请求超时")

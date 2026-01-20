@@ -5,9 +5,9 @@
 # @time:2024/10/26 10:12
 # @file:redis.py
 import hashlib
+from functools import wraps
 
 import django_redis
-from functools import wraps
 
 from utils.response import error_response
 
@@ -37,9 +37,7 @@ def rate_limit(user_limit=100, ip_limit=200):
                     {"error": "已超过用户和IP的请求限制", "result": False},
                 )
             if ip_count >= ip_limit:
-                return error_response(
-                    429, {"error": "已超过IP的请求限制", "result": False}
-                )
+                return error_response(429, {"error": "已超过IP的请求限制", "result": False})
 
             # 增加计数
             rd.incr(user_ip_key)

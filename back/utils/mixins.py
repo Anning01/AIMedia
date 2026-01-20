@@ -9,9 +9,7 @@ class CreateModelMixin:
     def create(self, request, *args, **kwargs):
         form_class = getattr(self, "create_form_class", None)
         if form_class:
-            serializer = form_class(
-                data=request.data, context=self.get_serializer_context()
-            )
+            serializer = form_class(data=request.data, context=self.get_serializer_context())
             serializer.is_valid(raise_exception=True)
             instance = self.perform_create(serializer)
             serializer = self.get_serializer(instance)
@@ -47,9 +45,7 @@ class UpdateModelMixin:
             # 这里做序列化对象
             serializer = self.get_serializer(instance)
         else:
-            serializer = self.get_serializer(
-                instance, data=request.data, partial=partial
-            )
+            serializer = self.get_serializer(instance, data=request.data, partial=partial)
             serializer.is_valid(raise_exception=True)
             self.perform_update(serializer)
         if getattr(instance, "_prefetched_objects_cache", None):

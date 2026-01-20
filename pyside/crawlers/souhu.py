@@ -1,12 +1,9 @@
-import time
-
 import ast
+import re
+from datetime import datetime, timedelta
 
 import requests
 from lxml import etree
-from datetime import datetime, timedelta
-import re
-
 
 # Create your tests here.
 
@@ -51,50 +48,54 @@ class SouHu:
         return result_time.strftime("%Y-%m-%d %H:%M:%S")
 
     def get_news_list(self, code=None):
-        productId, productType = code.split('_')
+        productId, productType = code.split("_")
         json_data = {
-            'mainContent': {
-                'productType': '13',
-                'productId': '1524',
-                'secureScore': '50',
-                'categoryId': '47',
+            "mainContent": {
+                "productType": "13",
+                "productId": "1524",
+                "secureScore": "50",
+                "categoryId": "47",
             },
-            'resourceList': [
+            "resourceList": [
                 {
-                    'tplCompKey': 'TPLFeedMul_2_9_feedData',
-                    'isServerRender': False,
-                    'isSingleAd': False,
-                    'configSource': 'mp',
-                    'content': {
-                        'productId': productId,
-                        'productType': productType,
-                        'size': 20,
-                        'pro': '0,1',
-                        'feedType': 'XTOPIC_LATEST',  # 默认 XTOPIC_SYNTHETICAL  最新 XTOPIC_LATEST
-                        'view': 'feedMode',
-                        'innerTag': 'channel',
-                        'spm': 'smpc.channel_114.block3_77_O0F7zf_1_fd',
-                        'page': 1,
-                        'requestId': '1732260842796Adk66ZV_1524',
+                    "tplCompKey": "TPLFeedMul_2_9_feedData",
+                    "isServerRender": False,
+                    "isSingleAd": False,
+                    "configSource": "mp",
+                    "content": {
+                        "productId": productId,
+                        "productType": productType,
+                        "size": 20,
+                        "pro": "0,1",
+                        "feedType": "XTOPIC_LATEST",  # 默认 XTOPIC_SYNTHETICAL  最新 XTOPIC_LATEST
+                        "view": "feedMode",
+                        "innerTag": "channel",
+                        "spm": "smpc.channel_114.block3_77_O0F7zf_1_fd",
+                        "page": 1,
+                        "requestId": "1732260842796Adk66ZV_1524",
                     },
                 },
             ],
         }
-        response = requests.post('https://odin.sohu.com/odin/api/blockdata', headers=self.headers, json=json_data)
+        response = requests.post(
+            "https://odin.sohu.com/odin/api/blockdata", headers=self.headers, json=json_data
+        )
         data = response.json()
         data_list = data["data"]["TPLFeedMul_2_9_feedData"]["list"]
         result = []
         for item in data_list:
-            if item['icon'] in ["images", 'video']:
+            if item["icon"] in ["images", "video"]:
                 continue
             date_str = item["extraInfoList"][1]["text"] if item["extraInfoList"] else ""
-            cover = item["cover"][0] if item["cover"] else ''
-            result.append({
-                "title": item["title"],
-                "article_url": f"https://www.sohu.com{item['url']}",
-                "cover_url": f"https:{cover}" if cover and 'https:' not in cover else cover,
-                "date_str": self.parse_relative_time(date_str),
-            })
+            cover = item["cover"][0] if item["cover"] else ""
+            result.append(
+                {
+                    "title": item["title"],
+                    "article_url": f"https://www.sohu.com{item['url']}",
+                    "cover_url": f"https:{cover}" if cover and "https:" not in cover else cover,
+                    "date_str": self.parse_relative_time(date_str),
+                }
+            )
         result = sorted(result, key=lambda x: x["date_str"], reverse=True)
         return result
 
@@ -104,28 +105,31 @@ class SouHu:
         content = requests.get(article_url, headers=self.headers).text
         content_html = etree.HTML(content)
         article_element = content_html.xpath('//article[@id="mp-editor"]')[0]
-        if not news['date_str']:
+        if not news["date_str"]:
             date_str = content_html.xpath('//span[@id="news-time"]/text()')[0].strip()
         else:
-            date_str = news['date_str']
+            date_str = news["date_str"]
         # 移除 id="backsohucom" 的整个元素
         for backsohu_element in article_element.xpath('.//a[@id="backsohucom"]'):
             backsohu_element.getparent().remove(backsohu_element)
 
         # 提取文本列表，过滤掉“责任编辑”内容
         text_list = [
-            p.xpath('string(.)').strip()
+            p.xpath("string(.)").strip()
             for p in article_element.xpath('.//p[not(contains(., "责任编辑"))]')
-            if p.xpath('string(.)').strip()
+            if p.xpath("string(.)").strip()
         ]
 
-        match = re.search(r'imgsList:\s*(\[[^\]]+\])', content, re.DOTALL)
+        match = re.search(r"imgsList:\s*(\[[^\]]+\])", content, re.DOTALL)
         if match:
             imgs_list_str = match.group(1)
             try:
                 img_list = ast.literal_eval(imgs_list_str)
-                img_list = [f"https:{item['url']}" if 'https:' not in item['url'] else item['url'] for item in img_list]
-            except Exception as e:
+                img_list = [
+                    f"https:{item['url']}" if "https:" not in item["url"] else item["url"]
+                    for item in img_list
+                ]
+            except Exception:
                 img_list = []
         else:
             img_list = []
@@ -147,7 +151,7 @@ class SouHu:
         dict_ = {
             "title": news["title"],
             "article_url": article_url,
-            "cover_url": news['cover_url'],
+            "cover_url": news["cover_url"],
             "date_str": date_str,
             "article_info": article_info,
             "img_list": img_list,

@@ -1,18 +1,30 @@
 from datetime import datetime
 
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
-    QPushButton, QLabel, QTableWidget, QTableWidgetItem, QComboBox,
-    QHeaderView, QFrame, QDialog, QTextEdit, QMessageBox)
-from PySide6.QtCore import Qt, QThread, Signal, QTimer
-from PySide6.QtGui import QColor, QFont
-from utils.account_service import AccountService
-from utils.task_service import TaskService
-from utils.hot_spot_service import HotSpotService
+from PySide6.QtCore import Qt, QThread, Signal
+from PySide6.QtGui import QFont
+from PySide6.QtWidgets import (
+    QComboBox,
+    QDialog,
+    QFrame,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QMessageBox,
+    QPushButton,
+    QTableWidget,
+    QTableWidgetItem,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
 
 from api.api_all import check_vip
 from components.task_center_widget import LogWindow
+from utils.account_service import AccountService
 from utils.local_data import LocalData
 from utils.message_popup import MessagePopup
+from utils.task_service import TaskService
+
 
 class MonitorTaskThread(QThread):
     def __init__(self, task_service, monitor_window):
@@ -21,8 +33,9 @@ class MonitorTaskThread(QThread):
         self.monitor_window = monitor_window
 
     def run(self):
-        self.monitor_window.append_log('启动新闻监控')
+        self.monitor_window.append_log("启动新闻监控")
         self.task_service.start_monitor_task(self.monitor_window)
+
 
 class ProductionTaskThread(QThread):
     def __init__(self, task_service, production_window):
@@ -31,8 +44,9 @@ class ProductionTaskThread(QThread):
         self.production_window = production_window
 
     def run(self):
-        self.production_window.append_log('启动任务生产')
+        self.production_window.append_log("启动任务生产")
         self.task_service.start_production_task(self.production_window)
+
 
 class AutoPublishThread(QThread):
     log_signal = Signal(str)
@@ -50,7 +64,7 @@ class AutoPublishThread(QThread):
     def run(self):
         code = check_vip()
         if code == 2000:
-            self.production_window.append_log('会员过期')
+            self.production_window.append_log("会员过期")
             return
         while self._running:
             try:
@@ -62,12 +76,13 @@ class AutoPublishThread(QThread):
                 # 异常时也检查_running状态
                 if not self._running:
                     break
-                self.error_signal.emit(f'Error: {str(e)}')
+                self.error_signal.emit(f"Error: {str(e)}")
                 self.msleep(1000)
+
 
 class LogWindow(QDialog):
     closed = Signal()
-    log_signal = Signal(str)  
+    log_signal = Signal(str)
 
     def __init__(self, title, position=None, parent=None):
         super().__init__(parent)
@@ -176,7 +191,6 @@ class LogWindow(QDialog):
             print(f"关闭事件时出错: {str(e)}")
 
     def append_log(self, log):
-
         timestamp = datetime.now().strftime("%H:%M:%S")
         formatted_log = f"[{timestamp}] {log}\n"
 
@@ -197,14 +211,14 @@ class LogWindow(QDialog):
 
 class AutoPublishWidget(QWidget):
     """一键托管组件"""
-    
+
     def __init__(self):
         super().__init__()
         self.account_service = AccountService()
         self.task_service = TaskService()
         self.production_window = None
         self.publish_thread = None
-        
+
         # 设置系统默认字体
         default_font = QFont()  # 使用系统默认字体
         default_font.setPointSize(9)  # 只设置字体大小
@@ -229,26 +243,26 @@ class AutoPublishWidget(QWidget):
             "时事热点": "16",
             "奇闻趣事": "17",
             "其他": "25",
-            "游戏": "26"
+            "游戏": "26",
         }
 
         # 使用category_code_map的key作为目标
         self.categories = {
             "第一目标": list(self.category_code_map.keys()),
             "第二目标": list(self.category_code_map.keys()),
-            "第三目标": list(self.category_code_map.keys())
+            "第三目标": list(self.category_code_map.keys()),
         }
-        
+
         self.init_ui()
         self.load_data()
-        
+
     def init_ui(self):
         """初始化UI"""
         layout = QVBoxLayout()
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(20)
         self.setLayout(layout)
-        
+
         # 顶部区域
         top_frame = QFrame()
         top_frame.setObjectName("topFrame")
@@ -271,15 +285,17 @@ class AutoPublishWidget(QWidget):
         self.start_btn.setFixedSize(120, 32)
         self.start_btn.clicked.connect(self.start_auto_publish)
         top_layout.addWidget(self.start_btn)
-        
+
         layout.addWidget(top_frame)
-        
+
         # 账号配置表格
         self.table = QTableWidget()
         self.table.setObjectName("accountTable")
         self.table.setColumnCount(7)
-        self.table.setHorizontalHeaderLabels(["昵称", "UID", "发布平台", "第一目标", "第二目标", "第三目标", "操作"])
-        
+        self.table.setHorizontalHeaderLabels(
+            ["昵称", "UID", "发布平台", "第一目标", "第二目标", "第三目标", "操作"]
+        )
+
         # 设置表格样式
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
@@ -287,12 +303,12 @@ class AutoPublishWidget(QWidget):
         self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(6, QHeaderView.Fixed)
         self.table.setColumnWidth(6, 100)
-        
+
         # 隐藏垂直表头
         self.table.verticalHeader().setVisible(False)
-        
+
         layout.addWidget(self.table)
-        
+
         # 设置样式
         self.setStyleSheet("""
             QWidget {
@@ -383,7 +399,7 @@ class AutoPublishWidget(QWidget):
                 selection-background-color: #3498DB;
             }
         """)
-        
+
     def load_data(self):
         """加载数据"""
         account_service = AccountService()
@@ -398,17 +414,17 @@ class AutoPublishWidget(QWidget):
             nickname_item = QTableWidgetItem(account["nickname"])
             nickname_item.setFlags(nickname_item.flags() & ~Qt.ItemIsEditable)
             self.table.setItem(row, 0, nickname_item)
-            
+
             # UID
             uid_item = QTableWidgetItem(account["uid"])
             uid_item.setFlags(uid_item.flags() & ~Qt.ItemIsEditable)
             self.table.setItem(row, 1, uid_item)
-            
+
             # 发布平台
             platform_item = QTableWidgetItem(account["platform"])
             platform_item.setFlags(platform_item.flags() & ~Qt.ItemIsEditable)
             self.table.setItem(row, 2, platform_item)
-            
+
             # 三个目标分类下拉框
 
             for c in cinfig_all:
@@ -417,7 +433,7 @@ class AutoPublishWidget(QWidget):
                         nickname=account["nickname"],
                         uid=account["uid"],
                         platform=account["platform"],
-                        account_id=account['id']
+                        account_id=account["id"],
                     )
                     break
 
@@ -428,7 +444,7 @@ class AutoPublishWidget(QWidget):
             for i, target in enumerate(["第一目标", "第二目标", "第三目标"]):
                 if len(data) > 0:
                     data_target = data[0][4]
-                    targets = data_target.split(',')
+                    targets = data_target.split(",")
                     # 要移动到第一位的值
                     value_to_move = targets[i]
                     # 从列表中移除该值
@@ -438,28 +454,27 @@ class AutoPublishWidget(QWidget):
                 combo = QComboBox()
                 combo.addItems(self.categories[target])
                 self.table.setCellWidget(row, 3 + i, combo)
-            
+
             # 保存按钮
             save_btn = QPushButton("保存配置")
             save_btn.setObjectName("saveBtn")
             save_btn.setFixedSize(80, 20)
-            save_btn.clicked.connect(lambda checked, r=row,i=account['id']: self.save_config(r,i))
+            save_btn.clicked.connect(lambda checked, r=row, i=account["id"]: self.save_config(r, i))
             self.table.setCellWidget(row, 6, save_btn)
 
-
-    def save_config(self, row,_id):
+    def save_config(self, row, _id):
         """保存账号配置"""
         try:
             # 获取基本信息
             nickname = self.table.item(row, 0).text()
             uid = self.table.item(row, 1).text()
             platform = self.table.item(row, 2).text()
-            
+
             # 获取选择的目标
             targets = []
             codes = []
             for i in range(3):
-                combo_box = self.table.cellWidget(row, i+3)
+                combo_box = self.table.cellWidget(row, i + 3)
                 if combo_box:
                     target = combo_box.currentText()
                     targets.append(target)
@@ -467,7 +482,7 @@ class AutoPublishWidget(QWidget):
                     code = self.category_code_map.get(target)
                     if code:
                         codes.append(code)
-            
+
             # 保存到数据库
             local_data = LocalData()
             print(targets)
@@ -478,21 +493,21 @@ class AutoPublishWidget(QWidget):
                 platform=platform,
                 targets=targets,
                 codes=codes,
-                account_id=_id
+                account_id=_id,
             )
             local_data.close()
-            
+
             # 添加成功提示
             success_popup = MessagePopup("配置保存成功", parent=self)
             success_popup.move(
                 self.mapToGlobal(self.rect().center()) - success_popup.rect().center()
             )
             success_popup.show()
-            
+
         except Exception as e:
             # 添加错误提示
             QMessageBox.critical(self, "错误", f"保存配置失败: {str(e)}")
-        
+
     def get_category_code(self, category_name):
         """获取分类代码"""
         return self.category_code_map.get(category_name, None)

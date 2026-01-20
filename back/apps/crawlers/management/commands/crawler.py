@@ -7,9 +7,9 @@
 from django.core.management import BaseCommand
 from django.db import transaction
 
-from apps.crawlers.models import Platform, NewsCategory, PlatformCategory
 from apps.crawlers.crawler_data.classify import data as classify_data
 from apps.crawlers.crawler_data.platform import data as platform_data
+from apps.crawlers.models import NewsCategory, Platform, PlatformCategory
 
 
 class Command(BaseCommand):
@@ -30,9 +30,7 @@ class Command(BaseCommand):
 
     def update_news_categories(self):
         """更新新闻分类数据"""
-        existing_categories = {
-            category.code: category for category in NewsCategory.objects.all()
-        }
+        existing_categories = {category.code: category for category in NewsCategory.objects.all()}
         new_categories = []
         for category in classify_data:
             if category["code"] in existing_categories:
@@ -63,9 +61,7 @@ class Command(BaseCommand):
 
     def update_platforms(self):
         """更新平台数据"""
-        existing_platforms = {
-            platform.code: platform for platform in Platform.objects.all()
-        }
+        existing_platforms = {platform.code: platform for platform in Platform.objects.all()}
         new_platforms = []
         for platform in platform_data:
             if platform["code"] in existing_platforms:
@@ -76,9 +72,7 @@ class Command(BaseCommand):
                     existing_platform.save()
             else:
                 # 如果平台不存在，添加新的平台
-                new_platforms.append(
-                    Platform(name=platform["name"], code=platform["code"])
-                )
+                new_platforms.append(Platform(name=platform["name"], code=platform["code"]))
         Platform.objects.bulk_create(new_platforms)
         self.stdout.write(
             self.style.SUCCESS(
@@ -90,9 +84,7 @@ class Command(BaseCommand):
         """更新平台分类数据"""
         existing_platform_categories = {
             (pc.platform.code, pc.code): pc
-            for pc in PlatformCategory.objects.select_related(
-                "platform", "news_category"
-            )
+            for pc in PlatformCategory.objects.select_related("platform", "news_category")
         }
         new_platform_categories = []
         for platform in platform_data:

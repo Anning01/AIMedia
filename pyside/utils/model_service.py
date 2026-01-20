@@ -6,15 +6,15 @@ from utils.article_product import article_create
 
 class ModelService:
     """模型配置服务"""
+
     def __init__(self):
-        self.optPath = 'opt.json'
+        self.optPath = "opt.json"
         self._init_mock_data()
 
-    
     def _init_mock_data(self):
         """初始化模拟数据"""
         if os.path.exists(self.optPath):
-            with open(self.optPath, 'r', encoding='utf-8') as file:
+            with open(self.optPath, encoding="utf-8") as file:
                 self._config = json.load(file)
         else:
             self._config = {
@@ -26,13 +26,8 @@ class ModelService:
                     "api_key": "",
                     "platform_url": "https://platform.moonshot.cn/",
                 },
-                "other": {
-                    "api_key": "",
-                    "platform_url": "",
-                    "model": "",
-                    "temperature": "0.7"
-                },
-                "publishNum": '5',
+                "other": {"api_key": "", "platform_url": "", "model": "", "temperature": "0.7"},
+                "publishNum": "5",
                 "selected_model": "glm",
                 "prompt": """Background:
 作为一名AI文章自然写作专家，你的目标是引导AI创作出具有人类写作特色的文本。你需要利用你对人类写作风格的深刻理解和自然语言处理的技能，来指导AI生成的文章从一开始就避免机械和公式化的痕迹，增强文章的可读性和亲和力。
@@ -76,28 +71,30 @@ class ModelService:
 5.根据文章主题和目标受众调整语言风格
 6.严格避免使用明显的AI风格词语和句式结构,
 7.确保文章的语言流畅自然，像人类写作一样有节奏感和变化
-8.要满足按照<人味写作指导>来书写文章"""
+8.要满足按照<人味写作指导>来书写文章""",
             }
-    
+
     def get_config(self):
         """获取配置"""
         return self._config
-    
+
     def save_config(self, config):
         """保存配置"""
         self._config.update(config)
-        with open(self.optPath, 'w', encoding='utf-8') as file:
+        with open(self.optPath, "w", encoding="utf-8") as file:
             json.dump(self._config, file, ensure_ascii=False, indent=4)
 
-    def preview_task(self, topic,selected_model,api_key,prompt):
+    def preview_task(self, topic, selected_model, api_key, prompt):
         """预览任务"""
-        if len(prompt)== 0:
+        if len(prompt) == 0:
             prompt = None
         else:
             prompt = prompt
         try:
-            content, usetokens,enable = article_create(topic,selected_model,api_key,prompt,False)
-            return content + '\n' + f'本次使用tokens：{usetokens}'
+            content, usetokens, enable = article_create(
+                topic, selected_model, api_key, prompt, False
+            )
+            return content + "\n" + f"本次使用tokens：{usetokens}"
         except Exception as e:
             print(f"预览任务出错: {e}")
             return f"生成预览内容失败: {str(e)}"

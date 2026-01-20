@@ -1,14 +1,15 @@
-from datetime import datetime, timedelta
 import json
-import uuid
 import time
+import uuid
+from datetime import datetime, timedelta
 from urllib.parse import urlencode
-from django.db import transaction
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from django.db.models import Sum
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render, redirect
+from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import action
@@ -16,27 +17,48 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+# Create your views here.
+from rest_framework_simplejwt.tokens import RefreshToken
+from wechatpy import WeChatOAuth
+
 from apps.users.models import (
-    ActivationCode,
-    Accounts,
     AccountNews,
+    Accounts,
+    ActivationCode,
+    AiArticle,
     Subscription,
+    UserNotice,
+    Users,
     UserSubscriptionLog,
-    WechatPayOrder, Users, AiArticle, UserNotice,
+    WechatPayOrder,
 )
-from apps.users.serializers import AiArticleSerializer
+from apps.users.serializers import AiArticleSerializer, LoginSerializer
 from utils import mixins, viewsets
 from utils.ai_model.writing_assistant import WritingAssistant
 from utils.common import generate_order_no
-from utils.encipher import initialize_fernet, encrypt_string, generate_key_from_string
+from utils.encipher import encrypt_string, generate_key_from_string, initialize_fernet
 from utils.permissons import IsNotExpiredUser
 from utils.redis_cli import rate_limit
 from utils.response import error_response, success_response
 from utils.wechatpay import WeChatPay
-from wechatpy import WeChatOAuth
 
 
-# Create your views here.
+class LoginAPIView(APIView):
+    """账号密码登录接口"""
+
+    def post(self, request):
+        serializer = LoginSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.validated_data["user"]
+            # 颁发 JWT token
+            refresh = RefreshToken.for_user(user)
+            data = {
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+            }
+            return success_response(data, "登录成功")
+        return error_response(400, serializer.errors)
+
 
 class AccountsViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsNotExpiredUser]
@@ -53,7 +75,9 @@ class AccountsViewSet(viewsets.ModelViewSet):
         # 检查是否存在相同的 uid
         account = Accounts.objects.filter(uid=uid).first()
         if account:
-            account_count = Accounts.objects.filter(user=self.request.user).exclude(status=4).count()
+            account_count = (
+                Accounts.objects.filter(user=self.request.user).exclude(status=4).count()
+            )
             if self.request.user.level.level == 0 and account_count >= 5:
                 return error_response(400, "普通用户最多只能绑定5个账号")
             # 因为uid是唯一约束 所以更新要去掉这个字段
@@ -81,9 +105,7 @@ class AccountsViewSet(viewsets.ModelViewSet):
 
 class AccountNewsViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsNotExpiredUser]
-    filterset_fields = [
-        "status", "account__id"
-    ]
+    filterset_fields = ["status", "account__id"]
 
     def get_permissions(self):
         if self.action == "list":
@@ -96,8 +118,7 @@ class AccountNewsViewSet(viewsets.ModelViewSet):
             # 性能优化 预取 account
             three_days_ago = datetime.now() - timedelta(days=3)
             return (
-                query_set
-                .prefetch_related("account")
+                query_set.prefetch_related("account")
                 .exclude(account__status=4)
                 .filter(account__user=self.request.user, created_at__gte=three_days_ago)
             )
@@ -122,9 +143,7 @@ class ActivationCodeView(APIView):
     def post(self, request, *args, **kwargs):
         code = request.data.get("code", "")
         if code:
-            activation_code = ActivationCode.objects.filter(
-                code=code, status=True
-            ).first()
+            activation_code = ActivationCode.objects.filter(code=code, status=True).first()
             if activation_code:
                 activation_code.use_time = datetime.now()
                 activation_code.use_user = request.user
@@ -163,31 +182,41 @@ def dashboard(request):
     """
     context = {"user_count": get_user_model().objects.count()}
     now = datetime.now()
-    context["member_count"] = (
-        get_user_model().objects.filter(expiry_time__gte=now).count()
+    context["member_count"] = get_user_model().objects.filter(expiry_time__gte=now).count()
+    context["total_income"] = (
+        WechatPayOrder.objects.filter(status=1).aggregate(Sum("amount"))["amount__sum"] or 0
     )
-    context["total_income"] = WechatPayOrder.objects.filter(status=1).aggregate(Sum("amount"))["amount__sum"] or 0
     # 计算当日的金额
     today_start = datetime(now.year, now.month, now.day)
-    context["today_income"] = \
-        WechatPayOrder.objects.filter(status=1, created_at__gte=today_start).aggregate(Sum("amount"))[
-            "amount__sum"] or 0
+    context["today_income"] = (
+        WechatPayOrder.objects.filter(status=1, created_at__gte=today_start).aggregate(
+            Sum("amount")
+        )["amount__sum"]
+        or 0
+    )
     context["news_count"] = AccountNews.objects.count()
     context["published_news_count"] = AccountNews.objects.filter(status=2).count()
     context["unpublished_news_count"] = AccountNews.objects.filter(status=0).count()
     # 今天新闻发布数量
-    context["today_news_count"] = AccountNews.objects.filter(status=2, created_at__gte=today_start).count()
+    context["today_news_count"] = AccountNews.objects.filter(
+        status=2, created_at__gte=today_start
+    ).count()
     # token总使用量
-    context["token_count"] = AiArticle.objects.filter(enable=True).aggregate(Sum("use_token"))["use_token__sum"] or 0
+    context["token_count"] = (
+        AiArticle.objects.filter(enable=True).aggregate(Sum("use_token"))["use_token__sum"] or 0
+    )
     # token今日使用量
-    context["today_token_count"] = \
-        AiArticle.objects.filter(enable=True, created_at__gte=today_start).aggregate(Sum("use_token"))[
-            "use_token__sum"] or 0
+    context["today_token_count"] = (
+        AiArticle.objects.filter(enable=True, created_at__gte=today_start).aggregate(
+            Sum("use_token")
+        )["use_token__sum"]
+        or 0
+    )
     return render(request, "dashboard.html", context)
 
 
 def package(request):
-    token = request.COOKIES.get('access_token')
+    token = request.COOKIES.get("access_token")
 
     subscriptions = Subscription.objects.all()
     subscription_data = []
@@ -200,8 +229,7 @@ def package(request):
                 "price": subscription.price,
                 "duration": subscription.duration,
                 "contents": [
-                    content.content
-                    for content in subscription.subscriptioncontent_set.all()
+                    content.content for content in subscription.subscriptioncontent_set.all()
                 ],
             }
         )
@@ -253,7 +281,11 @@ def pay(request):
             }
             # 创建订单
             WechatPayOrder.objects.create(
-                order_no=order_no, user_id=user_id, subscription=subscription, amount=subscription.price, status=0
+                order_no=order_no,
+                user_id=user_id,
+                subscription=subscription,
+                amount=subscription.price,
+                status=0,
             )
             return render(request, "pay.html", context)
         return HttpResponse(result.get("code"))
@@ -322,15 +354,21 @@ def wx_notify(request):
         amount = resp.get("amount").get("total")
         amount = amount / 100
         with transaction.atomic():
-            order = WechatPayOrder.objects.select_for_update().filter(
-                order_no=out_trade_no,
-                status=0  # 只处理未支付订单
-            ).first()
+            order = (
+                WechatPayOrder.objects.select_for_update()
+                .filter(
+                    order_no=out_trade_no,
+                    status=0,  # 只处理未支付订单
+                )
+                .first()
+            )
 
             if order and order.amount == amount:  # 验证订单金额
                 order.status = 1
                 # 将success_time转换为naive datetime对象
-                success_datetime = datetime.strptime(success_time, "%Y-%m-%dT%H:%M:%S%z").replace(tzinfo=None)
+                success_datetime = datetime.strptime(success_time, "%Y-%m-%dT%H:%M:%S%z").replace(
+                    tzinfo=None
+                )
                 order.pay_time = success_datetime
                 order.transaction_id = transaction_id
                 order.save()
@@ -347,9 +385,7 @@ def wx_notify(request):
 
                 # 创建用户订阅日志
                 UserSubscriptionLog.objects.create(
-                    user=user,
-                    subscription=order.subscription,
-                    expiry_time=user.expiry_time
+                    user=user, subscription=order.subscription, expiry_time=user.expiry_time
                 )
 
         return JsonResponse({"code": "SUCCESS", "message": "成功"})
@@ -357,14 +393,13 @@ def wx_notify(request):
 
 
 class AiArticleView(APIView):
-
     def post(self, request):
-        token = request.COOKIES.get('access_token')
+        token = request.COOKIES.get("access_token")
         data = json.loads(request.body)
         # 获取url字段
-        title = data.get('title')
-        content = data.get('content')
-        image_list = data.get('image_list')
+        title = data.get("title")
+        content = data.get("content")
+        image_list = data.get("image_list")
         if token:
             jwt_auth = JWTAuthentication()
             validated_token = jwt_auth.get_validated_token(token)
@@ -374,8 +409,8 @@ class AiArticleView(APIView):
                 assistant = WritingAssistant()
                 result = assistant.generate_article(text)
 
-                article = result["content"].replace("**", "").replace('### ', '')
-                total_tokens = result.get('token_usage', {}).get('total_tokens', 0)
+                article = result["content"].replace("**", "").replace("### ", "")
+                total_tokens = result.get("token_usage", {}).get("total_tokens", 0)
 
                 # 使用 \n 分割两段 第一段是标题
                 article_list = article.splitlines()
@@ -390,7 +425,7 @@ class AiArticleView(APIView):
                     new_content=new_content,
                     image_list=image_list,
                     use_token=total_tokens,
-                    enable=True
+                    enable=True,
                 )
                 data = {
                     "modifiedContent": article,
@@ -410,10 +445,12 @@ class AiArticleAPIView(APIView):
         # 查找创建日期为当天的
         date = datetime.now()
         # 查找AiArticle创建日期为当天的use_token相加总和
-        total_tokens = \
-            AiArticle.objects.filter(user=request.user, enable=True, created_at__date=date.today()).aggregate(
-                total_tokens=Sum('use_token')
-            )['total_tokens'] or 0
+        total_tokens = (
+            AiArticle.objects.filter(
+                user=request.user, enable=True, created_at__date=date.today()
+            ).aggregate(total_tokens=Sum("use_token"))["total_tokens"]
+            or 0
+        )
         status = True
         if total_tokens >= self.request.user.level.allow_token:
             status = False
@@ -438,10 +475,12 @@ class GLMAPIView(APIView):
         # 查找创建日期为当天的
         date = datetime.now()
         # 查找AiArticle创建日期为当天的use_token相加总和
-        total_tokens = \
-            AiArticle.objects.filter(user=request.user, enable=True, created_at__date=date.today()).aggregate(
-                total_tokens=Sum('use_token')
-            )['total_tokens'] or 0
+        total_tokens = (
+            AiArticle.objects.filter(
+                user=request.user, enable=True, created_at__date=date.today()
+            ).aggregate(total_tokens=Sum("use_token"))["total_tokens"]
+            or 0
+        )
         if total_tokens >= self.request.user.level.allow_token:
             return success_response(False)
 
@@ -455,16 +494,15 @@ class GLMAPIView(APIView):
         return success_response(encrypted_text)
 
 
-class NoticeViewSet(
-    mixins.ListModelMixin,
-    viewsets.GenericViewSet
-):
-    permission_classes = [IsAuthenticated, ]
+class NoticeViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    permission_classes = [
+        IsAuthenticated,
+    ]
 
     def get_queryset(self):
         return super().get_queryset().filter(is_show=True)
 
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
     def mark_as_read(self, request, *args, **kwargs):
         """
         自定义操作，用于用户标记公告为已读或未读。

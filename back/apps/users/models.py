@@ -1,23 +1,20 @@
-from django.contrib.auth.models import AbstractUser
-from django.db import models
-
 # Create your models here.
-
-from django.contrib.auth.models import BaseUserManager
+from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.db import models
 
 from utils.models import BaseModel
 
 
 class CustomUserManager(BaseUserManager):
-    def create_user(self, phone, password=None, **extra_fields):
+    def create_user(self, open_id, password=None, **extra_fields):
         """
         创建普通用户
         """
-        if not phone:
-            raise ValueError("The Phone field must be set")
+        if not open_id:
+            raise ValueError("The OpenID field must be set")
         # 设置默认字段
         extra_fields.setdefault("is_active", True)
-        user = self.model(phone=phone, **extra_fields)
+        user = self.model(open_id=open_id, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
@@ -28,7 +25,6 @@ class CustomUserManager(BaseUserManager):
         """
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
-        extra_fields.setdefault("open_id", open_id)
 
         if not extra_fields.get("is_staff"):
             raise ValueError("Superuser must have is_staff=True.")
@@ -42,14 +38,12 @@ class CustomUserManager(BaseUserManager):
 class Users(AbstractUser):
     # 增加一个字段
     username = None  # 删除默认的 username 字段
-    open_id = models.CharField(max_length=100, unique=True, db_index=True, verbose_name="微信OpenID")
-    nickname = models.CharField(
-        max_length=50, default="", verbose_name="昵称"
+    open_id = models.CharField(
+        max_length=100, unique=True, db_index=True, verbose_name="微信OpenID"
     )
-    avatar = models.URLField(max_length=200, blank=True, verbose_name='头像URL')
-    phone = models.CharField(
-        max_length=20, default="", verbose_name="手机号"
-    )
+    nickname = models.CharField(max_length=50, default="", verbose_name="昵称")
+    avatar = models.URLField(max_length=200, blank=True, verbose_name="头像URL")
+    phone = models.CharField(max_length=20, default="", verbose_name="手机号")
 
     expiry_time = models.DateTimeField(blank=True, null=True, verbose_name="到期时间")
     user = models.ForeignKey(
@@ -88,9 +82,7 @@ class Level(BaseModel):
         (1, "VIP用户"),
         (2, "SVIP用户"),
     )
-    level = models.PositiveSmallIntegerField(
-        choices=LEVEL_CHOICES, default=0, verbose_name="等级"
-    )
+    level = models.PositiveSmallIntegerField(choices=LEVEL_CHOICES, default=0, verbose_name="等级")
     # 允许消耗token
     allow_token = models.PositiveIntegerField(default=0, verbose_name="允许消耗token")
 
@@ -128,9 +120,7 @@ class Accounts(BaseModel):
     status = models.PositiveSmallIntegerField(
         choices=STATUS_CHOICES, default=0, verbose_name="状态"
     )
-    openid = models.CharField(
-        max_length=100, null=True, blank=True, verbose_name="openid"
-    )
+    openid = models.CharField(max_length=100, null=True, blank=True, verbose_name="openid")
     # 每天发布数量
     daily_publish_count = models.PositiveSmallIntegerField(default=15, verbose_name="每天发布数量")
 
@@ -214,9 +204,7 @@ class Subscription(BaseModel):
     original_price = models.PositiveSmallIntegerField(verbose_name="原价")
     price = models.PositiveSmallIntegerField(verbose_name="价格")
     duration = models.PositiveSmallIntegerField(verbose_name="有效期(天)")
-    level = models.ForeignKey(
-        "Level", on_delete=models.CASCADE, verbose_name="对应会员等级"
-    )
+    level = models.ForeignKey("Level", on_delete=models.CASCADE, verbose_name="对应会员等级")
 
     class Meta:
         verbose_name = "会员订阅服务"
@@ -290,6 +278,7 @@ class UserSubscriptionLog(BaseModel):
 
 class AiArticle(BaseModel):
     """Ai生成文章"""
+
     original_title = models.CharField(max_length=100, verbose_name="原始标题")
     new_title = models.CharField(max_length=100, verbose_name="新标题")
     original_content = models.TextField(verbose_name="原始内容")
@@ -312,10 +301,7 @@ class Notice(BaseModel):
     is_top = models.BooleanField(default=False, verbose_name="是否置顶")
     # 添加与公告的多对多关系，通过 UserNotice 关联模型
     users = models.ManyToManyField(
-        'Users',
-        through='UserNotice',
-        related_name='notices',
-        verbose_name="公告阅读状态"
+        "Users", through="UserNotice", related_name="notices", verbose_name="公告阅读状态"
     )
 
     class Meta:
@@ -329,14 +315,14 @@ class Notice(BaseModel):
 
 class UserNotice(models.Model):
     user = models.ForeignKey(Users, on_delete=models.CASCADE, verbose_name="用户")
-    notice = models.ForeignKey('Notice', on_delete=models.CASCADE, verbose_name="公告")
+    notice = models.ForeignKey("Notice", on_delete=models.CASCADE, verbose_name="公告")
     is_read = models.BooleanField(default=False, verbose_name="是否已读")
     read_time = models.DateTimeField(auto_now=True, verbose_name="阅读时间")
 
     class Meta:
         verbose_name = "用户公告阅读状态"
         verbose_name_plural = verbose_name
-        unique_together = ('user', 'notice')  # 确保每个用户和公告组合唯一
+        unique_together = ("user", "notice")  # 确保每个用户和公告组合唯一
 
     def __str__(self):
         return f"{self.user.nickname} - {self.notice.title} - {'已读' if self.is_read else '未读'}"

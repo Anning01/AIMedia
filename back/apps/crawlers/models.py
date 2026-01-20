@@ -2,7 +2,6 @@ from django.db import models
 
 from utils.models import BaseModel
 
-
 # Create your models here.
 
 
@@ -69,5 +68,3 @@ class ClientVersionManager(BaseModel):
         verbose_name = "客户端版本"
         verbose_name_plural = "客户端版本"
         ordering = ["-created_at"]
-
-

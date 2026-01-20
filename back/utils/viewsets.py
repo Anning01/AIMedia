@@ -7,7 +7,7 @@
 
 from django.apps import apps
 from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 
 from utils import mixins
 from utils.pagination import PageNumberPagination
@@ -48,9 +48,7 @@ class GenericViewSet(viewsets.GenericViewSet):
             return serializer_class
         serializer_name = self.__class__.__name__.replace("ViewSet", "Serializer")
         try:
-            module = __import__(
-                f"{self.get_app_label()}.serializers", fromlist=[serializer_name]
-            )
+            module = __import__(f"{self.get_app_label()}.serializers", fromlist=[serializer_name])
             return getattr(module, serializer_name)
         except (ImportError, AttributeError):
             raise ValueError(
@@ -69,14 +67,10 @@ class GenericViewSet(viewsets.GenericViewSet):
             model = apps.get_model(app_label, model_name)
             return model.objects.all()
         except LookupError:
-            raise ValueError(
-                f"Model '{model_name}' does not exist in app '{app_label}'."
-            )
+            raise ValueError(f"Model '{model_name}' does not exist in app '{app_label}'.")
 
 
-class ReadOnlyModelViewSet(
-    mixins.RetrieveModelMixin, mixins.ListModelMixin, GenericViewSet
-):
+class ReadOnlyModelViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, GenericViewSet):
     pass
 
 

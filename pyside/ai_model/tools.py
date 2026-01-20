@@ -1,14 +1,11 @@
-import json
 import os
-import time
-from typing import List
-from typing import Optional
-
-from langchain_community.chat_models import ChatZhipuAI,MoonshotChat
-from langchain_community.tools import BaseTool
-from zhipuai import ZhipuAI
 import re
+import time
+
+from langchain_community.chat_models import ChatZhipuAI, MoonshotChat
+from langchain_community.tools import BaseTool
 from openai import OpenAI
+from zhipuai import ZhipuAI
 
 # 搜索引擎工具
 from utils.get_user_ope import user_opt
@@ -22,8 +19,12 @@ class SearchTool:
         try:
             client = ZhipuAI(api_key=self.API_KEY)
             messages = [{"role": "user", "content": query}]
-            tool_zhipu = [{"type": "web_search", "web_search": {"enable": True, "search_query": query}}]
-            response = client.chat.completions.create(model="glm-4-flash", messages=messages, tools=tool_zhipu)
+            tool_zhipu = [
+                {"type": "web_search", "web_search": {"enable": True, "search_query": query}}
+            ]
+            response = client.chat.completions.create(
+                model="glm-4-flash", messages=messages, tools=tool_zhipu
+            )
             if response.choices:
                 return response.choices[0].message.content
             else:
@@ -39,7 +40,7 @@ class ContentAnalysisTool(BaseTool):
 
     def _run(self, topic: str) -> str:
         print("\n" + "=" * 50)
-        print(f"[ContentAnalysisTool] 开始分析主题")
+        print("[ContentAnalysisTool] 开始分析主题")
 
         result = f"""
 基于主题"{topic}"的内容分析：
@@ -58,7 +59,7 @@ class OutlineGeneratorTool(BaseTool):
 
     def _run(self, topic: str) -> str:
         print("\n" + "=" * 50)
-        print(f"[OutlineGeneratorTool] 开始生成大纲")
+        print("[OutlineGeneratorTool] 开始生成大纲")
 
         result = f"""
 为主题"{topic}"生成的文章大纲：
@@ -78,7 +79,7 @@ class ArticleWriterTool(BaseTool):
 
     def _run(self, outline: str) -> str:
         print("\n" + "=" * 50)
-        print(f"[ArticleWriterTool] 开始生成文章")
+        print("[ArticleWriterTool] 开始生成文章")
 
         result = "根据大纲生成的完整文章内容..."
 
@@ -90,19 +91,19 @@ class KnowledgeBaseTool(BaseTool):
     description: str = "从知识库中检索相关信息"
     docs_dir: str = None
     use_offline: bool = True
-    documents: Optional[list] = None
-    api_key: Optional[str] = None
+    documents: list | None = None
+    api_key: str | None = None
     max_chars: int = 500  # 限制返回的最大字符数
 
-    def __init__(self, docs_dir: str = './ai_model/knowledge_base'):
+    def __init__(self, docs_dir: str = "./ai_model/knowledge_base"):
         super().__init__()
         self.docs_dir = docs_dir
         self.max_chars = 500  # 限制知识库返回的最大字符数
-        
+
         # 确保文档目录存在
         if not os.path.exists(self.docs_dir):
             os.makedirs(self.docs_dir)
-            
+
         self._initialize_knowledge_base()
 
     def _initialize_knowledge_base(self):
@@ -111,7 +112,7 @@ class KnowledgeBaseTool(BaseTool):
             # 获取所有txt文件
             txt_files = []
             for file in os.listdir(self.docs_dir):
-                if file.endswith('.txt'):
+                if file.endswith(".txt"):
                     txt_files.append(os.path.join(self.docs_dir, file))
 
             # 加载所有文档
@@ -123,7 +124,7 @@ class KnowledgeBaseTool(BaseTool):
     def _run(self, query: str) -> str:
         """运行知识库查询，返回结构化的信息概要"""
         print("\n" + "=" * 50)
-        print(f"[KnowledgeBaseTool] 开始查询知识库")
+        print("[KnowledgeBaseTool] 开始查询知识库")
 
         if not query:
             return "请提供查询内容"
@@ -131,24 +132,20 @@ class KnowledgeBaseTool(BaseTool):
         # 尝试使用向量搜索
         if self.docs_dir:
             for doc in self.documents:
-                querys = re.sub(r'[^\w]', '', query)
+                querys = re.sub(r"[^\w]", "", query)
                 if querys in doc:
-                    with open(doc,'r',encoding='utf-8') as f:
+                    with open(doc, encoding="utf-8") as f:
                         raw_content = f.read()
                         break
         if not raw_content:
             return "未找到相关信息"
-        selected_model,api_key,_config = user_opt()
+        selected_model, api_key, _config = user_opt()
         # 提取关键信息
         try:
-            if selected_model == 'glm':
+            if selected_model == "glm":
                 print("glm-4-flash")
                 # 使用 LLM 提取结构化信息
-                llm = ChatZhipuAI(
-                    model_name='glm-4-flash',
-                    api_key= api_key,
-                    temperature=0.1
-                )
+                llm = ChatZhipuAI(model_name="glm-4-flash", api_key=api_key, temperature=0.1)
                 response = llm.invoke(
                     f"""请从{raw_content}中提取关键信息，按照以下格式输出：
                         时间：[具体发生时间，不允许添加或者改变，严重按照原文提取]
@@ -160,15 +157,16 @@ class KnowledgeBaseTool(BaseTool):
                         痛点：[事件背后相关痛点，100字以内]
                         概要：[内容概括，200字以内]
                         只需提取关键信息，无需添加任何其他内容。如果某项信息不存在，则填写"未提及"。
-                        """)
+                        """
+                )
 
                 print("\n提取的信息概要：")
                 print(response.content)
                 return response.content
-            elif selected_model == 'other':
-                print('other')
+            elif selected_model == "other":
+                print("other")
                 # 使用 LLM 提取结构化信息
-                prompt = f"""请根据用户输入提取关键信息，按照以下格式输出：
+                prompt = """请根据用户输入提取关键信息，按照以下格式输出：
                                    时间：[具体发生时间，不允许添加或者改变，严重按照原文提取]
                                    地点：[事件发生地点]
                                    人物：[相关人物及身份]
@@ -179,15 +177,17 @@ class KnowledgeBaseTool(BaseTool):
                                    概要：[内容概括，200字以内]
                                    只需提取关键信息，无需添加任何其他内容。如果某项信息不存在，则填写"未提及"。
                                    """
-                client = OpenAI(api_key=_config['other']['api_key'], base_url=_config['other']['platform_url'])
+                client = OpenAI(
+                    api_key=_config["other"]["api_key"], base_url=_config["other"]["platform_url"]
+                )
                 response = client.chat.completions.create(
-                    model=_config['other']['model'],
+                    model=_config["other"]["model"],
                     messages=[
                         {"role": "system", "content": prompt},
                         {"role": "user", "content": raw_content},
                     ],
                     stream=False,
-                    temperature=_config['other']['temperature'],
+                    temperature=_config["other"]["temperature"],
                 )
                 response = response.choices[0].message
                 print("\n提取的信息概要：")
@@ -196,13 +196,9 @@ class KnowledgeBaseTool(BaseTool):
             else:
                 print("moonshot-v1-8k")
                 # 使用 LLM 提取结构化信息
-                llm = MoonshotChat(
-                    model_name='moonshot-v1-8k',
-                    api_key=api_key,
-                    temperature=0.1
-                )
+                llm = MoonshotChat(model_name="moonshot-v1-8k", api_key=api_key, temperature=0.1)
                 response = llm.invoke(
-                 f"""请从{raw_content}中提取关键信息，按照以下格式输出：
+                    f"""请从{raw_content}中提取关键信息，按照以下格式输出：
                     时间：[具体发生时间，不允许添加或者改变，严重按照原文提取]
                     地点：[事件发生地点]
                     人物：[相关人物及身份]
@@ -212,35 +208,36 @@ class KnowledgeBaseTool(BaseTool):
                     痛点：[事件背后相关痛点，100字以内]
                     概要：[内容概括，200字以内]
                     只需提取关键信息，无需添加任何其他内容。如果某项信息不存在，则填写"未提及"。
-                    """)
+                    """
+                )
                 print("\n提取的信息概要：")
                 print(response.content)
                 return response.content
         except:
             return raw_content
 
-    def add_document(self, content: str, filename: Optional[str] = None) -> bool:
+    def add_document(self, content: str, filename: str | None = None) -> bool:
         """添加新文档到知识库
-        
+
         Args:
             content: 文档内容
             filename: 文件名，如果不提供则自动生成
-            
+
         Returns:
             bool: 是否添加成功
         """
         try:
             if not filename:
                 filename = f"doc_{int(time.time())}.txt"
-            filename = re.sub(r'[^\w]', '', filename)
+            filename = re.sub(r"[^\w]", "", filename)
             # 确保文件名以.txt结尾
-            if not filename.endswith('.txt'):
-                filename += '.txt'
+            if not filename.endswith(".txt"):
+                filename += ".txt"
 
             filepath = os.path.join(self.docs_dir, filename)
 
             # 写入文件
-            with open(filepath, 'w', encoding='utf-8') as f:
+            with open(filepath, "w", encoding="utf-8") as f:
                 f.write(content)
 
             # 重新初始化知识库
@@ -253,18 +250,18 @@ class KnowledgeBaseTool(BaseTool):
 
     def delete_document(self, filename: str) -> bool:
         """删除知识库中的文档
-        
+
         Args:
             filename: 要删除的文件名（如果没有.txt后缀会自动添加）
-            
+
         Returns:
             bool: 是否删除成功
         """
         try:
-            filename = re.sub(r'[^\w]', '', filename)
+            filename = re.sub(r"[^\w]", "", filename)
             # 确保文件名以.txt结尾
-            if not filename.endswith('.txt'):
-                filename += '.txt'
+            if not filename.endswith(".txt"):
+                filename += ".txt"
 
             filepath = os.path.join(self.docs_dir, filename)
 
@@ -284,16 +281,16 @@ class KnowledgeBaseTool(BaseTool):
             print(f"Error deleting document: {str(e)}")
             return False
 
-    def list_documents(self) -> List[str]:
+    def list_documents(self) -> list[str]:
         """列出知识库中的所有文档
-        
+
         Returns:
             List[str]: 文档名列表
         """
         try:
             files = []
             for file in os.listdir(self.docs_dir):
-                if file.endswith('.txt'):
+                if file.endswith(".txt"):
                     files.append(file)
             return files
         except Exception as e:

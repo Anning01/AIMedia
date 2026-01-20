@@ -1,17 +1,32 @@
 from datetime import datetime
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-                              QLabel, QTableWidget, QTableWidgetItem, QHeaderView,
-                              QFrame, QDialog, QTextEdit, QComboBox, QMessageBox)
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
-from services.material_service import MaterialService
+from PySide6.QtWidgets import (
+    QComboBox,
+    QDialog,
+    QFrame,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QMessageBox,
+    QPushButton,
+    QTableWidget,
+    QTableWidgetItem,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
+
 from components.material_import_dialog import MaterialImportDialog
+from services.material_service import MaterialService
 from threads.material_thread import MaterialThread
 from utils.message_popup import MessagePopup
 
 
 class LogWindow(QDialog):
     """日志窗口"""
+
     def __init__(self, title, position=None, parent=None):
         super().__init__(parent)
         self.setWindowTitle(title)
@@ -137,15 +152,10 @@ class LogWindow(QDialog):
 
 class MaterialImportWidget(QWidget):
     """素材导入组件"""
+
     # 添加状态映射
-    status_map = {
-        -1: "全部",
-        0: "已配置",
-        1: "已生成",
-        2: "已发布",
-        3: "已失败"
-    }
-    
+    status_map = {-1: "全部", 0: "已配置", 1: "已生成", 2: "已发布", 3: "已失败"}
+
     def __init__(self):
         super().__init__()
         self.material_service = MaterialService()
@@ -171,7 +181,7 @@ class MaterialImportWidget(QWidget):
         status_label = QLabel()
         status_label.setObjectName("statusLabel")
         toolbar_layout.addWidget(status_label)
-        
+
         self.status_combo = QComboBox()
         self.status_combo.setObjectName("statusCombo")
         self.status_combo.setFixedSize(100, 32)
@@ -211,7 +221,9 @@ class MaterialImportWidget(QWidget):
         self.table = QTableWidget()
         self.table.setObjectName("materialTable")
         self.table.setColumnCount(6)
-        self.table.setHorizontalHeaderLabels(["昵称", "标题", "上传时间", "平台", "任务进度", "操作"])
+        self.table.setHorizontalHeaderLabels(
+            ["昵称", "标题", "上传时间", "平台", "任务进度", "操作"]
+        )
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
 
         # 设置表格样式
@@ -233,7 +245,7 @@ class MaterialImportWidget(QWidget):
         self.table.setColumnWidth(2, 150)  # 上传时间
         self.table.setColumnWidth(3, 100)  # 平台
         self.table.setColumnWidth(4, 100)  # 任务进度
-        self.table.setColumnWidth(5, 80)   # 操作
+        self.table.setColumnWidth(5, 80)  # 操作
 
         layout.addWidget(self.table)
 
@@ -379,47 +391,42 @@ class MaterialImportWidget(QWidget):
         for row, data in enumerate(material_list):
             self.table.insertRow(row)
             self.table.verticalHeader().setDefaultSectionSize(50)  # 设置行高
-            
+
             # 昵称
             nickname_item = QTableWidgetItem(data["nickname"])
             nickname_item.setTextAlignment(Qt.AlignVCenter)
             self.table.setItem(row, 0, nickname_item)
-            
+
             # 标题
             title_item = QTableWidgetItem(data["title"])
             title_item.setTextAlignment(Qt.AlignVCenter)
             self.table.setItem(row, 1, title_item)
-            
+
             # 上传时间
             time_item = QTableWidgetItem(data["upload_time"])
             time_item.setTextAlignment(Qt.AlignVCenter)
             self.table.setItem(row, 2, time_item)
-            
+
             # 平台
             platform_item = QTableWidgetItem(data["platform"])
             platform_item.setTextAlignment(Qt.AlignVCenter)
             platform_item.setForeground(QColor("#2475A8"))  # 设置平台文字为蓝色
             self.table.setItem(row, 3, platform_item)
-            
+
             # 任务进度
-            status_map = {
-                0: "已配置",
-                1: "已生成",
-                2: "已发布",
-                3: "已失败"
-            }
+            status_map = {0: "已配置", 1: "已生成", 2: "已发布", 3: "已失败"}
             status_colors = {
                 "已配置": "#3498DB",
                 "已生成": "#F1C40F",
                 "已发布": "#27AE60",
-                "已失败": "#E74C3C"
+                "已失败": "#E74C3C",
             }
             status = status_map.get(data["status"], "未知")
             status_item = QTableWidgetItem(status)
             status_item.setTextAlignment(Qt.AlignVCenter)
             status_item.setForeground(QColor(status_colors.get(status, "#666666")))
             self.table.setItem(row, 4, status_item)
-            
+
             # 操作按钮
             delete_btn = QPushButton("删除")
             delete_btn.setObjectName("deleteBtn")
@@ -453,24 +460,26 @@ class MaterialImportWidget(QWidget):
         # 获取未发布的素材
         materials = self.material_service.get_material_list()
         unpublished_materials = [m for m in materials if m["status"] != 2 and m["status"] != 3]
-        
+
         if not unpublished_materials:
-            info_popup = MessagePopup("没有可发布的素材，请先导入素材", parent=self, message_type="warning")
-            info_popup.move(
-                self.mapToGlobal(self.rect().center()) - info_popup.rect().center()
+            info_popup = MessagePopup(
+                "没有可发布的素材，请先导入素材", parent=self, message_type="warning"
             )
+            info_popup.move(self.mapToGlobal(self.rect().center()) - info_popup.rect().center())
             info_popup.show()
             return
-            
+
         # 显示生产窗口
         if not self.production_window:
             self.production_window = LogWindow("自定义发布")
         else:
             self.production_window.clear_log()
         self.production_window.show()
-        
+
         # 启动生产线程
-        self.material_thread = MaterialThread(unpublished_materials, self.production_window, self.material_service)
+        self.material_thread = MaterialThread(
+            unpublished_materials, self.production_window, self.material_service
+        )
         self.material_thread.log_signal.connect(self.production_window.append_log)
         self.material_thread.finished.connect(self.load_data)  # 生产完成后刷新列表
         self.material_thread.start()
