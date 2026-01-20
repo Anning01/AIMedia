@@ -1,12 +1,9 @@
-from django.contrib import admin
-from django.utils.html import format_html
-from apps.users.models import AccountNews, Users
-
 # 注册 AccountNews 模型和新的 admin 类
-
 from django.apps import apps
 from django.contrib import admin
+from django.utils.html import format_html
 
+from apps.users.models import AccountNews, Users
 from utils.admin import SmartModelAdmin
 
 # Register your models here.
@@ -58,7 +55,12 @@ class AccountNewsAdmin(admin.ModelAdmin):
         "updated_at",
     )
 
-    list_filter = ('status', 'pub_date', 'account', 'account__user')  # 添加状态、平台和发布日期过滤器
+    list_filter = (
+        "status",
+        "pub_date",
+        "account",
+        "account__user",
+    )  # 添加状态、平台和发布日期过滤器
 
     def cover_url_display(self, obj):
         if obj.cover_url:

@@ -73,7 +73,9 @@ class GetArticle:
     def pengpai(self):
         content = requests.get(self.url, headers=self.headers).text
         content_html = etree.HTML(content)
-        img_list = content_html.xpath('//*[@id="__next"]/main/div[4]/div[1]/div[1]/div/div[2]/img/@src')
+        img_list = content_html.xpath(
+            '//*[@id="__next"]/main/div[4]/div[1]/div[1]/div/div[2]/img/@src'
+        )
 
         title = content_html.xpath('//*[@id="__next"]//h1/text()')
         txt = content_html.xpath('//*[@id="__next"]/main/div[4]/div[1]/div[1]/div/div[2]/p')
@@ -98,14 +100,14 @@ class GetArticle:
         content_div = content_html.xpath('//div[@id="Content"]')[0]
 
         # 提取 p 标签的文本列表
-        text_list = content_div.xpath('.//p/text()')
+        text_list = content_div.xpath(".//p/text()")
         title = content_html.xpath('//*[@id="all"]/div[4]/div[1]/h1//text()')
         if not title:
-            title = content_html.xpath('/html/body/div[5]/div[1]/div/h1//text()')
+            title = content_html.xpath("/html/body/div[5]/div[1]/div/h1//text()")
 
         # 提取 img 标签的 src 列表
-        img_list = content_div.xpath('.//img/@src')
-        img_list = ['https:' + i for i in img_list]
+        img_list = content_div.xpath(".//img/@src")
+        img_list = ["https:" + i for i in img_list]
         article_info = ""
         for item in text_list:
             article_info += item
@@ -129,26 +131,31 @@ class GetArticle:
 
         # 提取文本列表，过滤掉“责任编辑”内容
         text_list = [
-            p.xpath('string(.)').strip()
+            p.xpath("string(.)").strip()
             for p in article_element.xpath('.//p[not(contains(., "责任编辑"))]')
-            if p.xpath('string(.)').strip()
+            if p.xpath("string(.)").strip()
         ]
 
-        strings = content_html.xpath('//*[@id="article-container"]/div[2]/div[1]/div/div[1]//h1//text()')
+        strings = content_html.xpath(
+            '//*[@id="article-container"]/div[2]/div[1]/div/div[1]//h1//text()'
+        )
         cleaned_strings = []
         for s in strings:
-            cleaned_string = ''.join(s.split())  # Remove all whitespace including empty strings
+            cleaned_string = "".join(s.split())  # Remove all whitespace including empty strings
             cleaned_strings.append(cleaned_string)
 
         title = max(cleaned_strings, key=len)
 
-        match = re.search(r'imgsList:\s*(\[[^\]]+\])', content, re.DOTALL)
+        match = re.search(r"imgsList:\s*(\[[^\]]+\])", content, re.DOTALL)
         if match:
             imgs_list_str = match.group(1)
             try:
                 img_list = ast.literal_eval(imgs_list_str)
-                img_list = [f"https:{item['url']}" if 'https:' not in item['url'] else item['url'] for item in img_list]
-            except Exception as e:
+                img_list = [
+                    f"https:{item['url']}" if "https:" not in item["url"] else item["url"]
+                    for item in img_list
+                ]
+            except Exception:
                 img_list = []
         else:
             img_list = []
@@ -172,17 +179,19 @@ class GetArticle:
         content = content_html.xpath('//*[@id="ArticleContent"]/div[2]/div/p')
         if not content:
             content = content_html.xpath('//*[@id="article-content"]/div[2]/div/p')
-        title = content_html.xpath('//*[@id="dc-normal-body"]/div[3]/div[1]/div[1]/div[2]/h1//text()')
+        title = content_html.xpath(
+            '//*[@id="dc-normal-body"]/div[3]/div[1]/div[1]/div[2]/h1//text()'
+        )
         img_list = []
-        article_info = ''
+        article_info = ""
         for info in content:
             try:
-                img = info.xpath('.//img/@src')
+                img = info.xpath(".//img/@src")
                 if len(img) > 0:
                     img_list.append(img[0])
             except:
                 pass
-            txt = info.xpath('.//text()')
+            txt = info.xpath(".//text()")
             for i in txt:
                 article_info += i
                 article_info += "\n"
@@ -195,8 +204,7 @@ class GetArticle:
         return dict_
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     # url = "https://www.thepaper.cn/newsDetail_forward_29569997"
     # url = "https://cn.chinadaily.com.cn/a/202412/05/WS6751bf8aa310b59111da7532.html"
     # url = "https://www.sohu.com/a/833830761_491157?scm=10001.311_14-200000.0.10006.&spm=smpc.channel_218.block4_113_Mng7qw_1_fd.1.1733488904653tFoNKXN_530"

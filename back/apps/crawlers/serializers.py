@@ -1,6 +1,4 @@
-from rest_framework import serializers
-
-from apps.crawlers.models import ClientVersionManager, Platform, NewsCategory, PlatformCategory
+from apps.crawlers.models import ClientVersionManager, NewsCategory, Platform, PlatformCategory
 from utils.serializers import BaseSerializer
 
 
@@ -23,8 +21,6 @@ class PlatformCategorySerializer(BaseSerializer):
 
 
 class ClientVersionManagerSerializer(BaseSerializer):
-
     class Meta:
         model = ClientVersionManager
         fields = "__all__"
-

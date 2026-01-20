@@ -6,6 +6,7 @@
 
 import importlib
 import inspect
+
 from django.utils.encoding import force_str
 
 EXCEPTION_SYSTEM_ERROR = 10000
@@ -40,9 +41,7 @@ class LoadAppExceptions:
         for item in cls.app_list:
             try:
                 module = importlib.import_module(f"apps.{item}.exceptions")
-                for item in inspect.getmembers(
-                    module, predicate=cls.get_valid_exception
-                ):
+                for item in inspect.getmembers(module, predicate=cls.get_valid_exception):
                     key, value = item
                     globals().update({key: value})
 

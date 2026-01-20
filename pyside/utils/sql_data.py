@@ -1,14 +1,14 @@
 from datetime import datetime, timedelta
 
-from core.account import create_account, get_account_list, delete_account
+from core.account import create_account, delete_account, get_account_list
 from core.news import create_news
 from core.task import (
-    get_task_list,
-    delete_task,
-    partial_update_task,
-    create_task_info_,
     check_pub_time,
-    get_task_info_list
+    create_task_info_,
+    delete_task,
+    get_task_info_list,
+    get_task_list,
+    partial_update_task,
 )
 
 
@@ -39,7 +39,7 @@ def get_login_account():
         expiration_date = datetime.strptime(account["expiry_time"], "%Y-%m-%d %H:%M:%S")
         current_date = datetime.now()
         expired = current_date >= expiration_date
-        
+
         dict_ = {
             "data_id": account["id"],
             "nickname": account["nickname"],
@@ -64,18 +64,18 @@ def del_login_account(uid):
 def create_task(elected_account, code, res, platform_category):
     # 获取当前用户信息
     account = elected_account["id"] if elected_account else None
-    
+
     data = {
         "platform_category": platform_category,
-        "title": res['title'],
-        "article_url": res['article_url'],
-        "cover_url": res['cover_url'],
-        "date_str": res['date_str'],
-        "article_info": res['article_info'],
-        "img_list": res['img_list'],
-        "account": account
+        "title": res["title"],
+        "article_url": res["article_url"],
+        "cover_url": res["cover_url"],
+        "date_str": res["date_str"],
+        "article_info": res["article_info"],
+        "img_list": res["img_list"],
+        "account": account,
     }
-    
+
     try:
         res = create_news(data)
         return isinstance(res, dict)
@@ -85,9 +85,7 @@ def create_task(elected_account, code, res, platform_category):
 
 def get_account_task(status=None):
     today_date = datetime.now().strftime("%Y-%m-%d")
-    return get_task_list(
-        params={"created_time__date": today_date, "status_not": status}
-    )
+    return get_task_list(params={"created_time__date": today_date, "status_not": status})
 
 
 def del_account_task(task_id):
@@ -95,25 +93,24 @@ def del_account_task(task_id):
 
 
 def update_account_task(task_id, status):
-    if status == '已发布':
+    if status == "已发布":
         publish_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        partial_update_task(task_id, {
-            "status": status, 
-            'publish_time': publish_time
-        })
+        partial_update_task(task_id, {"status": status, "publish_time": publish_time})
     else:
         partial_update_task(task_id, {"status": status})
 
 
 def create_task_info(nickname, uid, platform, classify, content, task_id):
-    create_task_info_({
-        "task": task_id,
-        "nickname": nickname,
-        "uid": uid,
-        "platform": platform,
-        "classify": classify,
-        "content": content,
-    })
+    create_task_info_(
+        {
+            "task": task_id,
+            "nickname": nickname,
+            "uid": uid,
+            "platform": platform,
+            "classify": classify,
+            "content": content,
+        }
+    )
 
 
 def get_task_info(task_id):

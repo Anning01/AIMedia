@@ -1,8 +1,17 @@
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
-                             QLineEdit, QTextEdit, QComboBox, QPushButton)
-from PySide6.QtCore import Qt
+from PySide6.QtWidgets import (
+    QComboBox,
+    QDialog,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QTextEdit,
+    QVBoxLayout,
+)
+
 from utils.account_service import AccountService
 from utils.message_popup import MessagePopup
+
 
 class MaterialImportDialog(QDialog):
     def __init__(self, parent=None):
@@ -40,11 +49,11 @@ class MaterialImportDialog(QDialog):
         # 图片链接
         for i in range(3):
             image_layout = QHBoxLayout()
-            image_label = QLabel(f"图片{i+1}:")
+            image_label = QLabel(f"图片{i + 1}:")
             image_label.setFixedWidth(80)
             image_input = QLineEdit()
             image_input.setPlaceholderText("必填")
-            setattr(self, f"image_input_{i+1}", image_input)
+            setattr(self, f"image_input_{i + 1}", image_input)
             image_layout.addWidget(image_label)
             image_layout.addWidget(image_input)
             layout.addLayout(image_layout)
@@ -147,25 +156,18 @@ class MaterialImportDialog(QDialog):
     def on_platform_changed(self, platform):
         """当平台选择改变时，更新账号下拉框"""
         self.account_combo.clear()
-        
+
         # 获取所有账号
         accounts = self.account_service.get_accounts()
-        
+
         # 平台代码映射
-        platform_codes = {
-            "百家号": 1,
-            "微信公众号": 3,
-            "头条号": 0
-        }
-        
+        platform_codes = {"百家号": 1, "微信公众号": 3, "头条号": 0}
+
         # 根据选择的平台筛选账号
         platform_code = platform_codes.get(platform)
         if platform_code is not None:
-            filtered_accounts = [
-                acc for acc in accounts 
-                if acc["platform_code"] == platform_code
-            ]
-            
+            filtered_accounts = [acc for acc in accounts if acc["platform_code"] == platform_code]
+
             # 如果有账号，添加到下拉框
             if filtered_accounts:
                 for account in filtered_accounts:
@@ -179,51 +181,50 @@ class MaterialImportDialog(QDialog):
         title = self.title_input.text().strip()
         if not title:
             raise ValueError("标题不能为空")
-            
+
         content = self.content_input.toPlainText().strip()
         if not content:
             raise ValueError("内容不能为空")
-            
+
         platform = self.platform_combo.currentText()
         if not platform:
             raise ValueError("请选择发布平台")
-            
+
         account_nickname = self.account_combo.currentText()
         if account_nickname == "暂无账号":
             raise ValueError("请选择发布账号")
-            
+
         # 验证图片链接（必须三张）
         image_list = []
         for i in range(3):
-            image_url = getattr(self, f"image_input_{i+1}").text().strip()
+            image_url = getattr(self, f"image_input_{i + 1}").text().strip()
             if not image_url:
-                raise ValueError(f"请填写第{i+1}张图片链接")
+                raise ValueError(f"请填写第{i + 1}张图片链接")
             image_list.append(image_url)
-            
+
         # 获取当前平台的账号列表
-        platform_codes = {
-            "百家号": 1,
-            "微信公众号": 3,
-            "头条号": 0
-        }
+        platform_codes = {"百家号": 1, "微信公众号": 3, "头条号": 0}
         accounts = self.account_service.get_accounts()
         platform_code = platform_codes.get(platform)
         account = next(
-            (acc for acc in accounts 
-             if acc["platform_code"] == platform_code and acc["nickname"] == account_nickname),
-            None
+            (
+                acc
+                for acc in accounts
+                if acc["platform_code"] == platform_code and acc["nickname"] == account_nickname
+            ),
+            None,
         )
-        
+
         if not account:
             raise ValueError("未找到选中的账号信息")
-            
+
         return {
             "title": title,
             "content": content,
             "image_list": image_list,
             "platform": platform,
             "account_id": str(account["id"]),
-            "nickname": account["nickname"]
+            "nickname": account["nickname"],
         }
 
     def accept(self):
@@ -233,7 +234,5 @@ class MaterialImportDialog(QDialog):
             super().accept()  # 只有验证通过才关闭对话框
         except ValueError as e:
             error_popup = MessagePopup(str(e), parent=self, message_type="error")
-            error_popup.move(
-                self.mapToGlobal(self.rect().center()) - error_popup.rect().center()
-            )
+            error_popup.move(self.mapToGlobal(self.rect().center()) - error_popup.rect().center())
             error_popup.show()

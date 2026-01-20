@@ -2,7 +2,6 @@ from django.urls import path
 
 from apps.crawlers import views
 
-
 urlpatterns = [
     path("index/", views.IndexView.as_view(), name="index"),
     path("docs/", views.DocsView.as_view(), name="docs"),

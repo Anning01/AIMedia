@@ -11,12 +11,11 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 if platform.system() == "Windows":
-    import win32clipboard
     import pyperclip
+    import win32clipboard
 
 elif platform.system() == "Darwin":  # macOS
-    from AppKit import NSPasteboard, NSImage
-
+    from AppKit import NSImage, NSPasteboard
 
 
 def get_cookie_baijiahao(driver):
@@ -26,37 +25,45 @@ def get_cookie_baijiahao(driver):
     time.sleep(1)
     nickName, cookies, uid = None, None, None
     try:
-        driver.find_element(By.CLASS_NAME, 'btnlogin--bI826').click()
+        driver.find_element(By.CLASS_NAME, "btnlogin--bI826").click()
     except:
         pass
     time.sleep(3)
     while True:
         try:
-            driver.find_element('class name','activity-content').click()
+            driver.find_element("class name", "activity-content").click()
         except:
             pass
 
-        '''关闭弹窗'''
+        """关闭弹窗"""
         try:
-            driver.find_element(By.XPATH, '//*[@id="react-joyride-step-0"]/div/div/div[1]/div[2]/button').click()
+            driver.find_element(
+                By.XPATH, '//*[@id="react-joyride-step-0"]/div/div/div[1]/div[2]/button'
+            ).click()
             time.sleep(1)
         except:
             pass
         try:
-            driver.find_element(By.XPATH, '//*[@id="react-joyride-step-1"]/div/div/div[1]/div[2]/button[2]').click()
+            driver.find_element(
+                By.XPATH, '//*[@id="react-joyride-step-1"]/div/div/div[1]/div[2]/button[2]'
+            ).click()
             time.sleep(1)
         except:
             pass
         try:
-            driver.find_element(By.XPATH, '//*[@id="react-joyride-step-2"]/div/div/div[1]/div[2]/button[2]').click()
+            driver.find_element(
+                By.XPATH, '//*[@id="react-joyride-step-2"]/div/div/div[1]/div[2]/button[2]'
+            ).click()
             time.sleep(1)
         except:
             pass
         try:
-            driver.find_element(By.XPATH,'//*[@id="react-joyride-step-3"]/div/div/div[1]/div[2]/button[2]').click()
+            driver.find_element(
+                By.XPATH, '//*[@id="react-joyride-step-3"]/div/div/div[1]/div[2]/button[2]'
+            ).click()
         except:
             pass
-        '''跳转首页'''
+        """跳转首页"""
         try:
             driver.find_element(By.ID, "asideMenuItem-个人中心").click()
         except:
@@ -66,8 +73,10 @@ def get_cookie_baijiahao(driver):
             nickName = driver.find_element("class name", "pRvnIfCutwzU_pTdvz9Q").text
             cookies = driver.get_cookies()
             time.sleep(1)
-            uid = driver.find_element("xpath",
-                                      '//*[@id="layout-main-content"]/div[2]/div/div/div/div[1]/div[1]/div[3]/div[2]/div[1]/div[2]/div/span').text
+            uid = driver.find_element(
+                "xpath",
+                '//*[@id="layout-main-content"]/div[2]/div/div/div/div[1]/div[1]/div[3]/div[2]/div[1]/div[2]/div/span',
+            ).text
         except:
             pass
         if nickName and cookies and uid:
@@ -110,7 +119,6 @@ def convert_to_portrait(image_path):
         print(f"图片已调整为540x960并覆盖原文件：{image_path}")
 
 
-
 def publish_baijiahao(driver, content, imgs_path):
     lines = content.splitlines()
     title = lines[0].strip()
@@ -147,53 +155,50 @@ def publish_baijiahao(driver, content, imgs_path):
             """标题"""
             try:
                 title_input = WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located((By.XPATH, '//*[@id="newsTextArea"]/div/div/div/div/div/div/div[1]/div/div[1]/textarea'))
+                    EC.presence_of_element_located(
+                        (
+                            By.XPATH,
+                            '//*[@id="newsTextArea"]/div/div/div/div/div/div/div[1]/div/div[1]/textarea',
+                        )
+                    )
                 )
                 title_input.send_keys(title)
 
                 # 等待iframe加载完成
                 wait = WebDriverWait(driver, 10)
                 # 通过ID切换到iframe
-                driver.switch_to.frame('ueditor_0')
-                content_input = driver.find_element(By.XPATH,'/html/body')
+                driver.switch_to.frame("ueditor_0")
+                content_input = driver.find_element(By.XPATH, "/html/body")
                 info_len = info.split("\n")
                 tep = int(len(info_len) / imgs_list_len)
                 info1 = [i + "\n" for i in info_len[0:tep] if len(i) > 0]
-                info2 = [i + "\n" for i in info_len[tep: tep * 2] if len(i) > 0]
-                info3 = [i + "\n" for i in info_len[tep * 2:] if len(i) > 0]
+                info2 = [i + "\n" for i in info_len[tep : tep * 2] if len(i) > 0]
+                info3 = [i + "\n" for i in info_len[tep * 2 :] if len(i) > 0]
                 ct = [info1, info2, info3]
                 img_idx = 0
                 for info_txt in ct:
                     try:
                         # 检查操作系统
                         if platform.system() == "Windows":
-                            image = Image.open(
-                                os.path.join(imgs_path, imgs_list[img_idx])
-                            )
+                            image = Image.open(os.path.join(imgs_path, imgs_list[img_idx]))
                             output = BytesIO()
                             image.save(output, "BMP")
                             data = output.getvalue()[14:]
                             output.close()
                             win32clipboard.OpenClipboard()
                             win32clipboard.EmptyClipboard()
-                            win32clipboard.SetClipboardData(
-                                win32clipboard.CF_DIB, data
-                            )
+                            win32clipboard.SetClipboardData(win32clipboard.CF_DIB, data)
                             win32clipboard.CloseClipboard()
                             content_input.send_keys(Keys.CONTROL, "v")
                             time.sleep(0.5)
                             # content_input.send_keys(Keys.DOWN)
                         elif platform.system() == "Darwin":  # macOS
-                            image = Image.open(
-                                os.path.join(imgs_path, imgs_list[img_idx])
-                            )
+                            image = Image.open(os.path.join(imgs_path, imgs_list[img_idx]))
                             # 将图像转换为 NSImage
                             output = BytesIO()
                             image.save(output, "BMP")
                             output.seek(0)
-                            ns_image = NSImage.alloc().initWithData_(
-                                output.getvalue()
-                            )
+                            ns_image = NSImage.alloc().initWithData_(output.getvalue())
                             # 获取系统剪贴板
                             pasteboard = NSPasteboard.generalPasteboard()
                             pasteboard.clearContents()
@@ -223,11 +228,11 @@ def publish_baijiahao(driver, content, imgs_path):
             time.sleep(1)
             # 切换回主文档
             try:
-                radios = driver.find_element(By.XPATH,'//span[text()="单图"]')
+                radios = driver.find_element(By.XPATH, '//span[text()="单图"]')
                 driver.execute_script("arguments[0].scrollIntoView(true);", radios)
                 driver.execute_script("arguments[0].click();", radios)
                 time.sleep(5)
-                cover_row = driver.find_elements(By.CLASS_NAME,'wrap-scale-DraggableTags')
+                cover_row = driver.find_elements(By.CLASS_NAME, "wrap-scale-DraggableTags")
                 index = 0
                 print(len(cover_row))
                 for elm in cover_row:
@@ -235,7 +240,9 @@ def publish_baijiahao(driver, content, imgs_path):
                         actions = ActionChains(driver)
                         actions.move_to_element(elm).click().perform()
                         time.sleep(1)
-                        covers = driver.find_elements(By.CLASS_NAME,"cheetah-ui-pro-base-image-aspect-fit")
+                        covers = driver.find_elements(
+                            By.CLASS_NAME, "cheetah-ui-pro-base-image-aspect-fit"
+                        )
                         actions = ActionChains(driver)
                         actions.move_to_element(covers[0]).click().perform()
                         time.sleep(1)
@@ -252,20 +259,22 @@ def publish_baijiahao(driver, content, imgs_path):
                         actions = ActionChains(driver)
                         actions.move_to_element(elm).click().perform()
                         time.sleep(1)
-                        covers = driver.find_elements(By.CLASS_NAME,"cheetah-ui-pro-base-image-aspect-fit")
+                        covers = driver.find_elements(
+                            By.CLASS_NAME, "cheetah-ui-pro-base-image-aspect-fit"
+                        )
                         actions = ActionChains(driver)
                         actions.move_to_element(covers[2]).click().perform()
                         time.sleep(3)
-                        buttons = driver.find_elements(By.XPATH,'//button/span[text()="确认"]/..')
+                        buttons = driver.find_elements(By.XPATH, '//button/span[text()="确认"]/..')
                         actions = ActionChains(driver)
                         actions.move_to_element(buttons[1]).click().perform()
                         cover_flag = True
-                    index +=1
-            except Exception as e:
+                    index += 1
+            except Exception:
                 print("图片封面出错")
         """勾选框"""
         try:
-            selects = driver.find_elements('class name','cheetah-checkbox-input')
+            selects = driver.find_elements("class name", "cheetah-checkbox-input")
             for s in selects:
                 if s.is_selected() is False:
                     driver.execute_script("arguments[0].scrollIntoView(true);", s)
@@ -275,19 +284,22 @@ def publish_baijiahao(driver, content, imgs_path):
                     time.sleep(1)
         except:
             pass
-        print("cover_flag:",cover_flag)
+        print("cover_flag:", cover_flag)
         print("is_copy_content:", is_copy_content)
-        if  is_copy_content is True:
+        if is_copy_content is True:
             time.sleep(10)
             try:
                 wait = WebDriverWait(driver, 10)  # 等待时间设为10秒
                 # 使用显示等待来等待元素出现
                 publish_text_element = wait.until(
-                    EC.visibility_of_element_located((By.XPATH, '//div[text()="发布" and not(contains(text(), "定时发布"))]')))
+                    EC.visibility_of_element_located(
+                        (By.XPATH, '//div[text()="发布" and not(contains(text(), "定时发布"))]')
+                    )
+                )
                 print(publish_text_element.text)
                 # 从包含“发布”文本的元素出发，找到对应的按钮
                 print("找到发布")
-                button = publish_text_element.find_element(By.XPATH, './parent::div//button')
+                button = publish_text_element.find_element(By.XPATH, "./parent::div//button")
                 print("找到按钮")
                 button.click()
                 # 点击元素
@@ -306,7 +318,3 @@ def publish_baijiahao(driver, content, imgs_path):
             break
     time.sleep(10)
     return result
-
-
-
-

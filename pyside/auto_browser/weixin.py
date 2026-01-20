@@ -1,34 +1,32 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # @Time    : 2024/12/2 17:39
 # @Author  : DNQTeach
 # @File    : weixin.py
 import os
 import platform
+import subprocess
 import time
 from io import BytesIO
 
 from PIL import Image
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from selenium import webdriver
-import subprocess
-
 
 if platform.system() == "Windows":
-    import win32clipboard
     import pyperclip
-    from win32com import client as win_client
     import pythoncom
+    import win32clipboard
+    from win32com import client as win_client
 
 elif platform.system() == "Darwin":  # macOS
-    from AppKit import NSPasteboard, NSImage
+    pass
 
 
 def get_driver():
@@ -68,9 +66,7 @@ def get_driver():
     )
     driver.execute_cdp_cmd(
         "Page.addScriptToEvaluateOnNewDocument",
-        {
-            "source": 'Object.defineProperty(navigator, "webdriver", {get: () => undefined})'
-        },
+        {"source": 'Object.defineProperty(navigator, "webdriver", {get: () => undefined})'},
     )
     screen_width = driver.execute_script("return window.screen.width")
     screen_height = driver.execute_script("return window.screen.height")
@@ -78,6 +74,7 @@ def get_driver():
     window_height = screen_height
     driver.set_window_size(window_width, window_height)
     return driver
+
 
 def get_cookie_weixin(driver):
     url = "https://mp.weixin.qq.com/"
@@ -89,31 +86,32 @@ def get_cookie_weixin(driver):
     time.sleep(3)
     while True:
         try:
-            tabs = driver.find_elements(By.CLASS_NAME,'menu-fold')
+            tabs = driver.find_elements(By.CLASS_NAME, "menu-fold")
             for tab in tabs:
                 if tab.text == "设置与开发":
                     tab.click()
                     time.sleep(1)
                     break
-            labs = driver.find_elements(By.CLASS_NAME,'weui-desktop-sub-menu__item')
+            labs = driver.find_elements(By.CLASS_NAME, "weui-desktop-sub-menu__item")
             for lab in labs:
                 if lab.text == "账号设置":
                     lab.click()
                     time.sleep(1)
                     break
 
-            contents = driver.find_elements(By.CLASS_NAME,'weui-desktop-setting__item')
+            contents = driver.find_elements(By.CLASS_NAME, "weui-desktop-setting__item")
             for c in contents:
                 if "名称" in c.text:
-                    nickName = c.text.replace('名称\n','').replace('修改','').strip()
+                    nickName = c.text.replace("名称\n", "").replace("修改", "").strip()
                 if "原始ID" in c.text:
-                    uid = c.text.replace('原始ID\n','').replace('注销账号','').strip()
+                    uid = c.text.replace("原始ID\n", "").replace("注销账号", "").strip()
             cookies = driver.get_cookies()
             if nickName and cookies and uid:
                 break
         except:
             pass
     return nickName, cookies, uid
+
 
 def convert_to_portrait(image_path):
     """横屏转竖屏"""
@@ -145,7 +143,7 @@ def convert_to_portrait(image_path):
         cropped_img = img.crop((left, top, right, bottom))
         # 调整图片尺寸到目标尺寸
 
-        resized_img = cropped_img.resize((target_width, target_height),Image.Resampling.LANCZOS)
+        resized_img = cropped_img.resize((target_width, target_height), Image.Resampling.LANCZOS)
         resized_img.save(image_path)
         print(f"图片已调整为1080x1920并覆盖原文件：{image_path}")
 
@@ -170,11 +168,11 @@ def publish_weixin(driver, content, imgs_path):
         "msg": "",
     }
     time.sleep(3)
-    elms = driver.find_elements(By.CLASS_NAME,'new-creation__menu-content')
+    elms = driver.find_elements(By.CLASS_NAME, "new-creation__menu-content")
     try:
-        auth = driver.find_element(By.CLASS_NAME, 'weui-desktop_name').text
+        auth = driver.find_element(By.CLASS_NAME, "weui-desktop_name").text
     except:
-        auth = '佚名'
+        auth = "佚名"
     try:
         current_window = driver.current_window_handle
         for item in elms:
@@ -202,34 +200,30 @@ def publish_weixin(driver, content, imgs_path):
                 title_input.send_keys(title)
                 time.sleep(1)
                 """作者"""
-                author = driver.find_element(By.ID, 'author')
+                author = driver.find_element(By.ID, "author")
                 author.send_keys(auth)
                 time.sleep(1)
                 """内容"""
                 try:
                     """订阅号"""
-                    content_input = driver.find_element(By.CLASS_NAME,'ProseMirror')
+                    content_input = driver.find_element(By.CLASS_NAME, "ProseMirror")
                     info_len = info.split("\n")
                     tep = int(len(info_len) / imgs_list_len)
-                    info1 = [i + '\n' for i in info_len[0:tep] if len(i) >0]
-                    info2 = [i + '\n' for i in info_len[tep: tep * 2] if len(i) >0]
-                    info3 = [i + '\n' for i in info_len[tep * 2:] if len(i) >0]
+                    info1 = [i + "\n" for i in info_len[0:tep] if len(i) > 0]
+                    info2 = [i + "\n" for i in info_len[tep : tep * 2] if len(i) > 0]
+                    info3 = [i + "\n" for i in info_len[tep * 2 :] if len(i) > 0]
                     ct = [info1, info2, info3]
                     img_idx = 0
                     for info_txt in ct:
                         try:
-                            image = Image.open(
-                                os.path.join(imgs_path, imgs_list[img_idx])
-                            )
+                            image = Image.open(os.path.join(imgs_path, imgs_list[img_idx]))
                             output = BytesIO()
                             image.save(output, "BMP")
                             data = output.getvalue()[14:]
                             output.close()
                             win32clipboard.OpenClipboard()
                             win32clipboard.EmptyClipboard()
-                            win32clipboard.SetClipboardData(
-                                win32clipboard.CF_DIB, data
-                            )
+                            win32clipboard.SetClipboardData(win32clipboard.CF_DIB, data)
                             win32clipboard.CloseClipboard()
                             content_input.send_keys(Keys.CONTROL, "v")
                             time.sleep(0.5)
@@ -244,29 +238,25 @@ def publish_weixin(driver, content, imgs_path):
                     is_copy_content = True
                 except:
                     """服务号"""
-                    driver.switch_to.frame('ueditor_0')
-                    content_input = driver.find_element(By.CLASS_NAME, 'autoTypeSetting24psection')
+                    driver.switch_to.frame("ueditor_0")
+                    content_input = driver.find_element(By.CLASS_NAME, "autoTypeSetting24psection")
                     info_len = info.split("\n")
                     tep = int(len(info_len) / imgs_list_len)
-                    info1 = [i + '\n' for i in info_len[0:tep] if len(i) > 0]
-                    info2 = [i + '\n' for i in info_len[tep: tep * 2] if len(i) > 0]
-                    info3 = [i + '\n' for i in info_len[tep * 2:] if len(i) > 0]
+                    info1 = [i + "\n" for i in info_len[0:tep] if len(i) > 0]
+                    info2 = [i + "\n" for i in info_len[tep : tep * 2] if len(i) > 0]
+                    info3 = [i + "\n" for i in info_len[tep * 2 :] if len(i) > 0]
                     ct = [info1, info2, info3]
                     img_idx = 0
                     for info_txt in ct:
                         try:
-                            image = Image.open(
-                                os.path.join(imgs_path, imgs_list[img_idx])
-                            )
+                            image = Image.open(os.path.join(imgs_path, imgs_list[img_idx]))
                             output = BytesIO()
                             image.save(output, "BMP")
                             data = output.getvalue()[14:]
                             output.close()
                             win32clipboard.OpenClipboard()
                             win32clipboard.EmptyClipboard()
-                            win32clipboard.SetClipboardData(
-                                win32clipboard.CF_DIB, data
-                            )
+                            win32clipboard.SetClipboardData(win32clipboard.CF_DIB, data)
                             win32clipboard.CloseClipboard()
                             content_input.send_keys(Keys.CONTROL, "v")
                             time.sleep(0.5)
@@ -286,13 +276,13 @@ def publish_weixin(driver, content, imgs_path):
             try:
                 """封面"""
                 time.sleep(1)
-                cover_ac = driver.find_element(By.ID,'js_cover_area')
+                cover_ac = driver.find_element(By.ID, "js_cover_area")
                 driver.execute_script("arguments[0].scrollIntoView();", cover_ac)
                 time.sleep(1)
                 actions = ActionChains(driver)
                 actions.move_to_element(cover_ac).perform()
                 time.sleep(1)
-                popup_info = driver.find_elements(By.CLASS_NAME,'pop-opr__item')
+                popup_info = driver.find_elements(By.CLASS_NAME, "pop-opr__item")
                 for info in popup_info:
                     print(info.text)
                     if info.text == "从正文选择":
@@ -300,20 +290,19 @@ def publish_weixin(driver, content, imgs_path):
                         break
                 time.sleep(1)
                 # 点击第一章图片
-                imgs = driver.find_elements(By.CLASS_NAME,'appmsg_content_img_item')
+                imgs = driver.find_elements(By.CLASS_NAME, "appmsg_content_img_item")
                 imgs[0].click()
                 # 下一步
-                buttons_cover = driver.find_elements(By.CLASS_NAME,'weui-desktop-btn_wrp')
+                buttons_cover = driver.find_elements(By.CLASS_NAME, "weui-desktop-btn_wrp")
                 for bnt in buttons_cover:
                     if bnt.text == "下一步":
                         bnt.find_element(By.TAG_NAME, "button").click()
                         time.sleep(2)
                         break
                 driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                buttons_cover2 = driver.find_elements(By.CLASS_NAME, 'weui-desktop-btn_wrp')
+                buttons_cover2 = driver.find_elements(By.CLASS_NAME, "weui-desktop-btn_wrp")
                 for bnt2 in buttons_cover2:
                     if bnt2.text == "确认":
-
                         bnt2.find_element(By.TAG_NAME, "button").click()
                         time.sleep(1)
                         break
@@ -323,21 +312,23 @@ def publish_weixin(driver, content, imgs_path):
         try:
             if cover_flag:
                 print("原创")
-                yc = driver.find_element(By.CLASS_NAME,'js_unset_original_title')
-                if yc.text =="未声明":
+                yc = driver.find_element(By.CLASS_NAME, "js_unset_original_title")
+                if yc.text == "未声明":
                     yc.click()
                     time.sleep(1)
                     ag = driver.find_element(By.CLASS_NAME, "original_agreement")
-                    ag.find_element(By.CLASS_NAME,'weui-desktop-form__check-label').find_element(By.CLASS_NAME,'weui-desktop-icon-checkbox').click()
+                    ag.find_element(By.CLASS_NAME, "weui-desktop-form__check-label").find_element(
+                        By.CLASS_NAME, "weui-desktop-icon-checkbox"
+                    ).click()
 
-                    bnts = driver.find_elements(By.CLASS_NAME,'weui-desktop-btn_primary')
+                    bnts = driver.find_elements(By.CLASS_NAME, "weui-desktop-btn_primary")
                     for b in bnts:
                         if b.text == "确定":
                             b.click()
                             break
         except:
             pass
-        print("cover_flag:",cover_flag)
+        print("cover_flag:", cover_flag)
         print("is_copy_content:", is_copy_content)
         if cover_flag is True and is_copy_content is True:
             time.sleep(3)
@@ -345,31 +336,34 @@ def publish_weixin(driver, content, imgs_path):
                 wait = WebDriverWait(driver, 10)  # 等待时间设为10秒
                 # 使用显示等待来等待元素出现
                 publish_text_element = wait.until(
-                    EC.visibility_of_element_located((By.CLASS_NAME, 'mass_send')))
+                    EC.visibility_of_element_located((By.CLASS_NAME, "mass_send"))
+                )
                 publish_text_element.click()
                 # 取消群发
                 time.sleep(2)
-                check = driver.find_elements(By.CLASS_NAME,'weui-desktop-form__label')
+                check = driver.find_elements(By.CLASS_NAME, "weui-desktop-form__label")
                 for c in check:
                     if c.text == "群发通知":
-                        inp = c.find_element(By.XPATH, './following-sibling::div//input')
+                        inp = c.find_element(By.XPATH, "./following-sibling::div//input")
                         if inp.is_selected():
-                            inp.find_element(By.XPATH, './parent::*').click()
+                            inp.find_element(By.XPATH, "./parent::*").click()
                             break
                 time.sleep(1)
                 # 确定发布
-                footer_element = driver.find_element(By.CLASS_NAME,'mass-send__footer').find_element(By.CLASS_NAME,'weui-desktop-popover__wrp')
-                divs = footer_element.find_elements(By.CLASS_NAME,'weui-desktop-btn_wrp')
+                footer_element = driver.find_element(
+                    By.CLASS_NAME, "mass-send__footer"
+                ).find_element(By.CLASS_NAME, "weui-desktop-popover__wrp")
+                divs = footer_element.find_elements(By.CLASS_NAME, "weui-desktop-btn_wrp")
                 for d in divs:
-                    if d.text =="发表":
-                        d.find_element(By.TAG_NAME,'button').click()
+                    if d.text == "发表":
+                        d.find_element(By.TAG_NAME, "button").click()
                         break
                 time.sleep(1)
                 # 继续发表
-                continue_bnt= driver.find_elements(By.CLASS_NAME,'weui-desktop-btn_wrp')
+                continue_bnt = driver.find_elements(By.CLASS_NAME, "weui-desktop-btn_wrp")
                 for c in continue_bnt:
                     if c.text == "继续发表":
-                        c.find_element(By.TAG_NAME, 'button').click()
+                        c.find_element(By.TAG_NAME, "button").click()
                         print("发布成功")
                         out_flag = True
                         time.sleep(10)

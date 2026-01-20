@@ -1,34 +1,32 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # @Time    : 2024/12/22 21:09
 # @Author  : DNQTeach
 # @File    : qiehao.py
 import os
 import platform
+import subprocess
 import time
 from io import BytesIO
 
 from PIL import Image
-from selenium.webdriver.common.action_chains import ActionChains
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from selenium import webdriver
-import subprocess
-
 
 if platform.system() == "Windows":
-    import win32clipboard
     import pyperclip
-    from win32com import client as win_client
     import pythoncom
+    import win32clipboard
+    from win32com import client as win_client
 
 elif platform.system() == "Darwin":  # macOS
-    from AppKit import NSPasteboard, NSImage
+    pass
+
 
 def get_driver():
     chrome_options = Options()
@@ -67,9 +65,7 @@ def get_driver():
     )
     driver.execute_cdp_cmd(
         "Page.addScriptToEvaluateOnNewDocument",
-        {
-            "source": 'Object.defineProperty(navigator, "webdriver", {get: () => undefined})'
-        },
+        {"source": 'Object.defineProperty(navigator, "webdriver", {get: () => undefined})'},
     )
     screen_width = driver.execute_script("return window.screen.width")
     screen_height = driver.execute_script("return window.screen.height")
@@ -94,26 +90,28 @@ def get_cookie_qiehao(driver):
             pass
         try:
             if not sm_flag:
-                driver.find_element(By.CLASS_NAME, 'verify_action__wrapper-cls2uD5U').find_element(By.TAG_NAME,'button').click()
+                driver.find_element(By.CLASS_NAME, "verify_action__wrapper-cls2uD5U").find_element(
+                    By.TAG_NAME, "button"
+                ).click()
                 sm_flag = True
         except:
             pass
         try:
             time.sleep(1)
-            nk = driver.find_elements(By.CLASS_NAME,'setting__item-cls3yN0V')
-            idc,phone = None,None
+            nk = driver.find_elements(By.CLASS_NAME, "setting__item-cls3yN0V")
+            idc, phone = None, None
             for n in nk:
-                if '账号名称' in n.text:
-                    nickName = n.text.split('\n')[1]
-                if '联系电话' in n.text:
-                    phone = n.text.split('\n')[1]
-                if '主体信息' in n.text:
-                    idc = n.text.split('\n')[3]
+                if "账号名称" in n.text:
+                    nickName = n.text.split("\n")[1]
+                if "联系电话" in n.text:
+                    phone = n.text.split("\n")[1]
+                if "主体信息" in n.text:
+                    idc = n.text.split("\n")[3]
                     idc = idc[-4:]
             cookies = driver.get_cookies()
             time.sleep(1)
             if "*" not in phone and "*" not in idc:
-                uid = f'{phone}_{idc}'
+                uid = f"{phone}_{idc}"
         except:
             pass
         if nickName and cookies and uid:
@@ -151,7 +149,7 @@ def convert_to_portrait(image_path):
         cropped_img = img.crop((left, top, right, bottom))
         # 调整图片尺寸到目标尺寸
 
-        resized_img = cropped_img.resize((target_width, target_height),Image.Resampling.LANCZOS)
+        resized_img = cropped_img.resize((target_width, target_height), Image.Resampling.LANCZOS)
         resized_img.save(image_path)
         print(f"图片已调整为1080x1920并覆盖原文件：{image_path}")
 
@@ -180,35 +178,33 @@ def publish_qiehao(driver, content, imgs_path):
             """标题"""
             try:
                 title_input = WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located((By.XPATH, '//*[@id="omEditorTitle"]/div/div[1]/div/span'))
+                    EC.presence_of_element_located(
+                        (By.XPATH, '//*[@id="omEditorTitle"]/div/div[1]/div/span')
+                    )
                 )
                 title_input.clear()
                 title_input.send_keys(title)
                 time.sleep(1)
-                content_input = driver.find_element(By.CLASS_NAME,'ExEditor-basic')
+                content_input = driver.find_element(By.CLASS_NAME, "ExEditor-basic")
                 content_input.clear()
                 info_len = info.split("\n")
                 tep = int(len(info_len) / imgs_list_len)
                 info1 = [i + "\n" for i in info_len[0:tep] if len(i) > 0]
-                info2 = [i + "\n" for i in info_len[tep: tep * 2] if len(i) > 0]
-                info3 = [i + "\n" for i in info_len[tep * 2:] if len(i) > 0]
+                info2 = [i + "\n" for i in info_len[tep : tep * 2] if len(i) > 0]
+                info3 = [i + "\n" for i in info_len[tep * 2 :] if len(i) > 0]
                 ct = [info1, info2, info3]
                 img_idx = 0
                 for info_txt in ct:
                     try:
                         # 检查操作系统
-                        image = Image.open(
-                            os.path.join(imgs_path, imgs_list[img_idx])
-                        )
+                        image = Image.open(os.path.join(imgs_path, imgs_list[img_idx]))
                         output = BytesIO()
                         image.save(output, "BMP")
                         data = output.getvalue()[14:]
                         output.close()
                         win32clipboard.OpenClipboard()
                         win32clipboard.EmptyClipboard()
-                        win32clipboard.SetClipboardData(
-                            win32clipboard.CF_DIB, data
-                        )
+                        win32clipboard.SetClipboardData(win32clipboard.CF_DIB, data)
                         win32clipboard.CloseClipboard()
                         content_input.send_keys(Keys.CONTROL, "v")
                         time.sleep(0.5)
@@ -230,9 +226,10 @@ def publish_qiehao(driver, content, imgs_path):
                 wait = WebDriverWait(driver, 10)  # 等待时间设为10秒
                 # 使用显示等待来等待元素出现
                 publish_text_element = wait.until(
-                    EC.visibility_of_element_located((By.XPATH, '//span[text()="发布"]')))
+                    EC.visibility_of_element_located((By.XPATH, '//span[text()="发布"]'))
+                )
                 # 从包含“发布”文本的元素出发，找到对应的按钮
-                button = publish_text_element.find_element(By.XPATH, './parent::button')
+                button = publish_text_element.find_element(By.XPATH, "./parent::button")
                 button.click()
                 # 点击元素
                 # a.click()
@@ -250,7 +247,6 @@ def publish_qiehao(driver, content, imgs_path):
             break
     time.sleep(10)
     return result
-
 
 
 # driver = get_driver()

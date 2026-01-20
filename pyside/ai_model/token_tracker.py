@@ -11,11 +11,7 @@ class TokenCallbackHandler(BaseCallbackHandler):
 
     def reset_tokens(self):
         """重置 token 计数"""
-        self.tokens = {
-            "prompt_tokens": 0,
-            "completion_tokens": 0,
-            "total_tokens": 0
-        }
+        self.tokens = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
         self.successful_requests = 0
         self.has_error = False
         self.error_message = None
@@ -64,10 +60,21 @@ class TokenCallbackHandler(BaseCallbackHandler):
         try:
             # 标准化 key 名称
             key_mappings = {
-                "prompt_tokens": ["prompt_tokens", "promptTokens", "prompt", "input_tokens", "inputTokens"],
-                "completion_tokens": ["completion_tokens", "completionTokens", "completion", "output_tokens",
-                                      "outputTokens"],
-                "total_tokens": ["total_tokens", "totalTokens", "total"]
+                "prompt_tokens": [
+                    "prompt_tokens",
+                    "promptTokens",
+                    "prompt",
+                    "input_tokens",
+                    "inputTokens",
+                ],
+                "completion_tokens": [
+                    "completion_tokens",
+                    "completionTokens",
+                    "completion",
+                    "output_tokens",
+                    "outputTokens",
+                ],
+                "total_tokens": ["total_tokens", "totalTokens", "total"],
             }
 
             updated = False
@@ -119,6 +126,7 @@ class TokenCallbackHandler(BaseCallbackHandler):
         except Exception as e:
             print(f"token 错误: {str(e)}")
             import traceback
+
             print(traceback.format_exc())
 
     def on_llm_error(self, error: Exception, *args, **kwargs):
@@ -133,6 +141,5 @@ class TokenCallbackHandler(BaseCallbackHandler):
             **self.tokens,
             "successful_requests": self.successful_requests,
             "has_error": self.has_error,
-            "error_message": self.error_message
+            "error_message": self.error_message,
         }
-

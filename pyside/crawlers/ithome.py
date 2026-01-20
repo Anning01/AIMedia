@@ -12,7 +12,7 @@ from lxml import etree
 
 class ITHome:
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
     }
 
     def convert_time_str(self, time_str, date_str=None):
@@ -29,7 +29,7 @@ class ITHome:
         try:
             # 如果提供了日期字符串，则解析它；否则使用当前日期
             if date_str:
-                date_part = datetime.strptime(date_str, '%Y-%m-%d').date()
+                date_part = datetime.strptime(date_str, "%Y-%m-%d").date()
             else:
                 date_part = datetime.now().date()
 
@@ -37,10 +37,12 @@ class ITHome:
             hour, minute = map(int, time_str.strip().split())
 
             # 创建完整的 datetime 对象
-            full_datetime = datetime.combine(date_part, datetime.min.time()).replace(hour=hour, minute=minute, second=0)
+            full_datetime = datetime.combine(date_part, datetime.min.time()).replace(
+                hour=hour, minute=minute, second=0
+            )
 
             # 格式化为指定的字符串格式
-            formatted_datetime = full_datetime.strftime('%Y-%m-%d %H:%M:%S')
+            formatted_datetime = full_datetime.strftime("%Y-%m-%d %H:%M:%S")
 
             return formatted_datetime
         except ValueError as ve:
@@ -59,12 +61,12 @@ class ITHome:
         news_items = content_html.xpath('//*[@id="nnews"]/div[3]/ul/li')
         for item in news_items:
             # 提取标题和链接
-            title_elements = item.xpath('.//a')
+            title_elements = item.xpath(".//a")
             if title_elements:
                 title = title_elements[0].text.strip()
-                link = title_elements[0].get('href').strip()
+                link = title_elements[0].get("href").strip()
 
-                date_str = item.xpath('./b//text()')
+                date_str = item.xpath("./b//text()")
                 if date_str:
                     date_str = self.convert_time_str(date_str[0].strip())
             else:
@@ -74,11 +76,7 @@ class ITHome:
             # 只添加有实际内容的条目
             if title and link and date_str:
                 # 将数据添加到列表中
-                result.append({
-                    'title': title,
-                    'article_url': link,
-                    'date_str': date_str
-                })
+                result.append({"title": title, "article_url": link, "date_str": date_str})
         return result
 
     def get_news_info(self, news, category=None):
@@ -95,20 +93,23 @@ class ITHome:
 
         # 提取 img 标签的 src 列表
         data_original_list = content_div.xpath(
-            './/p[not(@class="ad-tips") and not(descendant::dir)]//img/@data-original')
-        src_list = content_div.xpath('.//p[not(@class="ad-tips") and not(descendant::dir)]//img/@src')
+            './/p[not(@class="ad-tips") and not(descendant::dir)]//img/@data-original'
+        )
+        src_list = content_div.xpath(
+            './/p[not(@class="ad-tips") and not(descendant::dir)]//img/@src'
+        )
 
         # 组合结果，优先使用 data-original
         img_list = []
         for data_original, src in zip(data_original_list, src_list):
-            if data_original and not data_original.strip().startswith('//'):
+            if data_original and not data_original.strip().startswith("//"):
                 img_url = data_original.strip()
-            elif data_original and data_original.strip().startswith('//'):
-                img_url = 'https:' + data_original.strip()
+            elif data_original and data_original.strip().startswith("//"):
+                img_url = "https:" + data_original.strip()
             else:
                 img_url = src.strip()
-                if img_url.startswith('//'):
-                    img_url = 'https:' + img_url
+                if img_url.startswith("//"):
+                    img_url = "https:" + img_url
             img_list.append(img_url)
 
         article_info = ""
@@ -123,8 +124,8 @@ class ITHome:
             "title": news["title"],
             "article_url": article_url,
             "cover_url": img_list[0] if img_list else "",
-            "date_str": news['date_str'],
-            "article_info": article_info.replace("\u3000", '').replace('\xa0', ''),
+            "date_str": news["date_str"],
+            "article_info": article_info.replace("\u3000", "").replace("\xa0", ""),
             "img_list": img_list,
             "category": category,
         }

@@ -1,19 +1,17 @@
 from datetime import datetime
 
-from apps.users.models import Accounts, AccountNews, AiArticle, Notice, UserNotice
-from utils.serializers import BaseSerializer
-
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
+
+from apps.users.models import AccountNews, Accounts, AiArticle, Notice, UserNotice
+from utils.serializers import BaseSerializer
 
 User = get_user_model()
 
 
 class AccountsSerializer(BaseSerializer):
     expiry_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
-    platform_value = serializers.CharField(
-        source="get_platform_display", read_only=True
-    )
+    platform_value = serializers.CharField(source="get_platform_display", read_only=True)
 
     class Meta:
         model = Accounts
@@ -51,7 +49,7 @@ class AccountNewsSerializer(BaseSerializer):
     def validate(self, attrs):
         account = attrs.get("account")
         if account:
-            if account.user != self.context['request'].user:
+            if account.user != self.context["request"].user:
                 raise serializers.ValidationError("只能创建或者修改自己绑定的账号！")
         return attrs
 
@@ -94,8 +92,45 @@ class NoticeSerializer(BaseSerializer):
 
     class Meta:
         model = Notice
-        fields = ['id', 'title', 'content', 'is_show', 'is_top', 'is_read', 'created_at', 'updated_at']
+        fields = [
+            "id",
+            "title",
+            "content",
+            "is_show",
+            "is_top",
+            "is_read",
+            "created_at",
+            "updated_at",
+        ]
 
     def get_is_read(self, obj):
-        user = self.context['request'].user
+        user = self.context["request"].user
         return UserNotice.objects.filter(user=user, notice=obj, is_read=True).exists()
+
+
+class LoginSerializer(serializers.Serializer):
+    """账号密码登录序列化器"""
+
+    open_id = serializers.CharField(max_length=100, required=True, help_text="微信OpenID/账号")
+    password = serializers.CharField(max_length=128, required=True, help_text="密码")
+
+    def validate(self, attrs):
+        open_id = attrs.get("open_id")
+        password = attrs.get("password")
+
+        # 查找用户
+        try:
+            user = User.objects.get(open_id=open_id)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("open_id 或密码错误")
+
+        # 验证密码
+        if not user.check_password(password):
+            raise serializers.ValidationError("open_id 或密码错误")
+
+        # 检查用户是否激活
+        if not user.is_active:
+            raise serializers.ValidationError("账号已被禁用")
+
+        attrs["user"] = user
+        return attrs

@@ -1,5 +1,5 @@
-from rest_framework import permissions
 from django.utils import timezone
+from rest_framework import permissions
 
 
 class IsNotExpiredUser(permissions.BasePermission):

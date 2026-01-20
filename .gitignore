@@ -175,3 +175,7 @@ back/ArticleManagePlus/.env
 
 .serena
 .claude
+
+pyside/chrome
+pyside/temp
+pyside/opt.json

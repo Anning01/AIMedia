@@ -1,14 +1,19 @@
-# -*- coding: utf-8 -*-
-from typing import Dict, Any, Optional
+from typing import Any
+
 from langchain_community.chat_models import ChatZhipuAI, MoonshotChat
+
 from utils.ai_model.token_tracker import TokenCallbackHandler
 from utils.ai_model.tools import KnowledgeBaseTool
 
 
 class WritingAssistant:
-
-    def __init__(self, mod: str = 'glm', api_key: Optional[str] = '1cfafa5d63e9b217254cedc2a4b2113d.M7BmUs11zXrgKl6n',
-                 temperature: float = 0.4, prompt: Optional[str] = None):
+    def __init__(
+        self,
+        mod: str = "glm",
+        api_key: str | None = "1cfafa5d63e9b217254cedc2a4b2113d.M7BmUs11zXrgKl6n",
+        temperature: float = 0.4,
+        prompt: str | None = None,
+    ):
         # 创建一个共享的 token 追踪回调
         self.token_handler = TokenCallbackHandler()
         self.callbacks = [self.token_handler]
@@ -17,21 +22,21 @@ class WritingAssistant:
         self.custom_prompt = prompt
 
         # 初始化llm
-        if mod == 'glm':
-            print('glm')
+        if mod == "glm":
+            print("glm")
             self.llm = ChatZhipuAI(
-                model_name='glm-4-plus',
+                model_name="glm-4-plus",
                 api_key=api_key,
                 temperature=temperature,
-                callbacks=self.callbacks
+                callbacks=self.callbacks,
             )
         elif mod == "kimi":
-            print('kimi')
+            print("kimi")
             self.llm = MoonshotChat(
-                model_name='moonshot-v1-128k',
+                model_name="moonshot-v1-128k",
                 api_key=api_key,
                 temperature=temperature,
-                callbacks=self.callbacks
+                callbacks=self.callbacks,
             )
         else:
             self.llm = None
@@ -39,7 +44,7 @@ class WritingAssistant:
         # 初始化知识库
         self.knowledge_base = KnowledgeBaseTool()
 
-    def generate_article(self, topics: str) -> Dict[str, Any]:
+    def generate_article(self, topics: str) -> dict[str, Any]:
         try:
             print("\n" + "*" * 50)
             print("开始生成文章")
@@ -86,19 +91,14 @@ class WritingAssistant:
                 - 反问式总结，引发共鸣。
                 """
 
-            response = self.llm.invoke(
-                prompt.format(
-                    topic=topic,
-                    background_info=background_info
-                )
-            )
+            response = self.llm.invoke(prompt.format(topic=topic, background_info=background_info))
 
             # 统计token
             token_usage = {
                 "prompt_tokens": self.token_handler.tokens["prompt_tokens"],
                 "completion_tokens": self.token_handler.tokens["completion_tokens"],
                 "total_tokens": self.token_handler.tokens["total_tokens"],
-                "successful_requests": self.token_handler.successful_requests
+                "successful_requests": self.token_handler.successful_requests,
             }
 
             print("\nToken 使用情况:")
@@ -108,14 +108,8 @@ class WritingAssistant:
             # 清理知识库
             self.knowledge_base.delete_document(f"{topic}.txt")
 
-            return {
-                "content": response.content,
-                "token_usage": token_usage
-            }
+            return {"content": response.content, "token_usage": token_usage}
 
         except Exception as e:
             print(f"\n发生错误: {str(e)}")
-            return {
-                "content": f"生成文章时发生错误: {str(e)}",
-                "token_usage": None
-            }
+            return {"content": f"生成文章时发生错误: {str(e)}", "token_usage": None}
