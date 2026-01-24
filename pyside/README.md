@@ -174,6 +174,7 @@ pip install webdriver-manager
 
 ## selenium 链接超时
 <img width="795" height="272" alt="3017d274ad99289d06de215a33fc6aa0" src="https://github.com/user-attachments/assets/63bdccfd-4c95-46c4-93b5-9ed09e25cf58" />
+<img width="1821" height="342" alt="image" src="https://github.com/user-attachments/assets/cc37461f-02cf-4db5-9202-e5184afa4042" />
 
 把按照的环境包中的\venv\Lib\site-packages\webdriver_manager\drivers\chrome.py替换
 
