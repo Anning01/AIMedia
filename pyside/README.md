@@ -172,6 +172,11 @@ pip install webdriver-manager
 
 查看 `version.json` 了解详细版本信息。
 
+## selenium 链接超时
+<img width="795" height="272" alt="3017d274ad99289d06de215a33fc6aa0" src="https://github.com/user-attachments/assets/63bdccfd-4c95-46c4-93b5-9ed09e25cf58" />
+
+把按照的环境包中的\venv\Lib\site-packages\webdriver_manager\drivers\chrome.py替换
+
 ## License
 
 MIT License
