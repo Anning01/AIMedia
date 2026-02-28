@@ -215,7 +215,7 @@ B站视频链接：https://www.bilibili.com/video/BV1HABgYKE6H
 
 ## 交流讨论 💬
 
-<img src="pyside/docs/wechat.png" width="250">
+<img src="pyside/docs/8909d20a08893bcad913feffcbf2f81a.jpg" width="250">
 
 ## 反馈建议 📢
 
