@@ -36,9 +36,8 @@
 > - **浏览器插件** 客户端（无需打包，开箱即用）
 > - **公众号 API** 直接调用（更稳定可靠）
 >
-> 新版本更适合快速部署和使用，敬请期待！
->
-> **官网说明**：官网功能仍在开发中，[官网链接](https://aimedia.daniu7.cn)
+> 新版本MediaFlow已经发布 [官网链接](https://mediaflow.daniu7.cn/login?code=GAGWP9UK)
+> **B站介绍**：[B站链接](https://www.bilibili.com/video/BV1Xkw1zMEP7)
 > 
 > 只对爬虫感兴趣的开发者可以直接看 [article-spider](https://github.com/Anning01/article-spider)
 
@@ -211,11 +210,11 @@ AIMedia/
 
 ## 视频演示 📺
 
-B站视频链接：https://www.bilibili.com/video/BV1HABgYKE6H
+B站视频链接：https://www.bilibili.com/video/BV1Xkw1zMEP7
 
 ## 交流讨论 💬
 
-<img src="pyside/docs/8909d20a08893bcad913feffcbf2f81a.jpg" width="250">
+<img src="pyside/docs/wechat.png">
 
 ## 反馈建议 📢
 
