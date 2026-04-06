@@ -29,14 +29,14 @@
 > - 打包 PySide6 桌面应用
 > - 配置数据库、支付接口等复杂环境
 >
-> **🎉 新版本开发中：[AiMaster](https://github.com/Anning01/AiMaster)**
+> **插件版本爬虫自取：[AiMaster](https://github.com/Anning01/AiMaster)**
 >
 > 我们正在开发更轻量、更稳定的新版本，采用：
 > - **FastAPI** 后端（替代 Django，更轻量）
 > - **浏览器插件** 客户端（无需打包，开箱即用）
 > - **公众号 API** 直接调用（更稳定可靠）
 >
-> 新版本MediaFlow已经发布 [官网链接](https://mediaflow.daniu7.cn/login?code=GAGWP9UK)
+> 🎉 新版本MediaFlow已经发布 [官网链接](https://mediaflow.daniu7.cn/login?code=GAGWP9UK)
 > **B站介绍**：[B站链接](https://www.bilibili.com/video/BV1Xkw1zMEP7)
 > 
 > 只对爬虫感兴趣的开发者可以直接看 [article-spider](https://github.com/Anning01/article-spider)
