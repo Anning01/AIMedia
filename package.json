@@ -1,0 +1,98 @@
+{
+  "name": "ai-media-desktop",
+  "version": "0.4.0",
+  "private": true,
+  "description": "AI Media 内容运营桌面工作台",
+  "author": "AI Media",
+  "type": "module",
+  "main": "dist/electron/main.cjs",
+  "engines": {
+    "node": ">=22.16.0"
+  },
+  "scripts": {
+    "postinstall": "npm --prefix renderer ci",
+    "dev": "node scripts/dev.mjs",
+    "build": "npm run build:renderer && npm run build:desktop",
+    "build:desktop": "tsc --noEmit && node scripts/build.mjs",
+    "start": "electron .",
+    "server": "tsx electron/server/cli.ts",
+    "test": "npm run test:desktop && npm run test:renderer",
+    "test:desktop": "tsx --test tests/server/*.test.ts",
+    "test:smoke": "node tests/e2e/smoke.mjs",
+    "test:workflow": "node tests/e2e/workflow.mjs",
+    "test:layout": "node tests/e2e/workspace-layout.mjs",
+    "test:visual": "node tests/e2e/studio-visual.mjs",
+    "test:review": "node tests/e2e/article-review.mjs",
+    "test:research": "node tests/e2e/fact-check.mjs",
+    "test:wechat": "node tests/e2e/wechat-adapter.mjs",
+    "test:live": "tsx tests/e2e/live-acceptance.ts",
+    "pack": "npm run build && electron-builder --dir",
+    "dist": "npm run build && electron-builder",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:linux": "npm run build && electron-builder --linux",
+    "dev:renderer": "npm --prefix renderer run dev",
+    "build:renderer": "npm --prefix renderer run build",
+    "test:renderer": "npm --prefix renderer test"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/js-yaml": "^4.0.9",
+    "@types/luxon": "^3.0.0",
+    "@types/multer": "^2.0.0",
+    "@types/node": "^22.0.0",
+    "@types/sanitize-html": "^2.0.0",
+    "@types/semver": "^7.0.0",
+    "electron": "44.1.1",
+    "electron-builder": "26.15.3",
+    "esbuild": "^0.25.0",
+    "express": "^5.1.0",
+    "ipaddr.js": "^2.2.0",
+    "js-yaml": "4.3.2",
+    "luxon": "^3.7.0",
+    "multer": "^2.0.2",
+    "playwright": "^1.55.0",
+    "sanitize-html": "^2.17.0",
+    "semver": "^7.7.0",
+    "tsx": "^4.20.0",
+    "typescript": "~5.7.2",
+    "zod": "^4.0.0"
+  },
+  "build": {
+    "appId": "com.aimedia.desktop",
+    "productName": "AI Media",
+    "asar": true,
+    "npmRebuild": false,
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/electron/**",
+      "renderer/dist/**",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "linux": {
+      "category": "Office",
+      "target": [
+        "AppImage"
+      ]
+    }
+  },
+  "packageManager": "pnpm@11.5.2+sha512.71c631e382066efc25625d5cf029075de07b61b37f6e27350fbd84b1bda5864c8c1967adc280776b45c30a715c0359a3be08fef42d5bb09e2b99029979692916"
+}

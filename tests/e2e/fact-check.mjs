@@ -1,0 +1,112 @@
+import { _electron as electron } from 'playwright';
+import { build } from 'esbuild';
+import assert from 'node:assert/strict';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
+
+const temp = await mkdtemp(join(tmpdir(), 'ai-media-research-ui-'));
+const entry = join(temp, 'research-app.cjs');
+const env = { ...process.env, AI_MEDIA_TEST_DATA: temp };
+delete env.ELECTRON_RUN_AS_NODE;
+const report = { status: 'running', checks: [] };
+let app, page;
+const api = (path, body, method = body === undefined ? 'GET' : 'PATCH') => page.evaluate(async ({ path, body, method }) => {
+  const response = await fetch(window.desktop.apiBase + path, { method, credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: body === undefined ? undefined : JSON.stringify(body) });
+  const data = response.status === 204 ? null : await response.json();
+  if (!response.ok) throw new Error(JSON.stringify(data));
+  return data;
+}, { path, body, method });
+const snapshot = name => page.screenshot({ path: resolve(`artifacts/fact-check-${name}.png`), animations: 'disabled' });
+try {
+  await mkdir('artifacts', { recursive: true });
+  await build({ entryPoints: ['tests/e2e/fact-check-app.ts'], outfile: entry, bundle: true, platform: 'node', format: 'cjs', target: 'node22', external: ['electron'] });
+  app = await electron.launch({ args: [entry], env, timeout: 30_000 });
+  page = await app.firstWindow();
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.waitForURL('**/articles/*');
+  await page.setViewportSize({ width: 1440, height: 960 });
+  await page.locator('.tiptap').waitFor();
+  const taskId = new URL(page.url()).pathname.split('/').at(-1);
+  const before = await api(`/api/tasks/${taskId}`);
+  const run = async () => {
+    await page.getByRole('button', { name: '核实关键事实', exact: true }).click();
+    await page.getByRole('button', { name: '接受修改', exact: true }).waitFor();
+    await page.waitForFunction(() => !document.querySelector('button[aria-label="发送修改要求"]')?.closest('aside')?.querySelector('[aria-label="Agent 正在运行"]'));
+  };
+  await run();
+  const panel = page.getByRole('region', { name: '事实核查结论' });
+  for (const label of ['来源支持', '证据反驳', '存在争议', '无法确认']) assert.ok(await panel.getByText(label, { exact: true }).isVisible());
+  assert.equal((await api(`/api/tasks/${taskId}`)).active_version_id, before.active_version_id);
+  const claim = panel.locator('summary').nth(1);
+  await claim.focus();
+  await page.keyboard.press('Enter');
+  assert.ok(await claim.evaluate(node => node.closest('details').open));
+  const source = panel.getByRole('link', { name: /示例官方资料 2-1/ });
+  assert.equal(await source.getAttribute('href'), 'https://example.com/evidence/2/1');
+  assert.ok(await panel.getByText('示例展览门票价格为 80 元', { exact: true }).isVisible());
+  await snapshot('wide');
+  report.checks.push('targeted_search_verdicts_quotes_keyboard_and_nonmutating_proposal');
+
+  await page.reload();
+  await panel.getByText('证据反驳', { exact: true }).waitFor();
+  assert.ok(await panel.getByText(/后续编辑未重新核查/).isVisible());
+  const persisted = await api(`/api/tasks/${taskId}/agent-history`);
+  const result = persisted.find(event => event.payload.status === 'fact_check_completed').payload.report;
+  assert.equal(result.claims.length, 4);
+  assert.equal(result.base_version_id, before.active_version_id);
+  await page.setViewportSize({ width: 390, height: 844 });
+  const trigger = page.getByRole('button', { name: '资料', exact: true });
+  await trigger.click();
+  await panel.locator('summary').last().click();
+  assert.ok(await panel.getByText(/仅搜索摘要，不足以确认/).isVisible());
+  const overflow = await panel.evaluate(node => ({ content: node.scrollWidth, width: node.clientWidth }));
+  assert.ok(overflow.content <= overflow.width + 1);
+  await snapshot('narrow');
+  await page.keyboard.press('Escape');
+  await page.getByRole('dialog', { name: '文章资料', exact: true }).waitFor({ state: 'hidden' });
+  await trigger.waitFor();
+  await page.waitForFunction(() => document.activeElement?.textContent === '资料');
+  assert.ok(await trigger.evaluate(node => document.activeElement === node));
+  report.checks.push('reload_restores_bound_report_narrow_drawer_and_focus_return');
+
+  await page.setViewportSize({ width: 1440, height: 960 });
+  await page.getByRole('button', { name: '放弃这版', exact: true }).click();
+  await api('/api/admin/config', { llm_model: 'malformed' });
+  await run();
+  await panel.getByText('本轮核查失败', { exact: true }).waitFor();
+  assert.equal(await panel.locator('summary').count(), 0);
+  assert.equal((await api(`/api/tasks/${taskId}`)).active_version_id, before.active_version_id);
+  await page.reload();
+  await panel.getByText('本轮核查失败', { exact: true }).waitFor();
+  assert.equal(await panel.getByText('来源支持', { exact: true }).count(), 0);
+  await snapshot('failure');
+  await page.getByRole('button', { name: '放弃这版', exact: true }).click();
+  await api('/api/admin/config', { llm_model: 'fixture' });
+  await run();
+  await panel.getByText('证据反驳', { exact: true }).waitFor();
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.getByRole('button', { name: '切换到深色模式', exact: true }).click();
+  await page.getByRole('button', { name: '切换到浅色模式', exact: true }).waitFor();
+  await panel.locator('summary').nth(2).click();
+  await page.waitForFunction(() => !document.documentElement.classList.contains('theme-fade') && document.getAnimations().every(animation => animation.playState !== 'running'));
+  report.darkTextColor = await panel.locator('h2').evaluate(node => getComputedStyle(node).color);
+  assert.ok(Number(report.darkTextColor.match(/\d+/)?.[0]) >= 180, 'Dark-mode inherited text must remain readable');
+  await snapshot('dark');
+  await page.getByRole('button', { name: '接受修改', exact: true }).click();
+  await page.getByText('2 个版本', { exact: false }).waitFor();
+  assert.ok((await api(`/api/tasks/${taskId}`)).html.includes('80 元'));
+  report.checks.push('failed_check_removes_old_conclusions_then_explicit_retry_dark_mode_and_accept');
+  assert.deepEqual(errors, []);
+  report.status = 'passed';
+  console.log(JSON.stringify(report, null, 2));
+} catch (error) {
+  report.status = 'failed'; report.error = String(error);
+  if (page) await snapshot('error').catch(() => {});
+  throw error;
+} finally {
+  await writeFile('artifacts/fact-check.json', JSON.stringify(report, null, 2));
+  if (app) { await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().forEach(window => window.destroy())).catch(() => {}); await app.close(); }
+  await rm(temp, { recursive: true, force: true });
+}

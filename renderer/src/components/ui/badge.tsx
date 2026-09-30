@@ -1,0 +1,4 @@
+import { cn } from '@/lib/utils'
+const tones: Record<string, string> = { completed: 'success', published: 'success', running: 'info', publishing: 'info', awaiting_browser: 'info', awaiting_approval: 'warning', needs_handoff: 'warning', queued: 'warning', scheduled: 'info', failed: 'danger' }
+const labels: Record<string, string> = { completed: '已完成', published: '已发布', running: '处理中', publishing: '正在发布', awaiting_browser: '待填写公众号', awaiting_approval: '待最终确认', needs_handoff: '需要人工接管', queued: '待处理', scheduled: '待发布', failed: '失败', cancelled: '已取消', draft: '草稿', paused_import: '待重启恢复' }
+export function Badge({ value, label, className }: { value: string; label?: string; className?: string }) { return <span data-tone={tones[value] ?? 'neutral'} className={cn('ui-badge inline-flex shrink-0 whitespace-nowrap rounded-full px-2 py-1 text-xs font-medium', className)}>{label ?? labels[value] ?? value}</span> }

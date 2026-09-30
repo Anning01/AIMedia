@@ -1,230 +1,114 @@
-<div align="center">
-<h1 align="center"> AIMedia 🤖 </h1>
+# AI Media Desktop
 
-<p align="center">
-  <a href="https://github.com/Anning01/AIMedia/stargazers"><img src="https://img.shields.io/github/stars/Anning01/AIMedia.svg?style=for-the-badge" alt="Stargazers"></a>
-  <a href="https://github.com/Anning01/AIMedia/issues"><img src="https://img.shields.io/github/issues/Anning01/AIMedia.svg?style=for-the-badge" alt="Issues"></a>
-  <a href="https://github.com/Anning01/AIMedia/network/members"><img src="https://img.shields.io/github/forks/Anning01/AIMedia.svg?style=for-the-badge" alt="Forks"></a>
-  <a href="https://github.com/Anning01/AIMedia/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Anning01/AIMedia.svg?style=for-the-badge" alt="License"></a>
-</p>
-<br>
-<h3>简体中文 | <a href="README.en.md">English</a></h3>
-<div align="center">
-  <a href="https://github.com/Anning01/AIMedia" target="_blank"><img src="pyside/docs/logo.png" style="width: 120px; height: 120px; border-radius: 50%;"/></a>
-</div>
-<br>
-自动抓取热点，自动生成新闻，自动发布各大平台。  <b>全自动托管AI媒体软件</b>
-<br>
-<br>
-全新架构：<b>Django</b> 后端 + <b>PySide6</b> 桌面端，提供企业级稳定性和优秀的用户体验
-<br>
-</div>
+AI Media 是一个基于 **Electron、Node.js、React、TypeScript 和 SQLite** 的文章 Agent 桌面应用。它通过对话完成求实、改稿和配图，并把最终文章发布到目标平台。
 
-> **⚠️ 重要说明**
->
-> 本项目为**工程级重量项目**，包含完整的 Django 后端服务、PySide6 桌面客户端，并集成了微信支付、登录等企业级功能。
->
-> **使用本项目需要：**
-> - 自行部署 Django 后端服务
-> - 打包 PySide6 桌面应用
-> - 配置数据库、支付接口等复杂环境
->
-> **插件版本爬虫自取：[AiMaster](https://github.com/Anning01/AiMaster)**
->
-> 我们正在开发更轻量、更稳定的新版本，采用：
-> - **FastAPI** 后端（替代 Django，更轻量）
-> - **浏览器插件** 客户端（无需打包，开箱即用）
-> - **公众号 API** 直接调用（更稳定可靠）
->
-> 🎉 新版本MediaFlow已经发布 [官网链接](https://mediaflow.daniu7.cn/login?code=GAGWP9UK)
-> **B站介绍**：[B站链接](https://www.bilibili.com/video/BV1Xkw1zMEP7)
-> 
-> 只对爬虫感兴趣的开发者可以直接看 [article-spider](https://github.com/Anning01/article-spider)
+任务、草稿版本和媒体保存在本机。安装包自带运行环境，使用应用不需要安装 Node.js；AI 生成和网络检索需要配置相应服务。
 
-## 项目架构 🏗️
+## 功能
 
-本项目采用前后端分离的架构设计，由两个主要部分组成：
+- **对话式改稿**：Agent 对关键说法逐条搜索求实，展示结论、原句和来源摘录，再给出候选稿；用户接受后才生成新版本。每轮最多核查 6 条，不代表全文已被证实。
+- **Skills**：内置新闻求实、标题优化、结构重写、公众号风格等常用 Skill，也可导入含 `SKILL.md` 和参考资料的目录，支持自动匹配、明确调用、工具权限、启停、更新和卸载。
+- **文章配图**：先由 Agent 生成图片提示词，用户确认后再执行文生图或图生图；生成结果选中后才插入正文。
+- **发布管理**：第一版支持微信公众号浏览器填写与逐次确认发布；每个账号使用独立、持久化的登录会话，Webhook 仅作为兼容方式保留。
+- **富媒体编辑**：Tiptap 编辑器、文件上传、草稿保存和历史版本切换。
+- **桌面管理**：数据导入、数据目录访问、接入令牌、深浅色主题及 GitHub Release 更新提示。
 
-### 后端服务 - Django (back/)
-- 提供 RESTful API 接口
-- 数据库管理与持久化
-- 任务调度与自动化执行
-- 热点新闻抓取服务
-- AI 内容生成引擎
-- 多平台发布管理
+## 快速开始
 
-### 前端应用 - PySide6 (pyside/)
-- 直观的图形用户界面
-- 本地任务管理
-- 实时数据监控
-- 配置管理面板
-- 跨平台桌面应用
+开发环境要求 Node.js **22.16 或更高版本**，使用 Node.js 自带的 npm。在项目根目录执行：
 
-### 技术栈
-- **后端**: Django 5.x + Django REST Framework
-- **前端**: PySide6 (Qt for Python)
-- **数据库**: SQLite / PostgreSQL / MySQL
-- **AI**: 智谱 AI + Stable Diffusion
-- **自动化**: Selenium + Chrome
-
-## 功能特性 🎯
-
-### 热点新闻抓取
-- [x] 抖音热点
-- [x] 网易新闻
-- [x] 微博热点
-- [x] 澎湃新闻
-- [x] 中国日报
-- [x] 搜狐新闻
-
-### AI 智能创作
-- [x] 基于热点新闻的 AI 自动创作
-- [x] AI 图像生成（增加原创率）
-- [x] 多平台内容适配
-
-### 多平台发布
-- [x] 今日头条
-- [x] 企鹅号
-- [x] 微信公众号
-- [x] 百家号
-
-### 系统管理
-- [x] Django 后台管理系统
-- [x] PySide6 桌面客户端
-- [x] 任务调度与监控
-- [x] 配置管理
-- [x] 微信支付集成
-- [x] 微信登录集成
-
-## ⚠️ 部署说明
-
-**本项目为工程级重量项目**，不适合开箱即用。使用前请充分了解以下要求：
-
-### 技术门槛
-- 需要具备 Django 项目部署经验
-- 需要了解 PySide6 应用打包流程
-- 需要配置微信支付、登录等第三方接口
-- 需要自行搭建和维护数据库服务
-
-### 部署工作量
-- **后端部署**：Django 服务器配置、数据库迁移、环境变量配置等
-- **前端打包**：PySide6 应用编译、依赖打包、图标资源等
-- **接口配置**：微信支付商户号、应用密钥、回调地址等
-- **运维维护**：日志监控、错误处理、版本更新等
-
-**如果您需要更轻量、易用的解决方案，请关注新版本 [AiMaster](https://github.com/Anning01/AiMaster)！**
-
-### 后期计划 📅
-
-> **注意**：本项目（AIMedia）作为工程级版本，后续维护将以稳定性为主。
->
-> 新功能开发已迁移至更轻量的新版本 **[AiMaster](https://github.com/Anning01/AiMaster)**，采用 FastAPI + 浏览器插件架构，更易部署和使用。
-
-- [ ] ~~自动生成视频并发布各个平台~~（将在 AiMaster 中实现）
-- [ ] ~~移动端应用开发~~（将在 AiMaster 中实现）
-- [ ] ~~更多平台接入~~（将在 AiMaster 中实现）
-- [x] Bug 修复和稳定性维护
-
-## 配置要求 📦
-
-### 硬件要求
-- CPU: 4核或以上
-- 内存: 8GB 或以上
-- 硬盘: 10GB 可用空间
-- 显卡: 非必须（AI 配图功能建议有独显）
-
-### 软件要求
-- Windows 10 或以上
-- Python 3.12.4
-- Chrome 浏览器（自动化发布需要）
-
-## 快速开始 🚀
-
-#### 前提条件
-- 尽量不要使用 **中文路径**，避免出现一些无法预料的问题
-- 请确保你的 **网络** 是正常的，VPN 需要打开全局流量模式
-
-#### 1. 克隆代码
-
-```shell
-git clone https://github.com/Anning01/AIMedia.git
-cd AIMedia
+```bash
+npm ci
+npm run dev
 ```
 
-#### 2. 创建虚拟环境
+`npm ci` 会自动安装 `renderer/` 的锁定依赖。开发命令会编译 Electron 代码、启动 Vite 并打开桌面窗口。React 页面支持热更新，修改 `electron/` 后需重新启动开发命令。
 
-**使用 Conda（推荐）**
+首次打开后，在「设置」中填写：
 
-```shell
-conda create -n AIMedia python=3.12.4
-conda activate AIMedia
-pip install -r requirements.txt
+| 配置 | 用途 |
+| --- | --- |
+| LLM 模型、API Base URL、API Key | 文章改写与 Skills 执行，支持 OpenAI 兼容的聊天接口 |
+| Firecrawl API Key | 改写前的网络检索；不使用时可关闭检索 |
+| 图片模型、API Base URL、API Key | 文生图和图片编辑，使用图片服务自己的地址及凭证 |
+| 图片尺寸与质量 | 若服务不接受这两个参数，关闭「使用指定尺寸与质量」 |
+
+配置后，在「文章」中新建内容并与 Agent 对话，或通过 [文章接入接口](docs/integrations.md) 提交内容。
+
+开发时也可参考根目录 [`.env.example`](.env.example) 创建 `.env`。模型和搜索环境变量作为回退配置，设置页中保存的值优先；安装后的应用使用设置页配置。
+
+## 项目结构
+
+```text
+.
+├── electron/                 # 桌面运行层
+│   ├── main.ts               # 窗口、菜单、权限与应用生命周期
+│   ├── preload.ts            # 受限的桌面桥接接口
+│   ├── worker.ts             # 独立 Node 服务进程
+│   └── server/               # API、文章 Agent、Skills、媒体与发布
+├── renderer/                 # React + TypeScript + Vite 界面
+│   ├── src/components/       # 编辑器、桌面组件和 UI 基础组件
+│   ├── src/pages/            # 文章、Skills、发布与设置
+│   ├── src/lib/              # API、提示消息、媒体和主题工具
+│   └── src/test/             # 前端测试环境；测试就近放在源码旁
+├── tests/
+│   ├── server/               # Node 服务、数据导入与接口测试
+│   └── e2e/                  # Electron 操作与真实供应商验收
+├── scripts/                  # 开发启动与打包构建脚本
+├── docs/                     # 架构、开发、测试与接入文档
+├── .env.example              # 开发环境配置示例
+├── package.json              # 统一命令入口及 Electron 打包配置
+└── tsconfig.json             # Electron 与 Node 测试类型检查
 ```
 
-**使用 venv**
+`dist/electron/` 和 `renderer/dist/` 是构建输出，`release/` 保存安装包，`artifacts/` 保存测试报告与截图；这些目录均不提交到版本库。
 
-```shell
-python -m venv venv
-# Windows
-.\venv\Scripts\activate
-# Linux/Mac
-source venv/bin/activate
+## 常用命令
 
-pip install -r requirements.txt
+所有命令均从项目根目录执行。
+
+| 命令 | 说明 |
+| --- | --- |
+| `npm run dev` | 启动桌面开发环境 |
+| `npm run build` | 类型检查并构建桌面与界面代码 |
+| `npm start` | 启动已构建的应用，首次使用前先构建 |
+| `npm test` | 运行 Node 和 React 测试 |
+| `npm run test:workflow` | 使用本机模拟服务运行完整 Electron 流程，需先构建 |
+| `npm run test:smoke` | 桌面基础操作与重启检查，需先构建 |
+| `npm run test:wechat` | 在模拟公众号编辑页验收填写、二次确认和成功判断 |
+| `npm run server` | 独立运行本机 API，用于接口调试 |
+| `npm run pack` | 构建当前平台的应用目录 |
+
+更多开发、环境变量与独立界面调试说明见 [开发指南](docs/development.md)，验收方式见 [测试指南](docs/testing.md)。
+
+## 打包
+
+```bash
+npm run dist:mac -- --arm64    # Apple Silicon：DMG + ZIP
+npm run dist:mac -- --x64      # Intel Mac：DMG + ZIP
+npm run dist:win -- --x64      # Windows：NSIS 安装程序
+npm run dist:linux -- --x64    # Linux：AppImage
 ```
 
-#### 3. 下载 Chrome 浏览器（自动发布功能需要）
+产物输出到 `release/`。建议在目标操作系统上构建并验证安装和运行；正式分发需配置代码签名，macOS 还需公证。仓库未配置签名凭据。
 
-下载地址：
-- 百度网盘: https://pan.baidu.com/s/1x6J3K4KdWrI9vOG8yvSSBw  提取码：7jyw
+安装包包含 Electron 运行环境、编译后的服务和界面资源，用户数据与 `.env` 不进入安装包。
 
-下载后解压，整个目录放到 `.\AIMedia\pyside` 里面，最终的文件路径应该是这样: `.\AIMedia\pyside\chrome`
+## 数据与运行
 
-#### 4. 启动项目
+桌面数据位于系统用户数据目录下的 `AI Media/storage/`，可通过「设置 → 桌面应用 → 打开数据文件夹」查看。macOS 默认位置为：
 
-请分别查看后端和前端的说明文档：
-
-- **Django 后端**：查看 [back/README.md](back/README.md)
-- **PySide6 前端**：查看 [pyside/README.md](pyside/README.md)
-
-## 项目结构 📁
-
-```
-AIMedia/
-├── back/                   # Django 后端
-│   ├── manage.py          # Django 管理脚本
-│   ├── config/            # 项目配置
-│   ├── apps/              # 应用模块
-│   └── ...
-├── pyside/                # PySide6 前端
-│   ├── main.py            # 主入口
-│   ├── ui/                # UI 界面
-│   ├── utils/             # 工具函数
-│   └── ...
-├── docs/                  # 文档资源
-├── config.py              # 配置文件模板
-├── requirements.txt       # Python 依赖
-├── LICENSE                # 许可证
-└── README.md              # 项目说明
+```text
+~/Library/Application Support/AI Media/storage/
 ```
 
-## 视频演示 📺
+「导入数据」支持包含 `ai_media.db` 或任务、账号、配置 JSON 文件的数据目录，并复制关联媒体。导入前会备份当前数据库，同 ID 数据和已有配置保留当前值。详细约定见 [架构说明](docs/architecture.md)。
 
-B站视频链接：https://www.bilibili.com/video/BV1Xkw1zMEP7
+生成和定时发布由应用进程执行，完全退出应用或电脑睡眠后会暂停；重新启动会恢复可执行任务。macOS 关闭窗口后应用仍可在后台运行，使用「退出 AI Media」才会完全停止。
 
-## 交流讨论 💬
+## 文档
 
-<img src="pyside/docs/wechat.png">
-
-## 反馈建议 📢
-
-- 可以提交 [issue](https://github.com/Anning01/AIMedia/issues)
-  或者 [pull request](https://github.com/Anning01/AIMedia/pulls)
-
-## 许可证 📝
-
-点击查看 [LICENSE](LICENSE) 文件
-
-## Star History
-
-[![Star History Chart](https://star-history.dera.page/svg?repos=Anning01/AIMedia&type=Date)](https://star-history.dera.page/#Anning01/AIMedia&Date)
+- [架构说明](docs/architecture.md)：进程、模块职责、数据与访问边界
+- [开发指南](docs/development.md)：配置、调试、依赖与构建约定
+- [测试指南](docs/testing.md)：自动化测试、独立数据与真实服务验收
+- [接入指南](docs/integrations.md)：文章 API、接入令牌与兼容发布方式
