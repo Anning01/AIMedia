@@ -2,10 +2,7 @@ name: Desktop build and release
 
 on:
   push:
-    branches: [develop]
     tags: ['v*']
-  pull_request:
-    branches: [develop]
   workflow_dispatch:
 
 permissions:

@@ -120,11 +120,11 @@ npm run check:qiling-ui
 
 | 触发方式 | 行为 |
 | --- | --- |
-| PR 到 `develop` | 密钥扫描、类型检查、生产构建、离线管线测试 |
-| 推送 `develop` | 上述检查 + Mac Intel / Apple Silicon 打包；Windows 证书就绪时才打签名包 |
+| 推送分支 / 提交 PR | 不触发构建或打包，当前仍在开发中 |
+| Actions 中手动运行 | 密钥扫描、类型检查、生产构建、离线管线测试及 Mac 打包；Windows 证书就绪时才打签名包 |
 | 推送 `v版本号` 标签 | 构建 Mac 和已签名 Windows 包，全部通过后创建 **Release 草稿** |
 
-开发包从对应 Actions 运行的 Artifacts 下载，保留 14 天。正式安装包在维护者核对后将 Release 草稿手动发布，不会因一次 `develop` 推送直接公开新版本。
+代码完成前不自动打包。需要测试安装包时，由维护者在 Actions 中选择对应分支手动运行，产物保留 14 天。正式安装包在维护者核对后将 Release 草稿手动发布。
 
 ### macOS：ad-hoc 自签名
 
@@ -144,7 +144,7 @@ npm run dist:mac -- --x64
 
 生成 Windows x64 NSIS 安装包，并强制代码签名；不会把未签名包当成正式 Windows 版本。
 
-当前 Windows 证书尚未准备，因此 `develop` 构建会显示原因并跳过 Windows 包；标签发布缺少凭据时失败，不创建不完整的正式 Release 草稿。
+当前 Windows 证书尚未准备，因此手动构建会显示原因并跳过 Windows 包；标签发布缺少凭据时失败，不创建不完整的正式 Release 草稿。
 
 准备好可供 CI 使用的 PFX/P12 证书后，在仓库 **Settings → Secrets and variables → Actions** 配置：
 
