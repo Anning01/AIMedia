@@ -1,0 +1,198 @@
+import React from "react";
+import { createRoot } from "react-dom/client";
+import { Toaster } from "../../src/components/ui/sonner";
+import { ConfirmationHost } from "../../src/components/shared/controls";
+import App from "../../src/App";
+import NoteStudio from "../../src/pages/NoteStudio";
+import ImageMaker from "../../src/pages/ImageMaker";
+import "../../src/ui.css";
+import "../../src/styles.css";
+import "../../src/workspace.css";
+
+(window as any).__calls = [];
+window.wangaohui = new Proxy({} as any, {
+  get: (_, name: string) => {
+    if (name.startsWith("on")) return () => () => {};
+    return async (...args: any[]) => {
+      (window as any).__calls.push({ name, args });
+      if (name === "appVersion") return "1.0.2";
+      if (name === "llmChat")
+        return {
+          ok: true,
+          reply: "## 第一节\n这是大纲",
+          content: "测试标题\n\n## 第一节\n\n测试正文。",
+        };
+      if (name === "generateArticle")
+        return {
+          ok: true,
+          title: "测试文章",
+          content: "测试标题\n\n## 第一节\n\n测试正文。",
+          chinese: "测试标题\n\n## 第一节\n\n测试正文。",
+          zh: "测试标题\n\n## 第一节\n\n测试正文。",
+        };
+      if (name === "platformPublish") return { ok: true };
+      return {
+        ok: true,
+        entries: [],
+        orders: [],
+        files: [],
+        images: [],
+        accounts: [],
+        version: "1.0.2",
+        error: "",
+      };
+    };
+  },
+});
+const realFetch = window.fetch.bind(window);
+window.fetch = async (input: any, options: any) => {
+  const url = String(input);
+  if (!url.includes("159.75.139.210")) return realFetch(input, options);
+  let data = url.includes("/categories")
+    ? [{ category: "科技", count: 1 }]
+    : url.includes("/articles")
+      ? [
+          {
+            id: 1,
+            title: "测试素材标题",
+            category: "科技",
+            platform: "微信24小时热榜",
+            content_text: "测试素材正文",
+            published_at: "2026-10-13T09:00:00",
+          },
+        ]
+      : [];
+  if (url.includes("/api/images"))
+    data = [1, 2].map((id) => ({
+      id,
+      url:
+        "data:image/svg+xml;charset=utf-8," +
+        encodeURIComponent(
+          `<svg xmlns="http://www.w3.org/2000/svg" width="240" height="180"><rect width="240" height="180" fill="${id === 1 ? "#dbeafe" : "#dcfce7"}"/></svg>`,
+        ),
+      title: "预览素材" + id,
+      tags: [],
+    })) as any;
+  return new Response(
+    JSON.stringify({
+      code: 0,
+      data,
+      meta: { total: data.length, page: 1, page_size: 12 },
+    }),
+    { headers: { "Content-Type": "application/json" } },
+  );
+};
+const store = await import("../../src/data/localStore");
+store.saveAccount({
+  id: "ui-test-account",
+  platform: "头条号",
+  name: "验收账号",
+  authed: true,
+  cookie: "mock-cookie",
+  lastSync: "2026-10-13T09:00:00",
+} as any);
+store.saveArticleHistoryItem({
+  id: "ui-test-article",
+  title: "验收文章",
+  blocks: [
+    { id: "b1", type: "title", text: "验收文章" },
+    { id: "b2", type: "p", text: "验收正文" },
+  ],
+  templateId: "t1",
+  status: "待发布",
+  time: "2026-10-13T09:00:00",
+  tag: "测试",
+} as any);
+const which = new URLSearchParams(location.search).get("page");
+createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    {which ? (
+        <main className="app-content">
+          {which === "note" ? <NoteStudio /> : <ImageMaker />}
+        </main>
+    ) : (
+      <App />
+    )}
+    <Toaster position="top-right" />
+    <ConfirmationHost />
+  </React.StrictMode>,
+);
+
+// Test-only export comparison; baseline modules are created and removed by ui-check.
+(window as any).__runExportChecks = async () => {
+  const { ARTICLE_TEMPLATES } = await import("../../src/data/articleTemplates");
+  const { SAMPLE_ARTICLE_BLOCKS } =
+    await import("../../src/data/sampleArticle");
+  const { buildInlineHtml } = await import("../../src/utils/articleHtml");
+  const baselineHtml = await import(
+    /* @vite-ignore */ "./.baseline-articleHtml.ts"
+  );
+  for (const t of ARTICLE_TEMPLATES) {
+    const a = buildInlineHtml(SAMPLE_ARTICLE_BLOCKS, t, t.accent, {});
+    const b = baselineHtml.buildInlineHtml(
+      SAMPLE_ARTICLE_BLOCKS,
+      t,
+      t.accent,
+      {},
+    );
+    if (a !== b) throw new Error("HTML export changed: " + t.id);
+  }
+  const { renderDesignPng } = await import("../../src/utils/renderDesignPng");
+  const baselinePng = await import(
+    /* @vite-ignore */ "./.baseline-renderDesignPng.ts"
+  );
+  const design = {
+    width: 300,
+    height: 400,
+    bg: "linear-gradient(135deg,#2f54eb,#ffffff)",
+    layers: [
+      {
+        text: "导出验证\n内容与排版保持一致",
+        x: 10,
+        y: 20,
+        size: 22,
+        color: "#202938",
+        bold: true,
+      },
+    ],
+  };
+  const png = await renderDesignPng(design);
+  if (png !== (await baselinePng.renderDesignPng(design)))
+    throw new Error("Canvas PNG changed");
+  const { STICKER_COVER_TEMPLATES } =
+    await import("../../src/data/stickerTemplates");
+  const { default: CoverThumb } =
+    await import("../../src/components/CoverThumb");
+  const { renderCoverNodeToPng } =
+    await import("../../src/utils/renderCoverNode");
+  const host = document.createElement("div");
+  host.style.cssText =
+    'position:fixed;top:0;left:0;width:168px;height:224px;z-index:9999;background:white;font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif';
+  document.body.appendChild(host);
+  const root = createRoot(host);
+  root.render(
+    <CoverThumb
+      tpl={STICKER_COVER_TEMPLATES[0]}
+      title="导出样式验证"
+      text="内容保持一致"
+    />,
+  );
+  await new Promise((r) => setTimeout(r, 300));
+  const newCover = await renderCoverNodeToPng(host, 336, 448);
+  const sheets = [
+    ...document.querySelectorAll<HTMLStyleElement>("style[data-vite-dev-id]"),
+  ]
+    .filter((s) => /\/(ui|workspace)\.css$/.test(s.dataset.viteDevId || ""))
+    .map((s) => s.sheet!);
+  sheets.forEach((s) => (s.disabled = true));
+  try {
+    const oldCover = await renderCoverNodeToPng(host, 336, 448);
+    if (newCover !== oldCover)
+      throw new Error("DOM cover affected by workspace styles");
+  } finally {
+    sheets.forEach((s) => (s.disabled = false));
+    root.unmount();
+    host.remove();
+  }
+  return { templates: ARTICLE_TEMPLATES.length, canvas: true, cover: true };
+};

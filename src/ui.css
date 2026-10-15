@@ -1,0 +1,183 @@
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--foreground);
+  --color-surface-subtle: var(--surface-subtle);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: #fff;
+  --color-secondary: var(--muted);
+  --color-secondary-foreground: #334155;
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent-soft);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: #c93636;
+  --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
+  --color-input: var(--border-strong);
+  --color-ring: var(--primary);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --shadow-card:
+    0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.05);
+  --shadow-pop: 0 10px 30px rgba(16, 24, 40, 0.12);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+}
+/* 色号契约（与 ai-media-api 对齐）：浅色用冷灰画布 + 白色内容面，
+   边框只保留两类——border 用于结构分区，border-strong 用于可交互边界。 */
+:root {
+  --background: #f5f7fa;
+  --foreground: #18202d;
+  --card: #ffffff;
+  --surface-subtle: #fafbfd;
+  --popover: #ffffff;
+  --primary: #2457d6;
+  --muted: #e9edf3;
+  --muted-foreground: #526075;
+  --accent-soft: #e8eeff;
+  --accent-foreground: #214daf;
+  --border: #e3e8ef;
+  --border-subtle: #eef1f6;
+  --border-strong: #cbd3df;
+  --radius: 10px;
+  --accent: #2457d6;
+  /* 状态色：与 .ui-tag / .ui-alert 既有色号同源，供 Tailwind 语义类（text-success 等）复用 */
+  --success: #18734c;
+  --success-soft: #edf8f2;
+  --warning: #92580b;
+  --warning-soft: #fff5e7;
+  --danger: #b52d36;
+  --danger-soft: #fff0f0;
+  --info: #2446cb;
+  --info-soft: #eff4ff;
+}
+
+/* ------------------------------------------------------------------
+   进场动画基元（对齐 shadcn 使用的 tw-animate-css 类名）
+   组件里书写 animate-in / fade-in-0 / zoom-in-95 / slide-in-from-top-2
+   等类名，配合 data-[state=open]: 变体即可获得进场动画。
+   有意不提供 animate-out：Radix Presence 会等退场动画结束才卸载浮层，
+   若在退场动画期间重新打开同一弹窗，会残留一层 fixed 遮罩挡住界面，
+   因此浮层只做进场动画、关闭立即卸载。
+------------------------------------------------------------------ */
+@keyframes ui-enter {
+  from {
+    opacity: var(--tw-enter-opacity, 1);
+    transform: translate3d(
+        var(--tw-enter-translate-x, 0),
+        var(--tw-enter-translate-y, 0),
+        0
+      )
+      scale3d(var(--tw-enter-scale, 1), var(--tw-enter-scale, 1), 1);
+  }
+}
+@utility animate-in {
+  animation-name: ui-enter;
+  animation-duration: var(--tw-duration, 160ms);
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  animation-fill-mode: both;
+}
+@utility fade-in-0 {
+  --tw-enter-opacity: 0;
+}
+@utility zoom-in-95 {
+  --tw-enter-scale: 0.95;
+}
+@utility slide-in-from-top-2 {
+  --tw-enter-translate-y: calc(var(--spacing, 0.25rem) * -2);
+}
+@utility slide-in-from-top-4 {
+  --tw-enter-translate-y: calc(var(--spacing, 0.25rem) * -4);
+}
+@utility slide-in-from-bottom-2 {
+  --tw-enter-translate-y: calc(var(--spacing, 0.25rem) * 2);
+}
+@utility slide-in-from-bottom-4 {
+  --tw-enter-translate-y: calc(var(--spacing, 0.25rem) * 4);
+}
+@utility slide-in-from-left-2 {
+  --tw-enter-translate-x: calc(var(--spacing, 0.25rem) * -2);
+}
+@utility slide-in-from-left-4 {
+  --tw-enter-translate-x: calc(var(--spacing, 0.25rem) * -4);
+}
+@utility slide-in-from-right-2 {
+  --tw-enter-translate-x: calc(var(--spacing, 0.25rem) * 2);
+}
+@utility slide-in-from-right-4 {
+  --tw-enter-translate-x: calc(var(--spacing, 0.25rem) * 4);
+}
+
+/* ------------------------------------------------------------------
+   标签面板切换过渡（AnimatedTabsPanel）
+   面板按顺序左右滑动淡入/淡出，方向由 --tab-shift 决定。
+------------------------------------------------------------------ */
+@keyframes tab-panel-in {
+  from {
+    opacity: 0;
+    transform: translate3d(var(--tab-shift, 0px), 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+@keyframes tab-panel-out {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(calc(var(--tab-shift, 0px) * -1), 0, 0);
+  }
+}
+.tab-panel-enter {
+  animation: tab-panel-in 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.tab-panel-leave {
+  animation: tab-panel-out 180ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+/* 分段标签（SegmentedTabs）：激活态由滑动指示器呈现，触发器本体保持透明。 */
+.segmented-tabs [data-slot="tabs-trigger"][data-state="active"] {
+  background: transparent;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tab-panel-enter,
+  .tab-panel-leave {
+    animation: none;
+  }
+}
+
+/* Accordion disclosure stays local to the interface; article/export styles are untouched. */
+@keyframes accordion-expand {
+  from { height: 0; }
+  to { height: var(--radix-accordion-content-height); }
+}
+@keyframes accordion-collapse {
+  from { height: var(--radix-accordion-content-height); }
+  to { height: 0; }
+}
+.ui-accordion-content[data-state="open"] { animation: accordion-expand 180ms ease-out; }
+.ui-accordion-content[data-state="closed"] { animation: accordion-collapse 180ms ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .ui-accordion-content { animation: none !important; }
+}

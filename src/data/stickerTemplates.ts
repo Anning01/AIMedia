@@ -1,0 +1,1046 @@
+import type { CSSProperties } from 'react';
+
+export type CoverVariant =
+  | 'border'
+  | 'doubleFrame'
+  | 'gradientBorder'
+  | 'dashedFrame'
+  | 'bubble'
+  | 'patchwork'
+  | 'seal'
+  | 'nested'
+  | 'wavy'
+  | 'tornPaper'
+  | 'speedline'
+  | 'halftone'
+  | 'comicGrid'
+  | 'explosion'
+  | 'onomatopoeia'
+  | 'tiltStripes'
+  | 'speechBubble'
+  | 'hSpeed'
+  | 'silhouette'
+  | 'arrow'
+  | 'sunset'
+  | 'neon'
+  | 'morandi'
+  | 'diagonalSplit'
+  | 'glass'
+  | 'noise'
+  | 'stripeBg'
+  | 'newspaper'
+  | 'receipt'
+  | 'magazine'
+  | 'tape'
+  | 'typewriter'
+  | 'postage'
+  | 'bigType'
+  | 'monoReverse'
+  | 'bigNumber'
+  | 'gridSystem'
+  | 'negativeSpace'
+  | 'neonFrame'
+  | 'banner'
+  | 'waveLines'
+  | 'inkSplash'
+  | 'aurora'
+  | 'candy'
+  | 'cinemaTicket'
+  | 'scrapCollage'
+  | 'glowText'
+  | 'blockGrid'
+  | 'outlineText'
+  | 'blueprint';
+
+export type HighlightMode =
+  | 'marker'
+  | 'color'
+  | 'underline'
+  | 'circle'
+  | 'correction'
+  | 'block'
+  | 'ink'
+  | 'circleUnderline'
+  | 'none';
+export type TitleFont = 'smiley' | 'sans' | 'serif' | 'kaiti' | 'type';
+
+export interface StickerCoverTemplate {
+  id: string;
+  cat: string;
+  name: string;
+  desc: string;
+  variant: CoverVariant;
+  bg: string;
+  frame?: string;
+  frame2?: string;
+  frame3?: string;
+  frame4?: string;
+  titleColor: string;
+  textColor: string;
+  accent: string;
+  glow?: string;
+  titleSize: number; // 占画布宽度的百分比
+  textSize: number; // 占画布宽度的百分比
+  layout: 'top' | 'center' | 'bottom';
+  align?: 'left' | 'center';
+  highlight?: HighlightMode;
+  badge?: string;
+  showPage?: boolean;
+  showArrow?: boolean;
+  titleFont?: TitleFont;
+  rotate?: number;
+}
+
+export interface CoverTextZone {
+  x: number; // 百分比
+  y: number;
+  w: number;
+  h: number;
+  size: number; // 900px 设计稿下的字号
+  color: string;
+  align: 'left' | 'center' | 'right';
+  bold: boolean;
+  maxLines: number;
+}
+
+export type CustomStickerTemplate = StickerCoverTemplate & {
+  source: 'custom';
+  bgImage?: string;
+  cardBgImage?: string;
+  customCSS?: string;
+  coverZones?: CoverTextZone[];
+  cardZones?: { heading?: CoverTextZone; text?: CoverTextZone };
+};
+
+export const DEFAULT_COVER_ZONE: CoverTextZone = {
+  x: 12,
+  y: 36,
+  w: 76,
+  h: 24,
+  size: 58,
+  color: '#1A1A1A',
+  align: 'center',
+  bold: true,
+  maxLines: 2,
+};
+
+export const STICKER_COVER_CATEGORIES = ['全部', '我的模板', '边框语录', '漫画冲击', '渐变色彩', '拼贴复古', '极简高级'];
+
+const CUSTOM_COVER_KEY = 'wangaohui:tplCustomStickerTemplates';
+
+export function loadCustomStickerTemplates(): CustomStickerTemplate[] {
+  try {
+    const list = JSON.parse(localStorage.getItem(CUSTOM_COVER_KEY) || '[]');
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveCustomStickerTemplates(list: CustomStickerTemplate[]): void {
+  try {
+    localStorage.setItem(CUSTOM_COVER_KEY, JSON.stringify(list));
+  } catch {
+    /* 本地存储满时忽略 */
+  }
+}
+
+export function allCoverTemplates(): StickerCoverTemplate[] {
+  return [...STICKER_COVER_TEMPLATES, ...loadCustomStickerTemplates()];
+}
+
+export const STICKER_COVER_TEMPLATES: StickerCoverTemplate[] = [
+  // ---------- 一、边框语录系列 ----------
+  {
+    id: 'f01',
+    cat: '边框语录',
+    name: '经典黄框',
+    desc: '黄底白卡，圆框+下划线标注',
+    variant: 'border',
+    bg: '#FFD60A',
+    frame: '#FFFDF5',
+    titleColor: '#1A1A1A',
+    textColor: '#4a4a4a',
+    accent: '#FFD60A',
+    titleSize: 9.5,
+    textSize: 3.8,
+    layout: 'center',
+    highlight: 'circleUnderline',
+    badge: '语录',
+    showPage: true,
+    showArrow: true,
+  },
+  {
+    id: 'f02',
+    cat: '边框语录',
+    name: '双框错位',
+    desc: '红青双框错位，对比句式',
+    variant: 'doubleFrame',
+    bg: '#FFFFFF',
+    frame: '#FF6B6B',
+    frame2: '#4ECDC4',
+    titleColor: '#2D3436',
+    textColor: '#5c5c5c',
+    accent: '#FF6B6B',
+    titleSize: 9.5,
+    textSize: 3.8,
+    layout: 'center',
+    highlight: 'color',
+    badge: '对比',
+  },
+  {
+    id: 'f03',
+    cat: '边框语录',
+    name: '渐变边框',
+    desc: '红黄渐变粗框，左对齐',
+    variant: 'gradientBorder',
+    bg: '#FAFAFA',
+    frame: '#FF6B6B',
+    frame2: '#FFD93D',
+    titleColor: '#1A1A1A',
+    textColor: '#555555',
+    accent: '#FF6B6B',
+    titleSize: 9.5,
+    textSize: 3.8,
+    layout: 'center',
+    align: 'left',
+    highlight: 'color',
+    badge: '成长',
+  },
+  {
+    id: 'f04',
+    cat: '边框语录',
+    name: '手账胶带',
+    desc: '虚线框 + 双胶带 + 马克笔',
+    variant: 'dashedFrame',
+    bg: '#FFF8E7',
+    frame: '#5D4E37',
+    titleColor: '#2D3436',
+    textColor: '#5D4E37',
+    accent: '#FFD60A',
+    titleSize: 9,
+    textSize: 3.8,
+    layout: 'center',
+    highlight: 'marker',
+    badge: '手账',
+  },
+  {
+    id: 'f05',
+    cat: '边框语录',
+    name: '圆角气泡框',
+    desc: '大圆角气泡 + 底部小三角',
+    variant: 'bubble',
+    bg: '#FFFFFF',
+    frame: '#A8E6CF',
+    titleColor: '#2D3436',
+    textColor: '#3f6f63',
+    accent: '#4ECDC4',
+    titleSize: 9,
+    textSize: 3.8,
+    layout: 'center',
+    highlight: 'circle',
+    badge: '冷知识',
+  },
+  {
+    id: 'f06',
+    cat: '边框语录',
+    name: '多色拼贴框',
+    desc: '四边不同色，盘点合集',
+    variant: 'patchwork',
+    bg: '#FFFFFF',
+    frame: '#FF6B6B',
+    frame2: '#4ECDC4',
+    frame3: '#FFD93D',
+    frame4: '#A8E6CF',
+    titleColor: '#1A1A1A',
+    textColor: '#555555',
+    accent: '#FF6B6B',
+    titleSize: 9.5,
+    textSize: 3.8,
+    layout: 'center',
+    highlight: 'color',
+    badge: '合集',
+  },
+  {
+    id: 'f07',
+    cat: '边框语录',
+    name: '印章边框',
+    desc: '红色印章框 + 轻微旋转',
+    variant: 'seal',
+    bg: '#F1FAEE',
+    frame: '#E63946',
+    titleColor: '#1D3557',
+    textColor: '#3f5a68',
+    accent: '#E63946',
+    titleSize: 9.5,
+    textSize: 3.8,
+    layout: 'center',
+    highlight: 'circle',
+    badge: '必看',
+    rotate: -2,
+  },
+  {
+    id: 'f08',
+    cat: '边框语录',
+    name: '双层嵌套框',
+    desc: '黑外黄内，重磅预警',
+    variant: 'nested',
+    bg: '#FFFFFF',
+    frame: '#1A1A1A',
+    frame2: '#FFD60A',
+    titleColor: '#1A1A1A',
+    textColor: '#555555',
+    accent: '#FFD60A',
+    titleSize: 9.5,
+    textSize: 3.8,
+    layout: 'center',
+    highlight: 'marker',
+    badge: '重磅',
+  },
+  {
+    id: 'f09',
+    cat: '边框语录',
+    name: '波浪边框',
+    desc: '粉底白卡 + 紫描边 + 波浪线',
+    variant: 'wavy',
+    bg: '#FFE5EC',
+    frame: '#C8B6FF',
+    titleColor: '#4A4E69',
+    textColor: '#6b6f8a',
+    accent: '#FF6B9D',
+    titleSize: 9.5,
+    textSize: 3.8,
+    layout: 'center',
+    highlight: 'underline',
+    badge: '情感',
+  },
+  {
+    id: 'f10',
+    cat: '边框语录',
+    name: '撕纸边框',
+    desc: '白纸撕边露出黄底，真心话',
+    variant: 'tornPaper',
+    bg: '#FFD60A',
+    frame: '#FFFFFF',
+    titleColor: '#2D3436',
+    textColor: '#5c5244',
+    accent: '#FFD60A',
+    titleSize: 9.5,
+    textSize: 3.8,
+    layout: 'center',
+    highlight: 'marker',
+    badge: '真心话',
+  },
+  {
+    id: 'f12',
+    cat: '边框语录',
+    name: '霓虹灯管框',
+    desc: '黑底霓虹发光边框',
+    variant: 'neonFrame',
+    bg: '#0D0D0D',
+    frame: '#FF2E88',
+    titleColor: '#FFFFFF',
+    textColor: '#c8c8d0',
+    accent: '#00F5D4',
+    glow: '#FF2E88',
+    titleSize: 9.5,
+    textSize: 3.8,
+    layout: 'center',
+    highlight: 'color',
+    badge: '霓虹',
+  },
+  {
+    id: 'f13',
+    cat: '边框语录',
+    name: '彩带横幅',
+    desc: '红彩带横幅 + 白色大字',
+    variant: 'banner',
+    bg: '#FFF8E7',
+    frame: '#FF6B6B',
+    titleColor: '#FFFFFF',
+    textColor: '#5c5244',
+    accent: '#FFD60A',
+    titleSize: 10,
+    textSize: 3.8,
+    layout: 'center',
+    highlight: 'none',
+    badge: '庆典',
+  },
+  // ---------- 二、漫画冲击系列 ----------
+  {
+    id: 'm11',
+    cat: '漫画冲击',
+    name: '经典放射线',
+    desc: '中心放射速度线，反转类',
+    variant: 'speedline',
+    bg: '#FFFFFF',
+    frame: '#1A1A1A',
+    titleColor: '#1A1A1A',
+    textColor: '#333333',
+    accent: '#E63946',
+    titleSize: 9.5,
+    textSize: 3.8,
+    layout: 'center',
+    highlight: 'color',
+    badge: '反转',
+    showPage: true,
+  },
+  {
+    id: 'm12',
+    cat: '漫画冲击',
+    name: '半色调网点',
+    desc: '左侧红网点，右侧文字',
+    variant: 'halftone',
+    bg: '#FFFFFF',
+    frame: '#E63946',
+    titleColor: '#1A1A1A',
+    textColor: '#333333',
+    accent: '#E63946',
+    titleSize: 9.5,
+    textSize: 3.8,
+    layout: 'center',
+    highlight: 'circle',
+    badge: '揭秘',
+  },
+  {
+    id: 'm15',
+    cat: '漫画冲击',
+    name: '拟声词大背景',
+    desc: '巨大「哇！」打底，惊讶类',
+    variant: 'onomatopoeia',
+    bg: '#FFF3E0',
+    frame: '#FF6B6B',
+    titleColor: '#1A1A1A',
+    textColor: '#5c4f3f',
+    accent: '#FF6B6B',
+    titleSize: 9.5,
+    textSize: 3.8,
+    layout: 'center',
+    highlight: 'color',
+    badge: '真相',
+  },
+  {
+    id: 'm16',
+    cat: '漫画冲击',
+    name: '倾斜冲击',
+    desc: '版面倾斜 -5°，斜纹背景',
+    variant: 'tiltStripes',
+    bg: '#FFFFFF',
+    frame: '#FFD60A',
+    titleColor: '#1A1A1A',
+    textColor: '#4a4a4a',
+    accent: '#FFD60A',
+    titleSize: 9.5,
+    textSize: 3.8,
+    layout: 'center',
+    highlight: 'marker',
+    badge: '潮流',
+    rotate: -5,
+  },
+  {
+    id: 'm17',
+    cat: '漫画冲击',
+    name: '漫画对话泡',
+    desc: '大对话泡 + 尾巴，引语类',
+    variant: 'speechBubble',
+    bg: '#A8E6CF',
+    frame: '#FFFFFF',
+    titleColor: '#2D3436',
+    textColor: '#3f6f63',
+    accent: '#3D8BFF',
+    titleSize: 9,
+    textSize: 3.8,
+    layout: 'center',
+    highlight: 'underline',
+    badge: '名场面',
+  },
+  {
+    id: 'm18',
+    cat: '漫画冲击',
+    name: '速度线横切',
+    desc: '黑底黄线横切，速看类',
+    variant: 'hSpeed',
+    bg: '#1A1A1A',
+    frame: '#FFD60A',
+    titleColor: '#FFFFFF',
+    textColor: '#e8e8e8',
+    accent: '#FFD60A',
+    titleSize: 9.5,
+    textSize: 3.8,
+    layout: 'center',
+    highlight: 'color',
+    badge: '速看',
+  },
+  {
+    id: 'm19',
+    cat: '漫画冲击',
+    name: '网点人物剪影',
+    desc: '半色调侧脸剪影，人物分析',
+    variant: 'silhouette',
+    bg: '#FFFFFF',
+    frame: '#2D3436',
+    titleColor: '#1A1A1A',
+    textColor: '#333333',
+    accent: '#FF6B6B',
+    titleSize: 9.5,
+    textSize: 3.8,
+    layout: 'center',
+    align: 'left',
+    highlight: 'color',
+    badge: '人物',
+    showPage: true,
+  },
+  {
+    id: 'm20',
+    cat: '漫画冲击',
+    name: '手绘箭头指向',
+    desc: '大箭头指向中心关键词',
+    variant: 'arrow',
+    bg: '#FFF8E7',
+    frame: '#FF6B6B',
+    titleColor: '#2D3436',
+    textColor: '#5c5244',
+    accent: '#FF6B6B',
+    titleSize: 9.5,
+    textSize: 3.8,
+    layout: 'center',
+    highlight: 'circle',
+    badge: '看这里',
+  },
+  {
+    id: 'm21',
+    cat: '漫画冲击',
+    name: '声波冲击',
+    desc: '黑色声波线，节奏感',
+    variant: 'waveLines',
+    bg: '#FFFFFF',
+    frame: '#1A1A1A',
+    titleColor: '#1A1A1A',
+    textColor: '#333333',
+    accent: '#E63946',
+    titleSize: 10,
+    textSize: 3.8,
+    layout: 'center',
+    highlight: 'color',
+    badge: '声浪',
+    showPage: true,
+  },
+  {
+    id: 'm22',
+    cat: '漫画冲击',
+    name: '墨迹冲击',
+    desc: '墨迹晕染背景，手绘感',
+    variant: 'inkSplash',
+    bg: '#FFFFFF',
+    frame: '#1A1A1A',
+    titleColor: '#1A1A1A',
+    textColor: '#333333',
+    accent: '#E63946',
+    titleSize: 10,
+    textSize: 3.8,
+    layout: 'center',
+    highlight: 'color',
+    badge: '手绘',
+  },
+
+  // ---------- 三、渐变色彩系列 ----------
+  {
+    id: 'g21',
+    cat: '渐变色彩',
+    name: '日落渐变',
+    desc: '红黄青三色渐变，治愈',
+    variant: 'sunset',
+    bg: 'linear-gradient(135deg,#FF6B6B 0%,#FFD93D 50%,#4ECDC4 100%)',
+    titleColor: '#FFFFFF',
+    textColor: 'rgba(255,255,255,.94)',
+    accent: '#FFFFFF',
+    titleSize: 9.5,
+    textSize: 3.8,
+    layout: 'center',
+    highlight: 'block',
+    badge: '治愈',
+    showPage: true,
+  },
+  {
+    id: 'g22',
+    cat: '渐变色彩',
+    name: '霓虹深色',
+    desc: '黑底霓虹光晕 + 青色关键词',
+    variant: 'neon',
+    bg: '#0D0D0D',
+    frame: '#FF006E',
+    frame2: '#8338EC',
+    titleColor: '#FFFFFF',
+    textColor: '#c8c8d0',
+    accent: '#00F5D4',
+    glow: '#00F5D4',
+    titleSize: 9.5,
+    textSize: 3.8,
+    layout: 'center',
+    highlight: 'color',
+    badge: '赛博',
+  },
+  {
+    id: 'g23',
+    cat: '渐变色彩',
+    name: '莫兰迪渐变',
+    desc: '低饱和紫调，高级感',
+    variant: 'morandi',
+    bg: 'linear-gradient(160deg,#B8C0FF,#C8B6FF,#E7C6FF)',
+    titleColor: '#4A4E69',
+    textColor: '#5d6180',
+    accent: '#4A4E69',
+    titleSize: 9,
+    textSize: 3.8,
+    layout: 'center',
+    align: 'left',
+    highlight: 'color',
+    badge: '审美',
+    titleFont: 'sans',
+  },
+  {
+    id: 'g24',
+    cat: '渐变色彩',
+    name: '双色对角',
+    desc: '红青对角分割，二选一',
+    variant: 'diagonalSplit',
+    bg: 'linear-gradient(135deg,#FF6B6B 50%,#4ECDC4 50%)',
+    titleColor: '#FFFFFF',
+    textColor: 'rgba(255,255,255,.92)',
+    accent: '#FFD93D',
+    titleSize: 9.5,
+    textSize: 3.8,
+    layout: 'center',
+    highlight: 'color',
+    badge: '二选一',
+  },
+  {
+    id: 'g25',
+    cat: '渐变色彩',
+    name: '玻璃拟态',
+    desc: '渐变背景 + 毛玻璃卡片',
+    variant: 'glass',
+    bg: 'linear-gradient(150deg,#A8E6CF,#4ECDC4)',
+    titleColor: '#1F3D36',
+    textColor: '#2f6a5d',
+    accent: '#2E9E7B',
+    titleSize: 9.5,
+    textSize: 3.8,
+    layout: 'center',
+    highlight: 'color',
+    badge: '效率',
+  },
+  {
+    id: 'g26',
+    cat: '渐变色彩',
+    name: '噪点渐变',
+    desc: '黄红渐变 + 颗粒噪点',
+    variant: 'noise',
+    bg: 'linear-gradient(150deg,#FFD60A,#FF6B6B)',
+    titleColor: '#1A1A1A',
+    textColor: '#4a2b1a',
+    accent: '#1A1A1A',
+    titleSize: 9.5,
+    textSize: 3.8,
+    layout: 'center',
+    highlight: 'color',
+    badge: '复古',
+    showPage: true,
+  },
+  {
+    id: 'g28',
+    cat: '渐变色彩',
+    name: '条纹渐变',
+    desc: '45° 四色条纹 + 白底块',
+    variant: 'stripeBg',
+    bg: 'repeating-linear-gradient(45deg,#FF6B6B 0 12.5%,#FFD93D 12.5% 25%,#4ECDC4 25% 37.5%,#A8E6CF 37.5% 50%)',
+    titleColor: '#1A1A1A',
+    textColor: '#555555',
+    accent: '#FFFFFF',
+    titleSize: 9.5,
+    textSize: 3.8,
+    layout: 'center',
+    highlight: 'marker',
+    badge: '清单',
+  },
+  {
+    id: 'g29',
+    cat: '渐变色彩',
+    name: '极光渐变',
+    desc: '深空极光，梦幻科技',
+    variant: 'aurora',
+    bg: 'linear-gradient(160deg,#0B1026,#12203E)',
+    frame: '#00E5FF',
+    titleColor: '#FFFFFF',
+    textColor: '#c7d4e8',
+    accent: '#00E5FF',
+    glow: '#00E5FF',
+    titleSize: 9.5,
+    textSize: 3.8,
+    layout: 'center',
+    highlight: 'color',
+    badge: '极光',
+  },
+  {
+    id: 'g30',
+    cat: '渐变色彩',
+    name: '糖果渐变',
+    desc: '马卡龙渐变 + 白点糖霜',
+    variant: 'candy',
+    bg: 'linear-gradient(135deg,#FFB3BA,#FFDFBA,#FFFFBA,#BAFFC9)',
+    frame: '#FF6B9D',
+    titleColor: '#4A3B4E',
+    textColor: '#7a6a7e',
+    accent: '#FF6B9D',
+    titleSize: 9.5,
+    textSize: 3.8,
+    layout: 'center',
+    highlight: 'marker',
+    badge: '甜度满格',
+    showPage: true,
+  },
+
+  // ---------- 四、拼贴复古系列 ----------
+  {
+    id: 'p29',
+    cat: '拼贴复古',
+    name: '报纸拼贴',
+    desc: '米黄报纸 + 红色印章',
+    variant: 'newspaper',
+    bg: '#F5F0E1',
+    frame: '#E63946',
+    titleColor: '#1A1A1A',
+    textColor: '#4a443c',
+    accent: '#E63946',
+    titleSize: 10,
+    textSize: 3.8,
+    layout: 'center',
+    align: 'left',
+    highlight: 'circle',
+    badge: '深度',
+    titleFont: 'serif',
+  },
+  {
+    id: 'p30',
+    cat: '拼贴复古',
+    name: '复古票据',
+    desc: '虚线票据 + 编号日期',
+    variant: 'receipt',
+    bg: '#FFF8E7',
+    frame: '#8B7355',
+    titleColor: '#5D4E37',
+    textColor: '#6b5f47',
+    accent: '#8B7355',
+    titleSize: 9,
+    textSize: 3.8,
+    layout: 'center',
+    highlight: 'underline',
+    badge: 'NO.0001',
+    titleFont: 'type',
+  },
+  {
+    id: 'p31',
+    cat: '拼贴复古',
+    name: '杂志封面',
+    desc: '红标签 + 大标题 + 条形码',
+    variant: 'magazine',
+    bg: '#FFFFFF',
+    frame: '#E63946',
+    titleColor: '#1A1A1A',
+    textColor: '#555555',
+    accent: '#E63946',
+    titleSize: 11,
+    textSize: 3.8,
+    layout: 'center',
+    align: 'left',
+    highlight: 'color',
+    badge: 'FEATURE',
+  },
+  {
+    id: 'p33',
+    cat: '拼贴复古',
+    name: '胶带拼贴',
+    desc: '四角彩色胶带固定纸张',
+    variant: 'tape',
+    bg: '#FFFDF5',
+    frame: '#FF6B6B',
+    frame2: '#4ECDC4',
+    frame3: '#FFD93D',
+    titleColor: '#2D3436',
+    textColor: '#5c5244',
+    accent: '#FFD60A',
+    titleSize: 9.5,
+    textSize: 3.8,
+    layout: 'center',
+    highlight: 'marker',
+    badge: '手账',
+  },
+  {
+    id: 'p35',
+    cat: '拼贴复古',
+    name: '打字机风',
+    desc: '打字机字体 + 修正液重打',
+    variant: 'typewriter',
+    bg: '#F5F0E1',
+    frame: '#E63946',
+    titleColor: '#2D3436',
+    textColor: '#5c5548',
+    accent: '#E63946',
+    titleSize: 8.8,
+    textSize: 3.8,
+    layout: 'center',
+    highlight: 'correction',
+    badge: '打字机',
+    titleFont: 'type',
+  },
+  {
+    id: 'p36',
+    cat: '拼贴复古',
+    name: '邮票边框',
+    desc: '齿孔邮票 + 面值装饰',
+    variant: 'postage',
+    bg: '#FFD60A',
+    frame: '#1A1A1A',
+    titleColor: '#1A1A1A',
+    textColor: '#4a4100',
+    accent: '#1A1A1A',
+    titleSize: 9,
+    textSize: 3.8,
+    layout: 'center',
+    highlight: 'marker',
+    badge: '面值 8分',
+    rotate: -1.5,
+  },
+  {
+    id: 'p37',
+    cat: '拼贴复古',
+    name: '电影票根',
+    desc: '老电影票，票根虚线',
+    variant: 'cinemaTicket',
+    bg: '#F5F0E1',
+    frame: '#8B7355',
+    titleColor: '#5D4E37',
+    textColor: '#8a7a5f',
+    accent: '#E63946',
+    titleSize: 8,
+    textSize: 3.6,
+    layout: 'center',
+    highlight: 'underline',
+    badge: '电影',
+    titleFont: 'type',
+  },
+  {
+    id: 'p38',
+    cat: '拼贴复古',
+    name: '剪报拼贴',
+    desc: '三张剪报错落拼贴',
+    variant: 'scrapCollage',
+    bg: '#F5F0E1',
+    frame: '#FF6B6B',
+    frame2: '#4ECDC4',
+    titleColor: '#2D3436',
+    textColor: '#6b6357',
+    accent: '#FFD60A',
+    titleSize: 7.5,
+    textSize: 3.5,
+    layout: 'center',
+    highlight: 'marker',
+    badge: '剪报',
+  },
+  // ---------- 五、极简高级系列 ----------
+  {
+    id: 's37',
+    cat: '极简高级',
+    name: '大字留白',
+    desc: '超大关键词 + 大量留白',
+    variant: 'bigType',
+    bg: '#FFFFFF',
+    titleColor: '#1A1A1A',
+    textColor: '#8a8a8a',
+    accent: '#FF6B6B',
+    titleSize: 16,
+    textSize: 3.4,
+    layout: 'center',
+    highlight: 'none',
+    badge: '',
+  },
+  {
+    id: 's38',
+    cat: '极简高级',
+    name: '纯色反白',
+    desc: '黑底白字，仅一处黄',
+    variant: 'monoReverse',
+    bg: '#1A1A1A',
+    titleColor: '#FFFFFF',
+    textColor: '#b8b8b8',
+    accent: '#FFD60A',
+    titleSize: 10,
+    textSize: 3.8,
+    layout: 'center',
+    align: 'left',
+    highlight: 'color',
+    badge: '',
+  },
+  {
+    id: 's40',
+    cat: '极简高级',
+    name: '数字超大',
+    desc: '超大数字 + 居中文字',
+    variant: 'bigNumber',
+    bg: '#FFFFFF',
+    titleColor: '#1A1A1A',
+    textColor: '#555555',
+    accent: '#FF6B6B',
+    titleSize: 9,
+    textSize: 3.8,
+    layout: 'center',
+    highlight: 'none',
+    badge: '01',
+  },
+  {
+    id: 's42',
+    cat: '极简高级',
+    name: '网格系统',
+    desc: '浅网格 + 左上角标签',
+    variant: 'gridSystem',
+    bg: '#FFFFFF',
+    frame: '#EEEEEE',
+    titleColor: '#1A1A1A',
+    textColor: '#555555',
+    accent: '#FFD60A',
+    titleSize: 9.5,
+    textSize: 3.8,
+    layout: 'center',
+    align: 'left',
+    highlight: 'marker',
+    badge: '数据',
+  },
+  {
+    id: 's43',
+    cat: '极简高级',
+    name: '负空间造型',
+    desc: '超大问号负空间，创意',
+    variant: 'negativeSpace',
+    bg: '#FFD60A',
+    titleColor: '#1A1A1A',
+    textColor: '#4a4100',
+    accent: '#1A1A1A',
+    titleSize: 14,
+    textSize: 3.6,
+    layout: 'center',
+    highlight: 'none',
+    badge: '创意',
+  },
+  {
+    id: 's45',
+    cat: '极简高级',
+    name: '霓虹字牌',
+    desc: '霓虹发光大字',
+    variant: 'glowText',
+    bg: '#0B0B12',
+    frame: '#FF2E88',
+    titleColor: '#FFFFFF',
+    textColor: '#999999',
+    accent: '#00F5D4',
+    titleSize: 13,
+    textSize: 3.2,
+    layout: 'center',
+    highlight: 'none',
+    badge: '',
+  },
+  {
+    id: 's46',
+    cat: '极简高级',
+    name: '色块构成',
+    desc: '四角色块 + 居中文字',
+    variant: 'blockGrid',
+    bg: '#FFFFFF',
+    frame: '#FF6B6B',
+    titleColor: '#1A1A1A',
+    textColor: '#555555',
+    accent: '#FFD60A',
+    titleSize: 9.5,
+    textSize: 3.8,
+    layout: 'center',
+    highlight: 'marker',
+    badge: '构成',
+  },
+  {
+    id: 's47',
+    cat: '极简高级',
+    name: '轮廓大字',
+    desc: '描边空心字，设计感',
+    variant: 'outlineText',
+    bg: '#FFFFFF',
+    frame: '#FF2442',
+    titleColor: '#1A1A1A',
+    textColor: '#8a8a8a',
+    accent: '#FF2442',
+    titleSize: 14,
+    textSize: 3.2,
+    layout: 'center',
+    highlight: 'none',
+    badge: '',
+  },
+  {
+    id: 's48',
+    cat: '极简高级',
+    name: '蓝图',
+    desc: '工程蓝图纸，理性感',
+    variant: 'blueprint',
+    bg: '#0B3D91',
+    frame: '#FFFFFF',
+    titleColor: '#FFFFFF',
+    textColor: 'rgba(255,255,255,.78)',
+    accent: '#FFD60A',
+    titleSize: 9.5,
+    textSize: 3.8,
+    layout: 'center',
+    highlight: 'color',
+    badge: '蓝图',
+  },
+];
+
+export function coverThumbStyle(t: StickerCoverTemplate, extra?: CSSProperties): CSSProperties {
+  return {
+    width: '100%',
+    aspectRatio: '3 / 4',
+    borderRadius: 12,
+    boxSizing: 'border-box',
+    position: 'relative',
+    overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column',
+    background: t.bg,
+    ...extra,
+  };
+}
+
+export function buildCoverRenderDesign(
+  t: StickerCoverTemplate,
+  title: string,
+  text: string,
+): { width: number; height: number; bg: string; layers: Array<{ text: string; x: number; y: number; size: number; color: string; bold: boolean }> } {
+  const lines = text
+    .split('\n')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const desc = (lines[0] || '').slice(0, 36);
+  const mainY = t.layout === 'top' ? 26 : t.layout === 'bottom' ? 60 : 42;
+  const subY = t.layout === 'top' ? 46 : t.layout === 'bottom' ? 80 : 60;
+  const layers: Array<{ text: string; x: number; y: number; size: number; color: string; bold: boolean }> = [
+    { text: (title || '贴图标题').slice(0, 18), x: 50, y: mainY, size: (t.titleSize / 100) * 900, color: t.titleColor, bold: true },
+  ];
+  if (desc) {
+    layers.push({ text: desc, x: 50, y: subY, size: (t.textSize / 100) * 900, color: t.textColor, bold: false });
+  }
+  if (t.badge) {
+    layers.push({ text: t.badge, x: 50, y: 90, size: (2.6 / 100) * 900, color: t.accent, bold: false });
+  }
+  return {
+    width: 900,
+    height: 1200,
+    bg: t.bg.startsWith('linear-gradient') || t.bg.startsWith('radial-gradient') ? t.bg : t.bg,
+    layers,
+  };
+}

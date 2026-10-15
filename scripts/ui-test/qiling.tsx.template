@@ -1,0 +1,62 @@
+import React,{useEffect,useState} from 'react';
+import {createRoot} from 'react-dom/client';
+import AiConfig from '../../src/pages/AiConfig';
+import {ArticleEditor} from '../../src/features/article-studio/ArticleEditor';
+import {useArticleStudio} from '../../src/features/article-studio/useArticleStudio';
+import {ArticleWorkspaceProvider} from '../../src/features/article-studio/workspace-context';
+import {Toaster} from '../../src/components/ui/sonner';
+import {ConfirmationHost} from '../../src/components/shared/controls';
+import '../../src/ui.css';import '../../src/styles.css';import '../../src/workspace.css';
+const state=window as any;
+state.__calls=[];
+state.__config={ok:true,service:'custom',baseUrl:'https://custom.invalid/chat',model:'custom-model',hasApiKey:true,qilingConfigured:false,qilingModel:''};
+state.__models=[{code:'text-live',name:'动态文本',maxTokens:100000,pricing:{input:'1.25',output:'2.50'}}];
+state.__job=null;state.__complete=false;state.__authReady=false;
+window.wangaohui=new Proxy({} as any,{get:(_,name:string)=>{
+ if(name.startsWith('on'))return()=>()=>{};
+ return async(payload:any={})=>{
+  state.__calls.push({name,payload});
+  if(name==='appVersion')return '1.0.2';
+  if(name==='readAiConfig')return {...state.__config};
+  if(name==='qilingAuthStart')return {ok:true,status:'pending',interval:3000};
+  if(name==='qilingAuthCancel')return {ok:true};
+  if(name==='qilingAuthPoll'){
+   if(!state.__authReady)return {ok:true,status:'pending',interval:3000};
+   state.__config={...state.__config,service:'qiling',qilingConfigured:true};
+   return {ok:true,status:'authorized',models:state.__models};
+  }
+  if(name==='qilingConnect'){
+   state.__config={...state.__config,service:'qiling',qilingConfigured:true};
+   return {ok:true,models:state.__models,config:state.__config};
+  }
+  if(name==='qilingModels')return {ok:true,models:state.__models};
+  if(name==='qilingSelectModel'){
+   state.__config={...state.__config,service:'qiling',qilingModel:payload.model,qilingMaxTokens:payload.maxTokens,qilingMaxFee:payload.maxFee,qilingBudgetConfigured:true};return {ok:true,models:state.__models,config:state.__config};
+  }
+  if(name==='saveAiConfig'){state.__config={...state.__config,...payload,hasApiKey:true,service:'custom'};return {ok:true};}
+  if(name==='qilingRemovePrice')return {ok:true,enabled:true,price:'0.25',freeQuota:2,balance:'9.5'};
+  if(name==='qilingRemoveGet')return {ok:true,job:state.__job?structuredClone(state.__job):null};
+  if(name==='qilingRemoveStart'){
+   state.__job={id:'job-ui',state:'running',source:payload.text,parts:[{source:payload.text,status:'processing',taskId:'task-ui',charged:'0.25'}]};
+   return {ok:true,job:structuredClone(state.__job)};
+  }
+  if(name==='qilingRemovePoll'){
+   if(state.__complete){state.__job={...state.__job,state:'completed',candidate:'# 候选标题\n\n候选正文'};state.__job.parts[0].status='completed';}
+   return {ok:true,job:structuredClone(state.__job)};
+  }
+  if(name==='qilingRemovePause'){
+   if(state.__job?.state==='running')state.__job.state='paused';return {ok:true,job:structuredClone(state.__job)};
+  }
+  if(name==='qilingRemoveResume'){state.__job.state='running';return {ok:true,job:structuredClone(state.__job)};}
+  if(name==='qilingRemoveAdopt'){state.__job.state='adopted';return {ok:true,job:structuredClone(state.__job)};}
+  return {ok:true,entries:[],orders:[],files:[],images:[],accounts:[]};
+ };
+}});
+const nativeFetch=window.fetch.bind(window);
+window.fetch=async(input,options)=>String(input).includes('159.75.139.210')?new Response(JSON.stringify({code:0,data:[],meta:{total:0,page:1,page_size:12}}),{headers:{'Content-Type':'application/json'}}):nativeFetch(input,options);
+function Editor(){const workspace=useArticleStudio();state.__editor=workspace;
+ useEffect(()=>{workspace.loadArticle({id:'ui-original',title:'生活中的三个发现',templateId:'t1',time:new Date().toISOString(),status:'待发布',blocks:[{id:'title-ui',type:'title',text:'生活中的三个发现'},{id:'p-ui',type:'p',text:'原文正文记录了生活中的细节，也保留了用户自己写下的观点。'},{id:'image-ui',type:'image',text:'原图',src:'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"/>')}]} as any);},[]);
+ return <ArticleWorkspaceProvider value={workspace}><ArticleEditor/></ArticleWorkspaceProvider>;
+}
+function Harness(){const [screen,setScreen]=useState('config');return <><nav><button onClick={()=>setScreen('config')}>配置页</button><button onClick={()=>setScreen('editor')}>编辑页</button></nav><main className="app-content">{screen==='config'?<AiConfig active/>:<Editor/>}</main><Toaster/><ConfirmationHost/></>;}
+createRoot(document.getElementById('root')!).render(<React.StrictMode><Harness/></React.StrictMode>);
