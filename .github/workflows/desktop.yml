@@ -80,6 +80,7 @@ jobs:
           codesign --verify --deep --strict --verbose=2 "$app"
           codesign -dv "$app" 2>&1 | grep 'Signature=adhoc'
           node scripts/verify-package.cjs "$app/Contents/Resources/app.asar"
+          WGH_TEST_APP_ASAR="$app/Contents/Resources/app.asar" npx electron scripts/qiling-check.cjs
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: mac-${{ matrix.arch }}
@@ -122,6 +123,10 @@ jobs:
             if ($signature.Status -ne 'NotSigned') { throw "Expected unsigned package: $($file.Name)" }
           }
           node scripts/verify-package.cjs release/win-unpacked/resources/app.asar
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $env:WGH_TEST_APP_ASAR = (Resolve-Path release/win-unpacked/resources/app.asar).Path
+          npx electron scripts/qiling-check.cjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: windows-x64

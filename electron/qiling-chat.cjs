@@ -79,7 +79,7 @@ function createQilingChat({ directory, api = createQilingApi() }) {
             temperature,
           },
         };
-        const quote = await api.request("/api/v1/open/models/estimate", {
+        const quote = await api.request("/v1/models/estimate", {
           key: env.key,
           signal: env.signal,
           method: "POST",
@@ -95,30 +95,33 @@ function createQilingChat({ directory, api = createQilingApi() }) {
         write(latest);
         submitted = true;
         const data = await api.request(CHAT_PATH, options);
+        const details = data.qiling || {};
+        const choice = data.choices?.[0];
         patch({
-          status: data.status || "unknown",
-          id: data.id,
-          fee: data.billing?.fee,
-          finishReason: data.usage?.finish_reason,
-          outputTokens: data.usage?.output_tokens,
-          reasoningTokens: data.usage?.reasoning_tokens,
+          status: details.status || "unknown",
+          id: details.id,
+          fee: details.billing?.fee,
+          finishReason: choice?.finish_reason,
+          outputTokens: data.usage?.completion_tokens,
+          reasoningTokens: data.usage?.completion_tokens_details?.reasoning_tokens,
         });
+        const errorMessage = data.error?.message || data.error;
         const failureDetail =
-          typeof data.error === "string"
-            ? data.error
+          typeof errorMessage === "string"
+            ? errorMessage
                 .split(env.key)
                 .join("[已隐藏]")
                 .replace(/qk_[A-Za-z0-9_-]+/g, "[已隐藏]")
                 .slice(0, 300)
             : "";
-        if (data.status !== "succeeded")
+        if (details.status !== "succeeded")
           throw fault(
-            `器灵调用${data.status === "failed" ? "失败" : "待核对"}${failureDetail ? `：${failureDetail}` : ""}，请查看使用记录。请求号：${requestId}`,
+            `器灵调用${details.status === "failed" ? "失败" : "待核对"}${failureDetail ? `：${failureDetail}` : ""}，请查看使用记录。请求号：${requestId}`,
             "QILING_REVIEW",
           );
         if (
-          typeof data.data?.content !== "string" ||
-          !data.data.content.trim()
+          typeof choice?.message?.content !== "string" ||
+          !choice.message.content.trim()
         ) {
           patch({ status: "review" });
           throw fault(
@@ -126,7 +129,7 @@ function createQilingChat({ directory, api = createQilingApi() }) {
             "QILING_REVIEW",
           );
         }
-        return data.data.content.trim();
+        return choice.message.content.trim();
       } catch (error) {
         if (submitted && error.code !== "QILING_REVIEW")
           patch({
