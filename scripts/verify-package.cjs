@@ -1,9 +1,10 @@
 "use strict";
 const assert = require("assert/strict");
+const path = require("path");
 const { listPackage, extractFile } = require("@electron/asar");
 const archive = process.argv[2];
 if (!archive) throw Error("Usage: node scripts/verify-package.cjs <app.asar>");
-const files = listPackage(archive).map((name) => name.replace(/^\//, ""));
+const files = listPackage(archive).map((name) => name.replace(/\\/g, "/").replace(/^\//, ""));
 const forbidden = files.filter(
   (name) =>
     !name.startsWith("node_modules/") &&
@@ -26,7 +27,7 @@ for (const name of appFiles) {
   if (!/\.(?:cjs|js|json|css|html|md)$/.test(name)) continue;
   let text;
   try {
-    text = extractFile(archive, name).toString("utf8");
+    text = extractFile(archive, path.normalize(name)).toString("utf8");
   } catch {
     continue;
   }
