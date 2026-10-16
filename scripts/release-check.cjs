@@ -14,7 +14,7 @@ const workflow = yaml.load(
 assert.equal(pkg.build.publish.provider, "github");
 assert.equal(pkg.build.publish.owner, "Anning01");
 assert.equal(pkg.build.publish.repo, "AIMedia");
-assert.equal(pkg.build.win.forceCodeSigning, true);
+assert.equal(pkg.build.win.forceCodeSigning, false);
 assert.equal(pkg.build.mac.sign, "./build/mac-sign.cjs");
 assert.equal(pkg.build.mac.notarize, false);
 assert.equal(workflow.on.push.branches, undefined);
@@ -23,21 +23,16 @@ assert(Object.hasOwn(workflow.on, "workflow_dispatch"));
 assert(workflow.on.push.tags.includes("v*"));
 assert.equal(workflow.jobs.release.permissions.contents, "write");
 assert(workflow.jobs.release.needs.includes("windows"));
-assert(workflow.jobs.release.needs.includes("signing"));
 assert(workflow.jobs.release.if.includes("always()"));
 assert(workflow.jobs.release.if.includes("needs.mac.result == 'success'"));
-assert(workflow.jobs.release.if.includes("github.ref == 'refs/tags/v1.0.0'"));
-assert(workflow.jobs.release.if.includes("needs.windows.result == 'skipped'"));
-assert(workflow.jobs.signing.steps[0].run.includes('"$GITHUB_REF" != refs/tags/v1.0.0'));
+assert(workflow.jobs.release.if.includes("needs.windows.result == 'success'"));
+assert.equal(workflow.on.workflow_dispatch.inputs.platform.default, "all");
+assert(workflow.on.workflow_dispatch.inputs.platform.options.includes("windows"));
 const windowsBuild = workflow.jobs.windows.steps.find(
-  (step) => step.name === "Build signed Windows x64 installer",
+  (step) => step.name === "Build unsigned Windows x64 installer",
 );
-assert(windowsBuild.env.WIN_CSC_LINK.includes("secrets.WIN_CSC_LINK"));
-assert(
-  windowsBuild.env.WIN_CSC_KEY_PASSWORD.includes(
-    "secrets.WIN_CSC_KEY_PASSWORD",
-  ),
-);
+assert(windowsBuild.run.includes("-c.win.forceCodeSigning=false"));
+assert.equal(windowsBuild.env.CSC_IDENTITY_AUTO_DISCOVERY, "false");
 const fixture = path.join(
   __dirname,
   `../secret-scan-fixture-${process.pid}.txt`,
@@ -89,5 +84,5 @@ try {
   fs.rmSync(releaseFixture, { recursive: true, force: true });
 }
 console.log(
-  "PASS: release workflow, signed Windows guard, Mac signing hook, and secret scan rejection/redaction.",
+  "PASS: release workflow, unsigned Windows package, Mac signing hook, and secret scan rejection/redaction.",
 );

@@ -21,11 +21,11 @@
 | --- | --- |
 | Mac · Apple 芯片（M1 / M2 / M3 等） | 名称含 `mac-arm64` 的 `.dmg` |
 | Mac · Intel 芯片 | 名称含 `mac-x64` 的 `.dmg` |
-| Windows · 64 位 | 签名版准备中，后续补充 |
+| Windows · 64 位 | 名称含 `win-x64-Setup` 的 `.exe` |
 
 Mac 打开 DMG 后将应用拖入「应用程序」；Windows 双击安装程序，按提示安装。Mac 自签名版如被系统拦截，确认来源后在「系统设置 → 隐私与安全性」中允许打开。
 
-> 1.0.0 首先提供 Mac Apple Silicon 与 Intel 自签名版，Windows 签名版后续补充。下载附件以 Releases 为准。
+> 1.0.0 提供 Mac Apple Silicon / Intel 自签名版与 Windows x64 未签名版。Windows 首次运行可能出现 SmartScreen 提示，请确认下载来源。下载附件以 Releases 为准。
 
 ## 怎么使用
 

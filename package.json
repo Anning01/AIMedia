@@ -83,7 +83,7 @@
       "target": "nsis",
       "icon": "build/icon.png",
       "executableName": "whg",
-      "forceCodeSigning": true
+      "forceCodeSigning": false
     },
     "publish": {
       "provider": "github",
