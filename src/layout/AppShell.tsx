@@ -202,9 +202,11 @@ export default function AppShell({ page, onNavigate, children }: Props) {
                             : "text-muted-foreground hover:bg-muted/70 hover:text-foreground",
                         )}
                       >
-                        <span className="[&_svg]:size-[18px]">{item.icon}</span>
+                        <span className="flex size-5 shrink-0 items-center justify-center leading-none [&_svg]:block [&_svg]:size-[18px]">
+                          {item.icon}
+                        </span>
                         {!collapsed && (
-                          <span className="truncate">{item.label}</span>
+                          <span className="truncate leading-5">{item.label}</span>
                         )}
                       </button>
                     );

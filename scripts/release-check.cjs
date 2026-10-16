@@ -23,6 +23,12 @@ assert(Object.hasOwn(workflow.on, "workflow_dispatch"));
 assert(workflow.on.push.tags.includes("v*"));
 assert.equal(workflow.jobs.release.permissions.contents, "write");
 assert(workflow.jobs.release.needs.includes("windows"));
+assert(workflow.jobs.release.needs.includes("signing"));
+assert(workflow.jobs.release.if.includes("always()"));
+assert(workflow.jobs.release.if.includes("needs.mac.result == 'success'"));
+assert(workflow.jobs.release.if.includes("github.ref == 'refs/tags/v1.0.0'"));
+assert(workflow.jobs.release.if.includes("needs.windows.result == 'skipped'"));
+assert(workflow.jobs.signing.steps[0].run.includes('"$GITHUB_REF" != refs/tags/v1.0.0'));
 const windowsBuild = workflow.jobs.windows.steps.find(
   (step) => step.name === "Build signed Windows x64 installer",
 );
@@ -56,6 +62,31 @@ try {
   );
 } finally {
   fs.rmSync(fixture, { force: true });
+}
+const releaseFixture = fs.mkdtempSync(path.join(require("os").tmpdir(), "aimedia-release-"));
+try {
+  const input = path.join(releaseFixture, "artifacts");
+  for (const arch of ["arm64", "x64"]) {
+    const directory = path.join(input, `mac-${arch}`);
+    fs.mkdirSync(directory, { recursive: true });
+    const files = ["dmg", "zip"].map((ext) => {
+      const name = `AIMedia-${pkg.version}-mac-${arch}.${ext}`;
+      const data = Buffer.from(name);
+      fs.writeFileSync(path.join(directory, name), data);
+      return { url: name, size: data.length, sha512: require("crypto").createHash("sha512").update(data).digest("base64") };
+    });
+    fs.writeFileSync(path.join(directory, "latest-mac.yml"), yaml.dump({ version: pkg.version, files }));
+  }
+  const { prepareRelease } = require("./prepare-release.cjs");
+  const output = path.join(releaseFixture, "output");
+  prepareRelease(input, output);
+  const info = yaml.load(fs.readFileSync(path.join(output, "latest-mac.yml"), "utf8"));
+  assert.equal(info.files.length, 4);
+  assert.equal(fs.readFileSync(path.join(output, "SHA256SUMS.txt"), "utf8").trim().split("\n").length, 5);
+  fs.appendFileSync(path.join(input, "mac-arm64", `AIMedia-${pkg.version}-mac-arm64.dmg`), "corrupt");
+  assert.throws(() => prepareRelease(input, path.join(releaseFixture, "invalid")), /Invalid checksum/);
+} finally {
+  fs.rmSync(releaseFixture, { recursive: true, force: true });
 }
 console.log(
   "PASS: release workflow, signed Windows guard, Mac signing hook, and secret scan rejection/redaction.",

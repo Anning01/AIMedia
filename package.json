@@ -1,7 +1,7 @@
 {
   "name": "wangaohui",
   "private": true,
-  "version": "1.0.2",
+  "version": "1.0.0",
   "description": "万稿汇 - 面向创作者的内容生产与发布桌面工具",
   "main": "electron/main.cjs",
   "scripts": {

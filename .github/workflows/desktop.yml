@@ -51,7 +51,7 @@ jobs:
             echo 'ready=true' >> "$GITHUB_OUTPUT"
           else
             echo 'ready=false' >> "$GITHUB_OUTPUT"
-            if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            if [[ "$GITHUB_REF" == refs/tags/* && "$GITHUB_REF" != refs/tags/v1.0.0 ]]; then
               echo '::error::Windows signing certificate is required for a release. Configure WIN_CSC_LINK and WIN_CSC_KEY_PASSWORD.'
               exit 1
             fi
@@ -98,6 +98,7 @@ jobs:
           path: |
             release/*.dmg
             release/*.zip
+            release/latest-mac.yml
           if-no-files-found: error
           retention-days: 14
 
@@ -140,16 +141,29 @@ jobs:
           retention-days: 14
 
   release:
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: [mac, windows]
+    if: >-
+      always() && startsWith(github.ref, 'refs/tags/v') &&
+      needs.mac.result == 'success' && needs.signing.result == 'success' &&
+      (needs.windows.result == 'success' ||
+       (github.ref == 'refs/tags/v1.0.0' && needs.windows.result == 'skipped'))
+    needs: [mac, windows, signing]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           path: artifacts
-          merge-multiple: true
+      - name: Verify and collect release files
+        run: node scripts/prepare-release.cjs artifacts release-upload
       - name: Create release draft
         env:
           GH_TOKEN: ${{ github.token }}
@@ -157,5 +171,10 @@ jobs:
           RELEASE_TAG: ${{ github.ref_name }}
         shell: bash
         run: |
-          gh release create "$RELEASE_TAG" --verify-tag --draft --title "$RELEASE_TAG" --generate-notes
-          find artifacts -type f -print0 | xargs -0 gh release upload "$RELEASE_TAG"
+          notes="docs/releases/${RELEASE_TAG#v}.md"
+          if [[ -f "$notes" ]]; then
+            gh release create "$RELEASE_TAG" --verify-tag --draft --title "万稿汇 $RELEASE_TAG" --notes-file "$notes"
+          else
+            gh release create "$RELEASE_TAG" --verify-tag --draft --title "万稿汇 $RELEASE_TAG" --generate-notes
+          fi
+          find release-upload -type f -print0 | xargs -0 gh release upload "$RELEASE_TAG"
