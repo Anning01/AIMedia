@@ -25,7 +25,7 @@
 
 Mac 打开 DMG 后将应用拖入「应用程序」；Windows 双击安装程序，按提示安装。Mac 自签名版如被系统拦截，确认来源后在「系统设置 → 隐私与安全性」中允许打开。
 
-> 1.0.0 提供 Mac Apple Silicon / Intel 自签名版与 Windows x64 未签名版。Windows 首次运行可能出现 SmartScreen 提示，请确认下载来源。下载附件以 Releases 为准。
+> 1.0.1 已修复器灵一键授权的旧接口兼容问题，提供 Mac Apple Silicon / Intel 自签名版与 Windows x64 未签名版。Windows 首次运行可能出现 SmartScreen 提示，请确认下载来源。下载附件以 Releases 为准。
 
 ## 怎么使用
 

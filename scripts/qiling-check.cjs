@@ -6,10 +6,11 @@ const fs = require("fs"),
   assert = require("assert/strict");
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), "wgh-qiling-check-"));
 app.setPath("userData", directory);
-const config = require("../electron/ai-config.cjs");
-const { createQilingApi } = require("../electron/qiling-api.cjs");
-const { createQilingService } = require("../electron/qiling-service.cjs");
-const { createQilingChat } = require("../electron/qiling-chat.cjs");
+const source = process.env.WGH_TEST_APP_ASAR || path.join(__dirname, "..");
+const config = require(path.join(source, "electron/ai-config.cjs"));
+const { createQilingApi } = require(path.join(source, "electron/qiling-api.cjs"));
+const { createQilingService } = require(path.join(source, "electron/qiling-service.cjs"));
+const { createQilingChat } = require(path.join(source, "electron/qiling-chat.cjs"));
 let clock = 0,
   authStatus = "pending",
   taskStatus = "processing",
@@ -42,6 +43,12 @@ const server = http.createServer(async (req, res) => {
     return;
   }
   res.setHeader("Content-Type", "application/json");
+  // Production has removed the old model API. Mocks must reject it too.
+  if (req.url.startsWith("/api/v1/open/models") || req.url === "/api/v1/open/chat/completions") {
+    res.writeHead(404);
+    res.end(JSON.stringify({ detail: "Not Found" }));
+    return;
+  }
   let data = {};
   if (req.url.endsWith("/auth/api-key/requests"))
     data = {
@@ -70,9 +77,10 @@ const server = http.createServer(async (req, res) => {
             }
           : {}),
       };
-  } else if (req.url.endsWith("/models"))
+  } else if (req.url === "/v1/models")
     data = {
-      items: [
+      object: "list",
+      data: [
         {
           code: "dynamic-text",
           name: "动态文本",
@@ -93,7 +101,7 @@ const server = http.createServer(async (req, res) => {
         },
         { code: "no-image", name: "不展示图片", kind: "image", enabled: true },
         { code: "off", name: "已停用", kind: "text", enabled: false },
-      ],
+      ].map((item) => ({ id: item.code, object: "model", qiling: item })),
     };
   else if (req.url.endsWith("/models/estimate"))
     data = { estimated_fee: estimatedFee, currency: "CNY" };
@@ -112,24 +120,30 @@ const server = http.createServer(async (req, res) => {
   else if (req.url.endsWith("/chat/completions")) {
     if (apiStatus !== 200) {
       res.statusCode = apiStatus;
-      data = { detail: "余额不足 qk_test_user_key" };
+      data = { error: { message: "余额不足 qk_test_user_key", type: "invalid_request_error" } };
     } else
       data = {
-        id: 42,
-        request_id: body.request_id,
-        status: modelStatus,
-        usage: emptyText
-          ? {
-              finish_reason: "length",
-              output_tokens: 16384,
-              reasoning_tokens: 16384,
-            }
-          : {},
-        data: {
-          content: emptyText ? "" : "器灵文本响应",
-          reasoning_content: "这只是思考内容，不能作为正文",
+        id: "chatcmpl-42",
+        object: "chat.completion",
+        choices: [{
+          index: 0,
+          finish_reason: emptyText ? "length" : "stop",
+          message: {
+            role: "assistant",
+            content: emptyText ? "" : "器灵文本响应",
+            reasoning_content: "这只是思考内容，不能作为正文",
+          },
+        }],
+        usage: emptyText ? {
+          completion_tokens: 16384,
+          completion_tokens_details: { reasoning_tokens: 16384 },
+        } : {},
+        qiling: {
+          id: 42,
+          request_id: body.request_id,
+          status: modelStatus,
+          billing: { fee: "0.00123" },
         },
-        billing: { fee: "0.00123" },
       };
   } else if (req.url.endsWith("/remove-ai"))
     data = {
@@ -182,6 +196,8 @@ app.whenReady().then(async () => {
     let service = create();
     const first = await service.startAuth(1);
     assert.equal(first.status, "pending");
+    assert.equal(calls.at(-1).path, "/api/v1/auth/api-key/requests");
+    assert(!calls.at(-1).auth && !calls.at(-1).key);
     assert(!JSON.stringify(first).includes("device"));
     assert.deepEqual(calls.at(-1).body, { client_name: "万稿汇" });
     assert(opened[0].includes("browser-code"));
@@ -214,6 +230,9 @@ app.whenReady().then(async () => {
     authStatus = "authorized";
     clock += 3000;
     assert.equal((await service.pollAuth(4)).status, "authorized");
+    assert.equal(calls.at(-1).path, "/v1/models");
+    assert.equal(calls.at(-1).auth, "Bearer qk_test_user_key");
+    assert(!calls.at(-1).key);
     const afterClaim = calls.length;
     await service.pollAuth(4);
     assert.equal(calls.length, afterClaim, "Key only claimed once");
@@ -425,9 +444,10 @@ app.whenReady().then(async () => {
     assert.equal(await chat(messages, env, 0.3), "器灵文本响应");
     assert.equal(calls.at(-1).body.max_tokens, 1200);
     assert(calls.at(-1).body.request_id.startsWith("business-1-"));
-    assert(!calls.at(-1).auth);
+    assert.equal(calls.at(-1).path, "/v1/chat/completions");
+    assert.equal(calls.at(-1).auth, "Bearer qk_test_user_key");
     assert(!calls.at(-1).app);
-    assert.equal(calls.at(-1).key, "qk_test_user_key");
+    assert(!calls.at(-1).key);
     await assert.rejects(
       chat(
         [{ role: "user", content: "模拟网络重试" }],
@@ -520,6 +540,8 @@ app.whenReady().then(async () => {
     assert(journal.some((row) => row.fee === "0.00123"));
     assert(!JSON.stringify(journal).includes("qk_test_user_key"));
     const price = await service.price();
+    assert.equal(calls.at(-1).key, "qk_test_user_key");
+    assert(!calls.at(-1).auth);
     assert.equal(price.price, "0.25");
     assert.equal(price.balance, "25.50");
     await assert.rejects(

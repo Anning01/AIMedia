@@ -1,6 +1,6 @@
 "use strict";
 const BASE = "https://toolsoul.daniu7.cn";
-const CHAT_PATH = "/api/v1/open/chat/completions";
+const CHAT_PATH = "/v1/chat/completions";
 function isQilingUrl(value) {
   try {
     return new URL(value).origin === BASE;
@@ -23,7 +23,11 @@ function createQilingApi({
         method,
         headers: {
           "Content-Type": "application/json",
-          ...(key ? { "x-api-key": key } : {}),
+          ...(key
+            ? path.startsWith("/v1/")
+              ? { Authorization: `Bearer ${key}` }
+              : { "x-api-key": key }
+            : {}),
         },
         ...(body ? { body: JSON.stringify(body) } : {}),
         signal: signal
@@ -63,7 +67,7 @@ function createQilingApi({
       const detail =
         typeof data.detail === "string"
           ? data.detail
-          : data.message || `HTTP ${response.status}`;
+          : data.error?.message || data.message || `HTTP ${response.status}`;
       const message =
         response.status === 402
           ? "器灵调用余额不足，请充值后再操作"
@@ -94,9 +98,10 @@ function createQilingApi({
     return data;
   }
   async function models(key, signal) {
-    const data = await request("/api/v1/open/models", { key, signal });
-    if (!Array.isArray(data.items)) throw fault("器灵模型清单格式异常");
-    return data.items
+    const data = await request("/v1/models", { key, signal });
+    if (!Array.isArray(data.data)) throw fault("器灵模型清单格式异常");
+    return data.data
+      .map((item) => ({ ...item.qiling, code: item.id }))
       .filter((item) => item.kind === "text" && item.enabled === true)
       .map((item) => ({
         code: item.code,
