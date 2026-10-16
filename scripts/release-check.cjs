@@ -34,6 +34,23 @@ const windowsBuild = workflow.jobs.windows.steps.find(
 assert(windowsBuild.run.includes("--config.win.forceCodeSigning=false"));
 assert.equal(windowsBuild.shell, "bash");
 assert.equal(windowsBuild.env.CSC_IDENTITY_AUTO_DISCOVERY, "false");
+for (const platformPath of [path.posix, path.win32]) {
+  const readFiles = [];
+  require("vm").runInThisContext("(function(require, process, console) {" + fs.readFileSync(path.join(__dirname, "verify-package.cjs"), "utf8") + "\n})")(
+    function(name) {
+      if (name === "path") return platformPath;
+      if (name === "@electron/asar") return {
+        listPackage: () => ["electron/main.cjs", "dist/index.html", "dist/assets/app.js"].map((file) => platformPath.sep + platformPath.normalize(file)),
+        extractFile(_archive, file) { readFiles.push(file); return Buffer.from("safe fixture"); },
+      };
+      return require(name);
+    },
+    { argv: ["node", "verify-package.cjs", "fixture.asar"] },
+    { log() {} },
+  );
+  assert(readFiles.includes(platformPath.normalize("electron/main.cjs")));
+  assert(readFiles.includes(platformPath.normalize("dist/assets/app.js")));
+}
 const fixture = path.join(
   __dirname,
   `../secret-scan-fixture-${process.pid}.txt`,
