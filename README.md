@@ -75,7 +75,19 @@ Mac 打开 DMG 后将应用拖入「应用程序」；Windows 双击安装程序
 
 交流写作、改文与排版经验，反馈问题，获取版本消息。欢迎一起把万稿汇做得更好。
 
-**微信群二维码待补充。**
+<img src="docs/wechat.png">
+
+## Star History
+
+<p align="center">
+  <a href="https://www.star-history.com/#Anning01/AIMedia&Date">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=Anning01/AIMedia&amp;type=Date&amp;theme=dark">
+      <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=Anning01/AIMedia&amp;type=Date">
+      <img src="https://api.star-history.com/svg?repos=Anning01/AIMedia&amp;type=Date" width="920" alt="万稿汇 AIMedia GitHub Star 增长曲线">
+    </picture>
+  </a>
+</p>
 
 ---
 
