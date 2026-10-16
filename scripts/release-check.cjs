@@ -31,7 +31,8 @@ assert(workflow.on.workflow_dispatch.inputs.platform.options.includes("windows")
 const windowsBuild = workflow.jobs.windows.steps.find(
   (step) => step.name === "Build unsigned Windows x64 installer",
 );
-assert(windowsBuild.run.includes("-c.win.forceCodeSigning=false"));
+assert(windowsBuild.run.includes("--config.win.forceCodeSigning=false"));
+assert.equal(windowsBuild.shell, "bash");
 assert.equal(windowsBuild.env.CSC_IDENTITY_AUTO_DISCOVERY, "false");
 const fixture = path.join(
   __dirname,
