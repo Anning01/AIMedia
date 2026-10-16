@@ -105,9 +105,12 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Build unsigned Windows x64 installer
+        shell: bash
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
-        run: npm run dist:win -- -c.win.forceCodeSigning=false
+        run: |
+          npm run build
+          npx electron-builder --win nsis --x64 --publish never --config.win.forceCodeSigning=false
       - name: Verify installer and executable
         shell: pwsh
         run: |
