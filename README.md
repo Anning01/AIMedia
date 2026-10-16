@@ -62,14 +62,36 @@ Mac 打开 DMG 后将应用拖入「应用程序」；Windows 双击安装程序
 
 万稿汇的「去 AI 味」接入与 **[qiling-humanize](https://github.com/qilingAI/qiling-humanize)** 相同的器灵改文服务。欢迎拿同一篇原文，与其他改写工具直接对比。
 
-以下为该项目公开的腾讯朱雀检测案例：
+### 腾讯朱雀实测
 
-| 公开案例 | AI 特征：改前 → 改后 | 人工特征：改前 → 改后 |
-| --- | --- | --- |
-| [重新认识阅读](https://github.com/qilingAI/qiling-humanize/tree/main/examples/reading) | **65.17% → 0%** | **0% → 100%** |
-| [青少年媒介素养](https://github.com/qilingAI/qiling-humanize/tree/main/examples/media-literacy) | **49.02% → 0%** | **0% → 79.02%** |
+同一篇文章，改前改后直接对比。以下为 [qiling-humanize 公开案例](https://github.com/qilingAI/qiling-humanize#腾讯朱雀实测)，两篇改文的检测结论均为 **「人工创作特征显著」**。
 
-两篇公开案例的检测结论均为「人工创作特征显著」。[查看完整原文、改文和检测截图](https://github.com/qilingAI/qiling-humanize#腾讯朱雀实测)，也欢迎用自己的文章体验。以上为项目方提供的案例，具体效果随文本与检测工具而异。
+| 案例 | AI 特征：改前 → 改后 | 疑似 AI：改前 → 改后 | 人工特征：改前 → 改后 |
+| --- | --- | --- | --- |
+| 重新认识阅读 | 65.17% → **0%** | 34.83% → **0%** | 0% → **100%** |
+| 青少年媒介素养 | 49.02% → **0%** | 50.98% → **20.98%** | 0% → **79.02%** |
+
+#### 01 · 重新认识阅读
+
+**AI 特征降至 0%，人工特征达到 100%。**
+
+| 改写前 | 器灵改写后 |
+| :---: | :---: |
+| <a href="https://raw.githubusercontent.com/qilingAI/qiling-humanize/main/examples/reading/before.png"><img src="https://raw.githubusercontent.com/qilingAI/qiling-humanize/main/examples/reading/before.png" width="440" alt="重新认识阅读：改写前腾讯朱雀检测结果"></a> | <a href="https://raw.githubusercontent.com/qilingAI/qiling-humanize/main/examples/reading/after.png"><img src="https://raw.githubusercontent.com/qilingAI/qiling-humanize/main/examples/reading/after.png" width="440" alt="重新认识阅读：器灵改写后腾讯朱雀检测结果"></a> |
+
+[阅读原文](https://github.com/qilingAI/qiling-humanize/blob/main/examples/reading/before.md) · [阅读改文](https://github.com/qilingAI/qiling-humanize/blob/main/examples/reading/after.md)
+
+#### 02 · 青少年媒介素养
+
+**AI 特征降至 0%，人工特征提升至 79.02%。**
+
+| 改写前 | 器灵改写后 |
+| :---: | :---: |
+| <a href="https://raw.githubusercontent.com/qilingAI/qiling-humanize/main/examples/media-literacy/before.png"><img src="https://raw.githubusercontent.com/qilingAI/qiling-humanize/main/examples/media-literacy/before.png" width="440" alt="青少年媒介素养：改写前腾讯朱雀检测结果"></a> | <a href="https://raw.githubusercontent.com/qilingAI/qiling-humanize/main/examples/media-literacy/after.png"><img src="https://raw.githubusercontent.com/qilingAI/qiling-humanize/main/examples/media-literacy/after.png" width="440" alt="青少年媒介素养：器灵改写后腾讯朱雀检测结果"></a> |
+
+[阅读原文](https://github.com/qilingAI/qiling-humanize/blob/main/examples/media-literacy/before.md) · [阅读改文](https://github.com/qilingAI/qiling-humanize/blob/main/examples/media-literacy/after.md)
+
+<sub>截图与数据由器灵提供，截图中朱雀模型更新时间为 2026-07-21。案例效果随文本与检测工具而异。点击截图可查看大图，亦可前往 <a href="https://matrix.tencent.com/ai-detect/ai_gen">腾讯朱雀</a> 自行复测。</sub>
 
 ## 加入微信交流群
 
