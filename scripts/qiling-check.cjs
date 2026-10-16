@@ -6,7 +6,7 @@ const fs = require("fs"),
   assert = require("assert/strict");
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), "wgh-qiling-check-"));
 app.setPath("userData", directory);
-const source = process.env.WGH_TEST_APP_ASAR || path.join(__dirname, "..");
+const source = path.resolve(process.env.WGH_TEST_APP_ASAR || path.join(__dirname, ".."));
 const config = require(path.join(source, "electron/ai-config.cjs"));
 const { createQilingApi } = require(path.join(source, "electron/qiling-api.cjs"));
 const { createQilingService } = require(path.join(source, "electron/qiling-service.cjs"));
