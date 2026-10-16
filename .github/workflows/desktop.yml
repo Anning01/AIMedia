@@ -4,6 +4,16 @@ on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      platform:
+        description: Platforms to build
+        type: choice
+        options: [all, windows]
+        default: all
+      source_ref:
+        description: Optional source tag or commit
+        type: string
+        default: ''
 
 permissions:
   contents: read
@@ -19,6 +29,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+          ref: ${{ inputs.source_ref || github.ref }}
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
@@ -34,32 +45,8 @@ jobs:
           RELEASE_TAG: ${{ github.ref_name }}
         run: node -e "if(process.env.RELEASE_TAG!=='v'+require('./package.json').version)throw Error('Release tag must match package.json version')"
 
-  signing:
-    if: github.event_name != 'pull_request'
-    runs-on: ubuntu-24.04
-    outputs:
-      windows-ready: ${{ steps.check.outputs.ready }}
-    steps:
-      - name: Check Windows signing credentials
-        id: check
-        env:
-          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
-          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
-        shell: bash
-        run: |
-          if [[ -n "$WIN_CSC_LINK" && -n "$WIN_CSC_KEY_PASSWORD" ]]; then
-            echo 'ready=true' >> "$GITHUB_OUTPUT"
-          else
-            echo 'ready=false' >> "$GITHUB_OUTPUT"
-            if [[ "$GITHUB_REF" == refs/tags/* && "$GITHUB_REF" != refs/tags/v1.0.0 ]]; then
-              echo '::error::Windows signing certificate is required for a release. Configure WIN_CSC_LINK and WIN_CSC_KEY_PASSWORD.'
-              exit 1
-            fi
-            echo '::warning::Windows signed package skipped: certificate secrets have not been configured. No unsigned Windows package will be published.'
-          fi
-
   mac:
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && inputs.platform != 'windows'
     needs: verify
     strategy:
       fail-fast: false
@@ -76,6 +63,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+          ref: ${{ inputs.source_ref || github.ref }}
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
@@ -103,31 +91,32 @@ jobs:
           retention-days: 14
 
   windows:
-    needs: [verify, signing]
-    if: github.event_name != 'pull_request' && needs.signing.outputs.windows-ready == 'true'
+    needs: verify
+    if: github.event_name != 'pull_request'
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+          ref: ${{ inputs.source_ref || github.ref }}
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - name: Build signed Windows x64 installer
+      - name: Build unsigned Windows x64 installer
         env:
-          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
-          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
-        run: npm run dist:win
-      - name: Verify installer and executable signatures
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: npm run dist:win -- -c.win.forceCodeSigning=false
+      - name: Verify installer and executable
         shell: pwsh
         run: |
           $files = @(Get-ChildItem release -Filter '*Setup.exe') + @(Get-Item release/win-unpacked/whg.exe)
           if ($files.Count -lt 2) { throw 'Missing installer or application executable' }
           foreach ($file in $files) {
+            if ($file.Length -eq 0) { throw "Empty package: $($file.Name)" }
             $signature = Get-AuthenticodeSignature $file.FullName
-            if ($signature.Status -ne 'Valid') { throw "Invalid Authenticode signature: $($file.Name)" }
+            if ($signature.Status -ne 'NotSigned') { throw "Expected unsigned package: $($file.Name)" }
           }
           node scripts/verify-package.cjs release/win-unpacked/resources/app.asar
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -143,10 +132,8 @@ jobs:
   release:
     if: >-
       always() && startsWith(github.ref, 'refs/tags/v') &&
-      needs.mac.result == 'success' && needs.signing.result == 'success' &&
-      (needs.windows.result == 'success' ||
-       (github.ref == 'refs/tags/v1.0.0' && needs.windows.result == 'skipped'))
-    needs: [mac, windows, signing]
+      needs.mac.result == 'success' && needs.windows.result == 'success'
+    needs: [mac, windows]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -154,6 +141,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+          ref: ${{ inputs.source_ref || github.ref }}
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
