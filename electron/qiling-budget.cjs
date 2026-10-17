@@ -53,10 +53,18 @@ function checkQuote(quote, maxFee) {
       "QILING_BUDGET",
     );
 }
+function validateThinking(mode, modes = []) {
+  if (mode === undefined || mode === "")
+    return modes.includes("disabled") ? "disabled" : modes[0] || "";
+  if (!["enabled", "disabled"].includes(mode) || !modes.includes(mode))
+    throw fault("当前模型不支持所选思考模式，请刷新模型并重新保存", "QILING_THINKING");
+  return mode;
+}
 module.exports = {
   API_TOKEN_LIMIT,
   DEFAULT_OUTPUT_TOKENS,
   DEFAULT_FEE_LIMIT,
   validateBudget,
   checkQuote,
+  validateThinking,
 };

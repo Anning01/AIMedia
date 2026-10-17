@@ -25,6 +25,7 @@ let taskCount = 0;
 let verificationUrl = "https://toolsoul.daniu7.cn/account/api-authorize?request=browser-code";
 let authorizationBaseUrl = "https://toolsoul.daniu7.cn";
 let authorizedKey = "qk_test_user_key";
+let thinkingSupported = true;
 const server = http.createServer(async (req, res) => {
   let raw = "";
   for await (const chunk of req) raw += chunk;
@@ -99,6 +100,8 @@ const server = http.createServer(async (req, res) => {
             max_output_tokens: 1200,
             input_price: "1.5",
             output_price: "2.1",
+            supports_thinking: false,
+            thinking_modes: ["enabled", "disabled"],
           },
         },
         {
@@ -106,7 +109,7 @@ const server = http.createServer(async (req, res) => {
           name: "第二个文本",
           kind: "text",
           enabled: true,
-          config: { max_output_tokens: 384000 },
+          config: { max_output_tokens: 384000, supports_thinking: thinkingSupported, thinking_modes: ["enabled", "disabled"] },
         },
         { code: "no-image", name: "不展示图片", kind: "image", enabled: true },
         { code: "off", name: "已停用", kind: "text", enabled: false },
@@ -286,6 +289,8 @@ app.whenReady().then(async () => {
       "manual and authorization have identical config",
     );
     assert.equal(manual.models.length, 2);
+    assert.deepEqual(manual.models.find((item) => item.code === "dynamic-text").thinkingModes, [], "explicit disabled capability overrides stale modes");
+    assert.deepEqual(manual.models.find((item) => item.code === "second-text").thinkingModes, ["enabled", "disabled"]);
     assert.equal(
       manual.models.find((model) => model.code === "second-text").maxTokens,
       100000,
@@ -549,6 +554,69 @@ app.whenReady().then(async () => {
     assert(!calls.at(-1).auth);
     assert.equal(price.price, "0.25");
     assert.equal(price.balance, "25.50");
+    for (const thinkingMode of ["disabled", "enabled"]) {
+      await service.selectModel("second-text", { maxTokens: 1200, maxFee: "0.50", thinkingMode });
+      assert.equal(config.publicConfig().qilingThinkingMode, thinkingMode);
+      assert.equal(config.runtimeConfig().QILING_THINKING_MODE, thinkingMode);
+      delete require.cache[require.resolve(path.join(source, "electron/ai-config.cjs"))];
+      const restarted = require(path.join(source, "electron/ai-config.cjs"));
+      assert.equal(restarted.runtimeConfig().QILING_THINKING_MODE, thinkingMode, "thinking selection survives restart");
+      const before = calls.length;
+      await chat([{ role: "user", content: `思考模式 ${thinkingMode} 验证` }], {
+        ...env, model: "second-text", requestId: `thinking-${thinkingMode}`,
+        thinkingMode: restarted.runtimeConfig().QILING_THINKING_MODE,
+        thinkingModes: restarted.runtimeConfig().QILING_THINKING_MODES,
+      }, 0.3);
+      const sent = calls.slice(before);
+      assert.deepEqual(sent.map((call) => call.path), ["/v1/models/estimate", "/v1/chat/completions"]);
+      assert.deepEqual(sent[0].body.request.thinking, { type: thinkingMode });
+      assert.deepEqual(sent[1].body.thinking, { type: thinkingMode });
+    }
+    const nativeFetch = global.fetch;
+    try {
+      global.fetch = (url, options) => {
+        const parsed = new URL(url);
+        assert.equal(parsed.origin, "https://toolsoul.daniu7.cn", "pipeline retains the configured model host");
+        return nativeFetch(`http://127.0.0.1:${server.address().port}${parsed.pathname}`, options);
+      };
+      const beforePipeline = calls.length;
+      const result = await require(path.join(source, "electron/pipeline.cjs")).runPipeline(
+        { sourceText: "思考模式生成管线验证", words: 300 },
+        { ...config.runtimeConfig(), AI_REQUEST_ID: "thinking-pipeline" },
+      );
+      assert.equal(result.chinese, "器灵文本响应");
+      const pipelineCalls = calls.slice(beforePipeline);
+      assert.deepEqual(pipelineCalls.map((call) => call.path), ["/v1/models/estimate", "/v1/chat/completions"]);
+      assert.deepEqual(pipelineCalls[0].body.request.thinking, { type: "enabled" });
+      assert.deepEqual(pipelineCalls[1].body.thinking, { type: "enabled" }, "persisted thinking reaches the actual article pipeline");
+    } finally {
+      global.fetch = nativeFetch;
+    }
+    await service.selectModel("second-text", { maxTokens: 1200, maxFee: "0.50" });
+    assert.equal(config.publicConfig().qilingThinkingMode, "disabled", "new supported-model settings explicitly default off");
+    const beforeUnsupported = calls.length;
+    await assert.rejects(chat([{ role: "user", content: "非法思考配置" }], {
+      ...env, thinkingMode: "enabled", thinkingModes: [],
+    }), (error) => error.code === "QILING_THINKING");
+    assert.equal(calls.length, beforeUnsupported, "unsupported thinking stops before estimate or generation");
+    await assert.rejects(service.selectModel("dynamic-text", {
+      maxTokens: 1200, maxFee: "0.50", thinkingMode: "enabled",
+    }), (error) => error.code === "QILING_THINKING");
+    thinkingSupported = false;
+    await assert.rejects(service.selectModel("second-text", {
+      maxTokens: 1200, maxFee: "0.50", thinkingMode: "enabled",
+    }), (error) => error.code === "QILING_THINKING");
+    thinkingSupported = true;
+    await service.selectModel("dynamic-text", { maxTokens: 1200, maxFee: "0.50" });
+    assert.equal(config.publicConfig().qilingThinkingMode, "", "switching to unsupported model clears thinking");
+    modelStatus = "unknown";
+    const thinkingUnknown = [{ role: "user", content: "思考开关不可绕过待核对" }];
+    const thinkingEnv = { ...env, model: "second-text", thinkingModes: ["enabled", "disabled"], thinkingMode: "enabled" };
+    await assert.rejects(chat(thinkingUnknown, { ...thinkingEnv, requestId: "thinking-unknown" }), (error) => error.code === "QILING_REVIEW");
+    const beforeModeRetry = calls.length;
+    await assert.rejects(chat(thinkingUnknown, { ...thinkingEnv, thinkingMode: "disabled", requestId: "thinking-toggle-retry" }), (error) => error.code === "QILING_REVIEW");
+    assert.equal(calls.length, beforeModeRetry, "changing thinking cannot repeat an unresolved paid request");
+    modelStatus = "succeeded";
     await assert.rejects(
       service.startRemove({ text: "文".repeat(2001) }, 1),
       /2000/,
@@ -777,7 +845,7 @@ app.whenReady().then(async () => {
       assert.equal(opened.length, browserCount, "unsafe browser schemes and credentials remain rejected");
     }
     console.log(
-      "PASS: main/site/custom-domain authorization, source persistence/switching, 404/409 no fallback, independent Key/API base, unsafe URL rejection; one-click/manual equivalence, cancellation, encrypted keys, model budgets, request journal and async remove-AI. No live paid calls.",
+      "PASS: main/site/custom-domain authorization, source persistence/switching, 404/409 no fallback, independent Key/API base, unsafe URL rejection; one-click/manual equivalence, cancellation, encrypted keys, thinking persistence/estimate/pipeline/unsupported modes, model budgets, request journal and async remove-AI. No live paid calls.",
     );
   } catch (error) {
     console.error(error);

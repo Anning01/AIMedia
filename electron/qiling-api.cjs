@@ -110,6 +110,9 @@ function createQilingApi({
           100000,
           Math.max(1, Number(item.config?.max_output_tokens) || 4096),
         ),
+        thinkingModes: item.config?.supports_thinking === true && Array.isArray(item.config.thinking_modes)
+          ? [...new Set(item.config.thinking_modes.filter((mode) => ["enabled", "disabled"].includes(mode)))]
+          : [],
         pricing: item.config
           ? {
               input: item.config.input_price,

@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const { randomUUID, createHash } = require("crypto");
 const { createQilingApi, CHAT_PATH, fault } = require("./qiling-api.cjs");
-const { validateBudget, checkQuote } = require("./qiling-budget.cjs");
+const { validateBudget, checkQuote, validateThinking } = require("./qiling-budget.cjs");
 function createQilingChat({ directory, api = createQilingApi() }) {
   const file = path.join(directory, "qiling-model-requests.json"),
     inflight = new Map();
@@ -25,6 +25,7 @@ function createQilingChat({ directory, api = createQilingApi() }) {
     if (!env.key) throw fault("请先授权器灵或配置器灵 API Key");
     if (!env.model) throw fault("请在 AI 配置中选择一个器灵文本模型");
     const budget = validateBudget(env.maxTokens, env.feeLimit, env.modelLimit);
+    const thinkingMode = validateThinking(env.thinkingMode, env.thinkingModes);
     const hash = createHash("sha256")
       .update(JSON.stringify([env.key, env.model, messages, temperature]))
       .digest("hex");
@@ -77,6 +78,7 @@ function createQilingChat({ directory, api = createQilingApi() }) {
             messages,
             max_tokens: budget.maxTokens,
             temperature,
+            ...(thinkingMode ? { thinking: { type: thinkingMode } } : {}),
           },
         };
         const quote = await api.request("/v1/models/estimate", {
@@ -90,6 +92,7 @@ function createQilingChat({ directory, api = createQilingApi() }) {
         record.maxTokens = budget.maxTokens;
         record.maxFee = budget.maxFee;
         record.estimatedFee = quote.estimated_fee;
+        record.thinkingMode = thinkingMode;
         const latest = read();
         latest.push(record);
         write(latest);

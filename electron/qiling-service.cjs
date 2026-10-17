@@ -198,6 +198,7 @@ function createQilingService({
       model: selected.code,
       maxTokens: budget.maxTokens,
       maxFee: budget.maxFee,
+      thinkingMode: budget.thinkingMode,
     });
     return { models, config: config.publicConfig() };
   }

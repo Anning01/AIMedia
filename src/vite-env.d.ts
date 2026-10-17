@@ -26,12 +26,15 @@ interface AiConfigInfo {
   qilingMaxTokens?: number;
   qilingMaxFee?: string;
   qilingBudgetConfigured?: boolean;
+  qilingThinkingMode?: QilingThinkingMode | "";
 }
 
+type QilingThinkingMode = "enabled" | "disabled";
 interface QilingModel {
   code: string;
   name: string;
   maxTokens?: number;
+  thinkingModes?: QilingThinkingMode[];
   pricing?: { input?: string; output?: string; cache?: string };
 }
 interface QilingAuthState {
@@ -170,6 +173,7 @@ interface Window {
       model: string;
       maxTokens: number;
       maxFee: string;
+      thinkingMode?: QilingThinkingMode;
     }) => Promise<QilingReply>;
     qilingAuthStart: (source?: { site_code?: string }) => Promise<QilingAuthState & { ok: boolean }>;
     qilingAuthPoll: () => Promise<QilingAuthState & { ok: boolean }>;

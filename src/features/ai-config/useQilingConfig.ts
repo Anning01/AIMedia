@@ -9,8 +9,13 @@ export function useQilingConfig(
     [model, setModel] = useState("");
   const [maxTokens, setMaxTokens] = useState<number | null>(16384);
   const [maxFee, setMaxFee] = useState("0.50");
+  const [thinkingMode, setThinkingMode] = useState<QilingThinkingMode | "">("");
+  const thinkingModes = models.find((item) => item.code === model)?.thinkingModes || [];
+  const effectiveThinkingMode = thinkingMode && thinkingModes.includes(thinkingMode)
+    ? thinkingMode : thinkingModes.includes("disabled") ? "disabled" : thinkingModes[0] || "";
   const selectModel = (value: string) => {
     setModel(value);
+    setThinkingMode("");
     const limit = models.find((item) => item.code === value)?.maxTokens;
     if (limit)
       setMaxTokens((current) =>
@@ -82,6 +87,7 @@ export function useQilingConfig(
       setKey("");
       setModels(result.models || []);
       setModel(result.config?.qilingModel || "");
+      setThinkingMode(result.config?.qilingThinkingMode || "");
       setFeedback("器灵 Key 已安全保存，请选择文本模型");
       await onConnected();
     } catch (e) {
@@ -113,10 +119,11 @@ export function useQilingConfig(
         model,
         maxTokens,
         maxFee,
+        ...(effectiveThinkingMode ? { thinkingMode: effectiveThinkingMode } : {}),
       });
       if (!result?.ok) throw Error(result?.error || "模型保存失败");
       setModels(result.models || []);
-      setFeedback("器灵文本模型与预算已保存");
+      setFeedback("器灵文本模型、思考模式与预算已保存");
       await onConnected();
       window.dispatchEvent(new Event("ai-config-changed"));
     } catch (e) {
@@ -147,6 +154,8 @@ export function useQilingConfig(
     setMaxTokens,
     maxFee,
     setMaxFee,
+    thinkingMode: effectiveThinkingMode,
+    setThinkingMode,
     busy,
     error,
     feedback,

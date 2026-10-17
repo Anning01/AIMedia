@@ -10,7 +10,7 @@ import '../../src/ui.css';import '../../src/styles.css';import '../../src/worksp
 const state=window as any;
 state.__calls=[];
 state.__config={ok:true,service:'custom',baseUrl:'https://custom.invalid/chat',model:'custom-model',hasApiKey:true,qilingConfigured:false,qilingModel:''};
-state.__models=[{code:'text-live',name:'动态文本',maxTokens:100000,pricing:{input:'1.25',output:'2.50'}}];
+state.__models=[{code:'text-live',name:'动态文本',maxTokens:100000,thinkingModes:['enabled','disabled'],pricing:{input:'1.25',output:'2.50'}},{code:'plain-text',name:'普通文本',maxTokens:100000,thinkingModes:[]}];
 state.__job=null;state.__complete=false;state.__authReady=false;
 window.wangaohui=new Proxy({} as any,{get:(_,name:string)=>{
  if(name.startsWith('on'))return()=>()=>{};
@@ -31,7 +31,7 @@ window.wangaohui=new Proxy({} as any,{get:(_,name:string)=>{
   }
   if(name==='qilingModels')return {ok:true,models:state.__models};
   if(name==='qilingSelectModel'){
-   state.__config={...state.__config,service:'qiling',qilingModel:payload.model,qilingMaxTokens:payload.maxTokens,qilingMaxFee:payload.maxFee,qilingBudgetConfigured:true};return {ok:true,models:state.__models,config:state.__config};
+   state.__config={...state.__config,service:'qiling',qilingModel:payload.model,qilingMaxTokens:payload.maxTokens,qilingMaxFee:payload.maxFee,qilingThinkingMode:payload.thinkingMode||'',qilingBudgetConfigured:true};return {ok:true,models:state.__models,config:state.__config};
   }
   if(name==='saveAiConfig'){state.__config={...state.__config,...payload,hasApiKey:true,service:'custom'};return {ok:true};}
   if(name==='qilingRemovePrice')return {ok:true,enabled:true,price:'0.25',freeQuota:2,balance:'9.5'};

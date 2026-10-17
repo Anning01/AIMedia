@@ -62,6 +62,8 @@ function providerEnv(provider, cfg, overrides = {}) {
       maxTokens: cfg.QILING_MAX_TOKENS,
       modelLimit: cfg.QILING_MODEL_LIMIT,
       feeLimit: cfg.QILING_MAX_FEE,
+      thinkingMode: cfg.QILING_THINKING_MODE,
+      thinkingModes: cfg.QILING_THINKING_MODES,
       key: cfg.AI_API_KEY || '',
       url: cfg.AI_BASE_URL ? chatUrl(cfg.AI_BASE_URL, cfg.AI_API_PATH) : '',
       model: cfg.AI_MODEL || '',

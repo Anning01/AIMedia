@@ -88,6 +88,9 @@ app.whenReady().then(async () => {
     assert((await js("document.body.innerText")).includes("已配置"));
     await click("器灵文本模型");
     await click("动态文本 · text-live");
+    assert.equal(await js(`document.querySelector('[role="switch"]').getAttribute('aria-checked')`), "false", "supported model defaults to explicit off");
+    await click("思考模式");
+    assert.equal(await js(`document.querySelector('[role="switch"]').getAttribute('aria-checked')`), "true");
     assert.equal(
       await js(
         `document.querySelector('input[aria-label="最大输出量"]').value`,
@@ -96,7 +99,7 @@ app.whenReady().then(async () => {
     );
     await input("最大输出量", "24576");
     await input("单次预估费用上限", "0");
-    await click("保存模型与预算");
+    await click("保存模型与设置");
     assert((await js("document.body.innerText")).includes("费用上限"));
     assert.equal(
       await js(
@@ -106,10 +109,27 @@ app.whenReady().then(async () => {
       "invalid budget never saved",
     );
     await input("单次预估费用上限", "0.15");
-    await click("保存模型与预算");
+    await click("保存模型与设置");
     assert.equal(await js("window.__config.qilingMaxTokens"), 24576);
     assert.equal(await js("window.__config.qilingMaxFee"), "0.15");
     assert.equal(await js("window.__config.qilingModel"), "text-live");
+    assert.equal(await js("window.__config.qilingThinkingMode"), "enabled");
+    await click("器灵文本模型");
+    await click("普通文本 · plain-text");
+    assert.equal(await js(`document.querySelectorAll('[role="switch"]').length`), 0, "unsupported models have no switch");
+    await click("保存模型与设置");
+    assert.equal(await js("window.__config.qilingThinkingMode"), "");
+    await click("器灵文本模型");
+    await click("动态文本 · text-live");
+    assert.equal(await js(`document.querySelector('[role="switch"]').getAttribute('aria-checked')`), "false");
+    await click("保存模型与设置");
+    assert.equal(await js("window.__config.qilingThinkingMode"), "disabled");
+    await js(`document.querySelector('[role="switch"]').focus()`);
+    win.webContents.sendInputEvent({ type: "keyDown", keyCode: "Space" });
+    win.webContents.sendInputEvent({ type: "keyUp", keyCode: "Space" });
+    await wait(100);
+    assert.equal(await js(`document.querySelector('[role="switch"]').getAttribute('aria-checked')`), "true", "thinking switch works with keyboard");
+    await click("保存模型与设置");
     await click("自定义接口");
     assert.equal(
       await js(`document.querySelector('input[aria-label="模型名称"]').value`),
@@ -122,6 +142,10 @@ app.whenReady().then(async () => {
     await wait(3300);
     assert((await js("document.body.innerText")).includes("授权成功"));
     await click("完成");
+    assert.equal(await js(`document.querySelector('[role="switch"]').getAttribute('aria-checked')`), "true", "saved thinking restored after configuration reload");
+    assert(await js(`(()=>{const root=document.querySelector('[role="switch"]');const r=root.getBoundingClientRect();const t=root.querySelector('[data-slot="switch-thumb"]').getBoundingClientRect();return t.left>=r.left && t.right<=r.right+1;})()`), "switch thumb stays within track with global preflight disabled");
+    await js(`document.querySelector('[role="switch"]').scrollIntoView({block:'center'})`);
+    await win.capturePage().then((img) => fs.writeFileSync(path.join(out, "thinking-mode.png"), img.toPNG()));
     await click("编辑页");
     await wait(200);
     const original = await js("window.__editor.removeAiText");
@@ -215,7 +239,7 @@ app.whenReady().then(async () => {
     );
     assert.deepEqual(errors, []);
     console.log(
-      "PASS: manual/custom config, authorization cancel/success, dynamic model selection, optional paid remove-AI confirmation, candidate preview, editing conflict guard, explicit adoption preserves images/template, three desktop sizes. Offline mocks only.",
+      "PASS: manual/custom config, authorization cancel/success, dynamic model selection, thinking defaults/persistence/keyboard/model capabilities, optional paid remove-AI confirmation, candidate preview, editing conflict guard, explicit adoption preserves images/template, three desktop sizes. Offline mocks only.",
     );
   } catch (error) {
     console.error(error);

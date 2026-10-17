@@ -8,6 +8,7 @@ const {
   DEFAULT_OUTPUT_TOKENS,
   DEFAULT_FEE_LIMIT,
   validateBudget,
+  validateThinking,
 } = require("./qiling-budget.cjs");
 const LEGACY = path.join(__dirname, "..", "config", "ai.env");
 const DEFAULTS = {
@@ -259,7 +260,7 @@ function persist(settings, secrets) {
   }
   return publicConfig();
 }
-function saveQiling({ apiKey, models, model, maxTokens, maxFee }) {
+function saveQiling({ apiKey, models, model, maxTokens, maxFee, thinkingMode }) {
   const settings = readSettings(),
     secrets = getSecrets();
   if (typeof apiKey !== "string" || !apiKey.startsWith("qk_"))
@@ -270,6 +271,7 @@ function saveQiling({ apiKey, models, model, maxTokens, maxFee }) {
   );
   settings.service = "qiling";
   settings.qilingModel = selected?.code || "";
+  settings.qilingThinkingModes = selected?.thinkingModes || [];
   if (model !== undefined) {
     if (!selected) throw Error("所选文本模型已停用，请刷新模型清单");
     const budget = validateBudget(maxTokens, maxFee, selected.maxTokens);
@@ -277,9 +279,12 @@ function saveQiling({ apiKey, models, model, maxTokens, maxFee }) {
     settings.qilingMaxFee = budget.maxFee;
     settings.qilingModelLimit = selected.maxTokens;
     settings.qilingBudgetConfigured = true;
+    settings.qilingThinkingMode = validateThinking(thinkingMode, settings.qilingThinkingModes);
   } else if (!selected || settings.qilingMaxTokens > selected.maxTokens) {
     settings.qilingBudgetConfigured = false;
   }
+  if (model === undefined && !settings.qilingThinkingModes.includes(settings.qilingThinkingMode))
+    settings.qilingThinkingMode = "";
   return persist(settings, secrets);
 }
 function authorizationSiteCode() {
@@ -323,6 +328,8 @@ function runtimeConfig() {
       secrets.qilingKey ||
       (isQilingUrl(settings.baseUrl) ? secrets.apiKey : ""),
     QILING_MODEL: settings.qilingModel,
+    QILING_THINKING_MODE: settings.qilingThinkingMode || "",
+    QILING_THINKING_MODES: settings.qilingThinkingModes || [],
     QILING_MAX_TOKENS: settings.qilingMaxTokens,
     QILING_MODEL_LIMIT: settings.qilingModelLimit,
     QILING_MAX_FEE: settings.qilingBudgetConfigured

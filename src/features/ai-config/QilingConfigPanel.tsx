@@ -8,6 +8,7 @@ import {
   Select,
 } from "@/components/shared/controls";
 import { QilingAccountLinks } from "./QilingAccountLinks";
+import { ThinkingModeField } from "./ThinkingModeField";
 import type { useQilingConfig } from "./useQilingConfig";
 export function QilingConfigPanel({
   qiling,
@@ -19,6 +20,9 @@ export function QilingConfigPanel({
   useEffect(() => {
     qiling.setModel(info?.qilingModel || "");
   }, [info?.qilingModel]);
+  useEffect(() => {
+    qiling.setThinkingMode(info?.qilingThinkingMode || "");
+  }, [info?.qilingModel, info?.qilingThinkingMode]);
   useEffect(() => {
     qiling.setMaxTokens(
       info?.qilingBudgetConfigured ? (info.qilingMaxTokens ?? 16384) : 16384,
@@ -92,10 +96,12 @@ export function QilingConfigPanel({
               }
               onClick={() => void qiling.saveModel()}
             >
-              保存模型与预算
+              保存模型与设置
             </Button>
           </div>
         </label>
+        <ThinkingModeField model={selectedModel} value={qiling.thinkingMode}
+          disabled={qiling.busy} onChange={qiling.setThinkingMode} />
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="flex flex-col gap-2 text-[13px]">
             <span>最大输出量（含模型思考）</span>
@@ -138,7 +144,7 @@ export function QilingConfigPanel({
           />
         )}
         <p className="m-0 text-xs leading-relaxed text-muted-foreground">
-          输出额度包含模型思考与最终正文，不是文章字数。一次创作会有多轮模型调用，此费用上限按每轮预估判断；实际费用以器灵结算为准。
+          输出额度包含模型思考与最终正文，不是文章字数。默认文章生成调用一次文本模型，预估与生成使用同一思考模式；实际费用以器灵结算为准。
         </p>
         {qiling.models.find((item) => item.code === qiling.model)?.pricing && (
           <p className="m-0 text-xs text-muted-foreground">
