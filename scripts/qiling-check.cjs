@@ -669,7 +669,7 @@ app.whenReady().then(async () => {
     assert.equal(calls.at(-1).body.site_code, "site-a", "reopened authorization uses persisted source");
     clock += 3000;
     authStatus = "authorized";
-    authorizedKey = "qk_browser_account_b_test_key";
+    authorizedKey = "qk_browser_b_test";
     assert.equal((await restoredService.pollAuth(21)).status, "authorized");
     assert.equal(config.authorizationSiteCode(), "site-a", "account B's site cannot replace the software source");
     const browserKey = config.runtimeConfig().QILING_API_KEY;
