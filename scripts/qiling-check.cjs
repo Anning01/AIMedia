@@ -22,6 +22,9 @@ let networkDrop = true;
 let estimatedFee = "0.01",
   emptyText = false;
 let taskCount = 0;
+let verificationUrl = "https://toolsoul.daniu7.cn/account/api-authorize?request=browser-code";
+let authorizationBaseUrl = "https://toolsoul.daniu7.cn";
+let authorizedKey = "qk_test_user_key";
 const server = http.createServer(async (req, res) => {
   let raw = "";
   for await (const chunk of req) raw += chunk;
@@ -32,6 +35,7 @@ const server = http.createServer(async (req, res) => {
     key: req.headers["x-api-key"],
     auth: req.headers.authorization,
     app: req.headers["x-qiling-app-key"],
+    host: req.headers.host,
   });
   if (
     req.url.endsWith("/chat/completions") &&
@@ -50,15 +54,19 @@ const server = http.createServer(async (req, res) => {
     return;
   }
   let data = {};
-  if (req.url.endsWith("/auth/api-key/requests"))
+  if (req.url.endsWith("/auth/api-key/requests")) {
+    if (["missing-site", "disabled-site", "bad-domain"].includes(body.site_code)) {
+      res.statusCode = body.site_code === "bad-domain" ? 409 : 404;
+      res.end(JSON.stringify({ detail: `分站授权错误：${body.site_code}` }));
+      return;
+    }
     data = {
       device_code: "secret-device-code",
-      verification_url:
-        "https://toolsoul.daniu7.cn/account/api-authorize?request=browser-code",
+      verification_url: verificationUrl,
       interval: 3,
       expires_in: 600,
     };
-  else if (req.url.endsWith("/auth/api-key/token")) {
+  } else if (req.url.endsWith("/auth/api-key/token")) {
     if (authStatus === "expired") {
       res.statusCode = 410;
       data = { detail: "过期" };
@@ -71,8 +79,9 @@ const server = http.createServer(async (req, res) => {
         status: authStatus,
         ...(authStatus === "authorized"
           ? {
-              api_key: "qk_test_user_key",
-              base_url: "https://toolsoul.daniu7.cn",
+              api_key: authorizedKey,
+              base_url: authorizationBaseUrl,
+              site: { code: "browser-account-b-site" },
               app_key: "",
             }
           : {}),
@@ -636,8 +645,143 @@ app.whenReady().then(async () => {
         .filter((c) => c.path.endsWith("/remove-ai"))
         .every((c) => Array.from(c.body.text).length <= 2000),
     );
+    // The open-source app has no software login. Only an explicit host source
+    // updates provenance; the browser's paying account never supplies it.
+    const originalKey = config.runtimeConfig().QILING_API_KEY;
+    const originalBase = config.runtimeConfig().AI_BASE_URL;
+    const customDomainUrl = "https://partner.example.test/account/api-authorize?request=browser-code&site=site-a&next=%2Fhome";
+    verificationUrl = customDomainUrl;
+    authorizationBaseUrl = "https://partner.example.test";
+    assert.equal((await service.startAuth(20, { site_code: "site-a" })).status, "pending");
+    assert.deepEqual(calls.at(-1).body, { client_name: "万稿汇", site_code: "site-a" });
+    assert.equal(opened.at(-1), customDomainUrl, "server URL is opened byte-for-byte, including query encoding");
+    assert.equal(config.authorizationSiteCode(), "site-a");
+    assert.equal(config.authorizationWebsite(), "https://partner.example.test");
+    const savedSource = fs.readFileSync(path.join(directory, "ai-config.json"), "utf8");
+    assert(!savedSource.includes("browser-code") && !savedSource.includes("secret-device-code"), "stored source contains no authorization credentials");
+    for (const [page, route] of [["usage", "/account/api-usage"], ["recharge", "/account/personal"], ["keys", "/account/api-keys"]]) {
+      const before = calls.length;
+      await service.openAccount(page);
+      assert.equal(opened.at(-1), "https://partner.example.test" + route);
+      assert.equal(calls.length, before, "account links reuse the resolved source without creating another authorization");
+    }
+    assert.equal(config.runtimeConfig().QILING_API_KEY, originalKey, "saving source metadata cannot switch the paying account");
+    delete require.cache[require.resolve(path.join(source, "electron/ai-config.cjs"))];
+    const restoredConfig = require(path.join(source, "electron/ai-config.cjs"));
+    assert.equal(restoredConfig.authorizationSiteCode(), "site-a", "source survives process/module restart");
+    assert.equal(restoredConfig.authorizationWebsite(), "https://partner.example.test", "website source survives restart");
+    service.cancelAuth(20);
+    const restoredService = createQilingService({
+      config: restoredConfig, directory, api, now: () => clock,
+      openExternal: (url) => opened.push(url),
+    });
+    await restoredService.startAuth(21);
+    assert.equal(calls.at(-1).body.site_code, "site-a", "reopened authorization uses persisted source");
+    clock += 3000;
+    authStatus = "authorized";
+    authorizedKey = "qk_browser_b_test";
+    assert.equal((await restoredService.pollAuth(21)).status, "authorized");
+    assert.equal(config.authorizationSiteCode(), "site-a", "account B's site cannot replace the software source");
+    const browserKey = config.runtimeConfig().QILING_API_KEY;
+    assert.equal(browserKey, authorizedKey, "the explicit browser approval saves account B's Key");
+    assert.equal(config.runtimeConfig().AI_BASE_URL, originalBase, "browser domain cannot become model API base");
+    assert(calls.every((call) => call.host === `127.0.0.1:${server.address().port}`), "all API traffic stays on the configured API host");
+
+    await service.startAuth(22, { site_code: "site-a" });
+    verificationUrl = "https://site-b.aitool.example.test/account/api-authorize?request=other-browser-code&site=site-b";
+    await restoredService.startAuth(23, { site_code: "site-b" });
+    assert.equal(opened.at(-1), verificationUrl, "a registered subdomain also opens unchanged");
+    const beforeStalePoll = calls.length;
+    clock += 3000;
+    assert.equal((await service.pollAuth(22)).status, "cancelled");
+    assert.equal(calls.length, beforeStalePoll, "switching source stops polling old authorization");
+    assert.equal(config.authorizationSiteCode(), "site-b");
+    await restoredService.openAccount("recharge");
+    assert.equal(opened.at(-1), "https://site-b.aitool.example.test/account/personal", "switching source also switches account links");
+    assert.equal((await restoredService.pollAuth(23)).status, "authorized");
+
+    let releaseStart, enteredStart = false;
+    const raceService = createQilingService({
+      config, directory, now: () => clock, openExternal: (url) => opened.push(url),
+      api: { ...api, request: async (route, options) => {
+        const result = await api.request(route, options);
+        if (options.body?.site_code === "race-old") {
+          enteredStart = true;
+          await new Promise((resolve) => { releaseStart = resolve; });
+        }
+        return result;
+      } },
+    });
+    const oldStart = raceService.startAuth(30, { site_code: "race-old" });
+    while (!enteredStart) await new Promise((resolve) => setTimeout(resolve, 5));
+    assert.equal((await raceService.startAuth(30, { site_code: "site-b" })).status, "pending");
+    releaseStart();
+    assert.equal((await oldStart).status, "cancelled");
+    clock += 3000;
+    assert.equal((await raceService.pollAuth(30)).status, "authorized", "stale response cannot cancel the new source authorization");
+
+    enteredModels = false;
+    authorizedKey = "qk_other_browser_test_key";
+    const savingService = createQilingService({
+      config, directory, api: heldApi, now: () => clock, openExternal: () => {},
+    });
+    await savingService.startAuth(31, { site_code: "site-a" });
+    clock += 3000;
+    const saving = savingService.pollAuth(31);
+    while (!enteredModels) await new Promise((resolve) => setTimeout(resolve, 5));
+    config.saveAuthorizationSiteCode("site-b");
+    releaseModels();
+    assert.equal((await saving).status, "cancelled");
+    assert.equal(config.runtimeConfig().QILING_API_KEY, browserKey, "switching source during Key validation discards the stale Key");
+    authorizedKey = browserKey;
+
+    for (const site_code of ["missing-site", "disabled-site", "bad-domain"]) {
+      const before = calls.length, browserCount = opened.length;
+      const failed = await service.startAuth(24, { site_code });
+      assert.equal(failed.status, "failed");
+      assert(failed.error.includes(site_code) && failed.error.includes("联系分站管理员"));
+      assert.equal(config.authorizationSiteCode(), site_code, "invalid station must not silently fall back to main");
+      clock += 3000;
+      assert.equal((await service.pollAuth(24)).status, "failed");
+      assert.equal(calls.length, before + 1, "404/409 never retry or fall back");
+      assert.equal(opened.length, browserCount);
+      await assert.rejects(service.openAccount("recharge"), (error) => error.message.includes("联系分站管理员"));
+      assert.equal(calls.length, before + 2, "account navigation never falls back for invalid sources");
+      assert.equal(opened.length, browserCount);
+    }
+    for (const invalid of ["https://arbitrary.example", "bad site", "../platform"]) {
+      const before = calls.length;
+      assert.equal((await service.startAuth(25, { site_code: invalid })).status, "failed");
+      assert.equal(calls.length, before, "hostnames and URLs cannot be submitted as source codes");
+    }
+    verificationUrl = "https://toolsoul.daniu7.cn/account/api-authorize?request=main-site";
+    for (const site_code of ["platform", ""]) {
+      assert.equal((await service.startAuth(26, { site_code })).status, "pending");
+      assert.equal(calls.at(-1).body.site_code, site_code || undefined);
+      assert.equal(opened.at(-1), verificationUrl);
+      service.cancelAuth(26);
+      await service.openAccount("keys");
+      assert.equal(opened.at(-1), "https://toolsoul.daniu7.cn/account/api-keys");
+    }
+    verificationUrl = "https://moved.example.test/account/api-authorize?request=resolved-once&site=uncached-site";
+    config.saveAuthorizationSiteCode("uncached-site");
+    assert.equal(config.authorizationWebsite(), "", "new source cannot reuse the previous website");
+    const beforeResolve = calls.length;
+    await service.openAccount("usage");
+    assert.equal(calls.length, beforeResolve + 1);
+    assert.equal(calls.at(-1).body.site_code, "uncached-site");
+    assert.equal(opened.at(-1), "https://moved.example.test/account/api-usage", "legacy source resolves website from server without opening a confirmation page");
+    assert.equal(config.runtimeConfig().QILING_API_KEY, browserKey);
+    assert.equal(config.runtimeConfig().AI_BASE_URL, originalBase);
+    await assert.rejects(service.openAccount("__proto__"), /未知器灵页面/);
+    for (const unsafe of ["http://partner.example.test/confirm", "file:///tmp/confirm", "https://user:password@partner.example.test/confirm", "javascript:alert(1)"]) {
+      verificationUrl = unsafe;
+      const browserCount = opened.length;
+      assert.equal((await service.startAuth(27)).status, "failed");
+      assert.equal(opened.length, browserCount, "unsafe browser schemes and credentials remain rejected");
+    }
     console.log(
-      "PASS: generic one-click/manual Key equivalence, cancellation/expiry/denied/consumed/429, encrypted keys, dynamic text models and limits, custom config preserved, Qiling response and request journal, unknown/review stop, 402, async remove-AI failure/wait/cancel/restart/splitting. No live paid calls.",
+      "PASS: main/site/custom-domain authorization, source persistence/switching, 404/409 no fallback, independent Key/API base, unsafe URL rejection; one-click/manual equivalence, cancellation, encrypted keys, model budgets, request journal and async remove-AI. No live paid calls.",
     );
   } catch (error) {
     console.error(error);

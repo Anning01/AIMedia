@@ -171,7 +171,7 @@ interface Window {
       maxTokens: number;
       maxFee: string;
     }) => Promise<QilingReply>;
-    qilingAuthStart: () => Promise<QilingAuthState & { ok: boolean }>;
+    qilingAuthStart: (source?: { site_code?: string }) => Promise<QilingAuthState & { ok: boolean }>;
     qilingAuthPoll: () => Promise<QilingAuthState & { ok: boolean }>;
     qilingAuthCancel: () => Promise<{ ok: boolean }>;
     qilingOpenAccount: (payload: {
