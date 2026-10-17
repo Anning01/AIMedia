@@ -341,7 +341,7 @@ function registerIpc() {
     'qiling-connect': (_e,p) => qilingService().connect(p.apiKey),
     'qiling-models': () => qilingService().models().then(models=>({models})),
     'qiling-model-select': (_e,p) => qilingService().selectModel(p.model,p),
-    'qiling-auth-start': e => qilingService().startAuth(e.sender.id),
+    'qiling-auth-start': (e,p) => qilingService().startAuth(e.sender.id,p),
     'qiling-auth-poll': e => qilingService().pollAuth(e.sender.id),
     'qiling-auth-cancel': e => qilingService().cancelAuth(e.sender.id),
     'qiling-remove-price': () => qilingService().price(),

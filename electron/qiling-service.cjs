@@ -2,7 +2,7 @@
 const fs = require("fs");
 const path = require("path");
 const { randomUUID, createHash } = require("crypto");
-const { BASE, CHAT_PATH, fault, createQilingApi } = require("./qiling-api.cjs");
+const { fault, createQilingApi } = require("./qiling-api.cjs");
 const fingerprint = (key) => createHash("sha256").update(key).digest("hex");
 function splitText(text) {
   const chars = Array.from(text),
@@ -64,7 +64,12 @@ function createQilingService({
     }
     return { status: "cancelled" };
   }
-  async function startAuth(owner) {
+  const currentAuth = (owner, session) =>
+    auth.get(owner) === session && config.authorizationSiteCode() === session.siteCode;
+  const discardAuth = (owner, session) => auth.get(owner) === session
+    ? cancelAuth(owner)
+    : { status: "cancelled" };
+  async function startAuth(owner, source = {}) {
     cancelAuth(owner);
     const session = {
       status: "starting",
@@ -75,16 +80,22 @@ function createQilingService({
     };
     auth.set(owner, session);
     try {
+      session.siteCode = Object.hasOwn(source, "site_code")
+        ? config.saveAuthorizationSiteCode(source.site_code)
+        : config.authorizationSiteCode();
       const data = await api.request("/api/v1/auth/api-key/requests", {
         method: "POST",
-        body: { client_name: "万稿汇" },
+        body: {
+          client_name: "万稿汇",
+          ...(session.siteCode ? { site_code: session.siteCode } : {}),
+        },
         signal: session.controller.signal,
       });
-      if (auth.get(owner) !== session) return { status: "cancelled" };
+      if (!currentAuth(owner, session)) return discardAuth(owner, session);
       const url = new URL(data.verification_url);
       if (
-        url.origin !== BASE ||
-        !data.device_code ||
+        url.protocol !== "https:" || url.username || url.password ||
+        typeof data.device_code !== "string" || !data.device_code ||
         !Number.isFinite(data.expires_in) ||
         data.expires_in <= 0
       )
@@ -99,7 +110,9 @@ function createQilingService({
     } catch (error) {
       if (auth.get(owner) === session) {
         session.status = "failed";
-        session.error = error.message;
+        session.error = [404, 409].includes(error.status)
+          ? `${error.message}；请联系分站管理员检查分站状态和域名配置`
+          : error.message;
         delete session.code;
       }
       return safeAuth(session);
@@ -109,6 +122,7 @@ function createQilingService({
     const session = auth.get(owner);
     if (!session) return { status: "cancelled" };
     if (session.status !== "pending" || session.busy) return safeAuth(session);
+    if (!currentAuth(owner, session)) return discardAuth(owner, session);
     if (now() >= session.expiresAt) {
       session.status = "expired";
       delete session.code;
@@ -123,17 +137,17 @@ function createQilingService({
         body: { device_code: session.code },
         signal: session.controller.signal,
       });
-      if (auth.get(owner) !== session) return { status: "cancelled" };
+      if (!currentAuth(owner, session)) return discardAuth(owner, session);
       if (data.status === "authorized") {
         delete session.code;
         session.status = "saving";
         // Claim exactly once. A failed save is reported, never retried with this device code.
         const result = await connect(
           data.api_key,
-          () => auth.get(owner) === session,
+          () => currentAuth(owner, session),
           session.controller.signal,
         );
-        if (auth.get(owner) !== session) return { status: "cancelled" };
+        if (!currentAuth(owner, session)) return discardAuth(owner, session);
         session.models = result.models;
         session.status = "authorized";
       } else if (["denied", "consumed"].includes(data.status)) {
@@ -143,6 +157,7 @@ function createQilingService({
         throw fault("器灵返回未知授权状态，请重新发起");
     } catch (error) {
       if (auth.get(owner) !== session) return { status: "cancelled" };
+      if (!currentAuth(owner, session)) return discardAuth(owner, session);
       if (error.status === 429) {
         session.nextPoll =
           now() + Math.max(session.interval, error.retryAfter * 1000);

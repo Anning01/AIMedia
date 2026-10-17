@@ -282,6 +282,17 @@ function saveQiling({ apiKey, models, model, maxTokens, maxFee }) {
   }
   return persist(settings, secrets);
 }
+function authorizationSiteCode() {
+  return readSettings().qilingAuthSiteCode || "";
+}
+function saveAuthorizationSiteCode(value) {
+  if (typeof value !== "string" || !/^[a-z0-9_-]{0,80}$/.test(value.trim()))
+    throw Error("授权来源不正确，请使用原软件授权返回的分站标识");
+  const siteCode = value.trim();
+  // Source metadata is independent of the browser account's Key and model settings.
+  persist({ ...readSettings(), qilingAuthSiteCode: siteCode }, getSecrets());
+  return siteCode;
+}
 function runtimeConfig() {
   const env = legacy();
   const settings = readSettings();
@@ -343,4 +354,6 @@ module.exports = {
   testConfig,
   validUrl,
   saveQiling,
+  authorizationSiteCode,
+  saveAuthorizationSiteCode,
 };
