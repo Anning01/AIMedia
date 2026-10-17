@@ -289,9 +289,27 @@ function saveAuthorizationSiteCode(value) {
   if (typeof value !== "string" || !/^[a-z0-9_-]{0,80}$/.test(value.trim()))
     throw Error("授权来源不正确，请使用原软件授权返回的分站标识");
   const siteCode = value.trim();
+  const settings = readSettings();
   // Source metadata is independent of the browser account's Key and model settings.
-  persist({ ...readSettings(), qilingAuthSiteCode: siteCode }, getSecrets());
+  persist({ ...settings, qilingAuthSiteCode: siteCode,
+    qilingWebsiteOrigin: siteCode === authorizationSiteCode() ? settings.qilingWebsiteOrigin || "" : "",
+  }, getSecrets());
   return siteCode;
+}
+function saveAuthorizationWebsite(siteCode, verificationUrl) {
+  const url = new URL(verificationUrl);
+  if (url.protocol !== "https:" || url.username || url.password)
+    throw Error("器灵授权地址不正确");
+  if (siteCode !== authorizationSiteCode()) throw Error("授权来源已切换，请重新操作");
+  // Keep only the server-selected origin; never persist browser/device codes.
+  persist({ ...readSettings(), qilingWebsiteOrigin: url.origin }, getSecrets());
+  return url.origin;
+}
+function authorizationWebsite() {
+  const settings = readSettings();
+  if (settings.qilingWebsiteOrigin)
+    return new URL(validUrl(settings.qilingWebsiteOrigin, "器灵站点地址")).origin;
+  return !authorizationSiteCode() || authorizationSiteCode() === "platform" ? BASE : "";
 }
 function runtimeConfig() {
   const env = legacy();
@@ -356,4 +374,6 @@ module.exports = {
   saveQiling,
   authorizationSiteCode,
   saveAuthorizationSiteCode,
+  saveAuthorizationWebsite,
+  authorizationWebsite,
 };

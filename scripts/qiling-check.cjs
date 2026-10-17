@@ -656,10 +656,20 @@ app.whenReady().then(async () => {
     assert.deepEqual(calls.at(-1).body, { client_name: "万稿汇", site_code: "site-a" });
     assert.equal(opened.at(-1), customDomainUrl, "server URL is opened byte-for-byte, including query encoding");
     assert.equal(config.authorizationSiteCode(), "site-a");
+    assert.equal(config.authorizationWebsite(), "https://partner.example.test");
+    const savedSource = fs.readFileSync(path.join(directory, "ai-config.json"), "utf8");
+    assert(!savedSource.includes("browser-code") && !savedSource.includes("secret-device-code"), "stored source contains no authorization credentials");
+    for (const [page, route] of [["usage", "/account/api-usage"], ["recharge", "/account/personal"], ["keys", "/account/api-keys"]]) {
+      const before = calls.length;
+      await service.openAccount(page);
+      assert.equal(opened.at(-1), "https://partner.example.test" + route);
+      assert.equal(calls.length, before, "account links reuse the resolved source without creating another authorization");
+    }
     assert.equal(config.runtimeConfig().QILING_API_KEY, originalKey, "saving source metadata cannot switch the paying account");
     delete require.cache[require.resolve(path.join(source, "electron/ai-config.cjs"))];
     const restoredConfig = require(path.join(source, "electron/ai-config.cjs"));
     assert.equal(restoredConfig.authorizationSiteCode(), "site-a", "source survives process/module restart");
+    assert.equal(restoredConfig.authorizationWebsite(), "https://partner.example.test", "website source survives restart");
     service.cancelAuth(20);
     const restoredService = createQilingService({
       config: restoredConfig, directory, api, now: () => clock,
@@ -686,6 +696,8 @@ app.whenReady().then(async () => {
     assert.equal((await service.pollAuth(22)).status, "cancelled");
     assert.equal(calls.length, beforeStalePoll, "switching source stops polling old authorization");
     assert.equal(config.authorizationSiteCode(), "site-b");
+    await restoredService.openAccount("recharge");
+    assert.equal(opened.at(-1), "https://site-b.aitool.example.test/account/personal", "switching source also switches account links");
     assert.equal((await restoredService.pollAuth(23)).status, "authorized");
 
     let releaseStart, enteredStart = false;
@@ -733,6 +745,9 @@ app.whenReady().then(async () => {
       assert.equal((await service.pollAuth(24)).status, "failed");
       assert.equal(calls.length, before + 1, "404/409 never retry or fall back");
       assert.equal(opened.length, browserCount);
+      await assert.rejects(service.openAccount("recharge"), (error) => error.message.includes("联系分站管理员"));
+      assert.equal(calls.length, before + 2, "account navigation never falls back for invalid sources");
+      assert.equal(opened.length, browserCount);
     }
     for (const invalid of ["https://arbitrary.example", "bad site", "../platform"]) {
       const before = calls.length;
@@ -745,7 +760,20 @@ app.whenReady().then(async () => {
       assert.equal(calls.at(-1).body.site_code, site_code || undefined);
       assert.equal(opened.at(-1), verificationUrl);
       service.cancelAuth(26);
+      await service.openAccount("keys");
+      assert.equal(opened.at(-1), "https://toolsoul.daniu7.cn/account/api-keys");
     }
+    verificationUrl = "https://moved.example.test/account/api-authorize?request=resolved-once&site=uncached-site";
+    config.saveAuthorizationSiteCode("uncached-site");
+    assert.equal(config.authorizationWebsite(), "", "new source cannot reuse the previous website");
+    const beforeResolve = calls.length;
+    await service.openAccount("usage");
+    assert.equal(calls.length, beforeResolve + 1);
+    assert.equal(calls.at(-1).body.site_code, "uncached-site");
+    assert.equal(opened.at(-1), "https://moved.example.test/account/api-usage", "legacy source resolves website from server without opening a confirmation page");
+    assert.equal(config.runtimeConfig().QILING_API_KEY, browserKey);
+    assert.equal(config.runtimeConfig().AI_BASE_URL, originalBase);
+    await assert.rejects(service.openAccount("__proto__"), /未知器灵页面/);
     for (const unsafe of ["http://partner.example.test/confirm", "file:///tmp/confirm", "https://user:password@partner.example.test/confirm", "javascript:alert(1)"]) {
       verificationUrl = unsafe;
       const browserCount = opened.length;

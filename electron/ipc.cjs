@@ -22,7 +22,7 @@ const {
 } = require('./baijiahao.cjs');
 const aiConfig = require('./ai-config.cjs');
 const { createQilingService } = require('./qiling-service.cjs');
-const { BASE: QILING_BASE, isQilingUrl } = require('./qiling-api.cjs');
+const { isQilingUrl } = require('./qiling-api.cjs');
 let qiling;
 const qilingService = () => qiling ||= createQilingService({config:aiConfig,directory:app.getPath('userData'),openExternal:url=>shell.openExternal(url)});
 const aiError = error => ({ok:false,error:error.message||String(error),code:error.code,retryable:error.retryable});
@@ -351,11 +351,7 @@ function registerIpc() {
     'qiling-remove-pause': (e,p) => ({job:qilingService().pauseRemove(p.id,e.sender.id)}),
     'qiling-remove-resume': (_e,p) => ({job:qilingService().resumeRemove(p.id)}),
     'qiling-remove-adopt': (_e,p) => ({job:qilingService().adoptRemove(p.id)}),
-    'qiling-open-account': (_e,p) => {
-      const paths={usage:'/account/api-usage',recharge:'/account/personal',keys:'/account/api-keys'};
-      if(!paths[p.page])throw Error('未知器灵页面');
-      return shell.openExternal(QILING_BASE+paths[p.page]).then(()=>({}));
-    },
+    'qiling-open-account': (_e,p) => qilingService().openAccount(p.page),
   };
   const owners=new Set();
   for(const [channel,handler] of Object.entries(qilingHandlers)) ipcMain.handle(channel,async(e,p={})=>{
