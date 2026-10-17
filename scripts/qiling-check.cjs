@@ -245,10 +245,7 @@ app.whenReady().then(async () => {
     const afterClaim = calls.length;
     await service.pollAuth(4);
     assert.equal(calls.length, afterClaim, "Key only claimed once");
-    const savedBeforeCancel = fs.readFileSync(
-      path.join(directory, "ai-config.json"),
-      "utf8",
-    );
+    const savedBeforeCancel = JSON.stringify(config.runtimeConfig());
     let releaseModels,
       enteredModels = false;
     const heldApi = {
@@ -275,9 +272,8 @@ app.whenReady().then(async () => {
     held.cancelAuth(9);
     releaseModels();
     assert.equal((await claiming).status, "cancelled");
-    assert.equal(
-      fs.readFileSync(path.join(directory, "ai-config.json"), "utf8"),
-      savedBeforeCancel,
+    assert(
+      JSON.stringify(config.runtimeConfig()) === savedBeforeCancel,
       "cancel during model validation never saves a claimed Key",
     );
     const oneClick = config.publicConfig();
