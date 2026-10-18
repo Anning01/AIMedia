@@ -55,7 +55,7 @@ function checkQuote(quote, maxFee) {
 }
 function validateThinking(mode, modes = []) {
   if (mode === undefined || mode === "")
-    return modes.includes("disabled") ? "disabled" : modes[0] || "";
+    return "";
   if (!["enabled", "disabled"].includes(mode) || !modes.includes(mode))
     throw fault("当前模型不支持所选思考模式，请刷新模型并重新保存", "QILING_THINKING");
   return mode;

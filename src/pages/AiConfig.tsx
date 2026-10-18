@@ -42,7 +42,7 @@ export default function AiConfig({ active }: { active: boolean }) {
         </div>
       </Card>
       {config.error && <Alert type="error" message={config.error} />}
-      {config.feedback && <Alert type="success" message={config.feedback} />}
+      {mode === "custom" && config.feedback && <Alert type="success" message={config.feedback} />}
       <Tabs value={mode} onValueChange={setMode}>
         <SegmentedTabs
           value={mode}

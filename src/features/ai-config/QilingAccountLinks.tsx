@@ -11,6 +11,7 @@ export function QilingAccountLinks() {
       ).map((item) => (
         <Button
           size="small"
+          type="text"
           key={item.page}
           onClick={() =>
             void window.wangaohui

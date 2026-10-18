@@ -11,8 +11,8 @@ export function useQilingConfig(
   const [maxFee, setMaxFee] = useState("0.50");
   const [thinkingMode, setThinkingMode] = useState<QilingThinkingMode | "">("");
   const thinkingModes = models.find((item) => item.code === model)?.thinkingModes || [];
-  const effectiveThinkingMode = thinkingMode && thinkingModes.includes(thinkingMode)
-    ? thinkingMode : thinkingModes.includes("disabled") ? "disabled" : thinkingModes[0] || "";
+  const effectiveThinkingMode: QilingThinkingMode | "" = thinkingMode && thinkingModes.includes(thinkingMode)
+    ? thinkingMode : "";
   const selectModel = (value: string) => {
     setModel(value);
     setThinkingMode("");

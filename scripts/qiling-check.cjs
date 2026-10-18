@@ -554,7 +554,7 @@ app.whenReady().then(async () => {
     assert(!calls.at(-1).auth);
     assert.equal(price.price, "0.25");
     assert.equal(price.balance, "25.50");
-    for (const thinkingMode of ["disabled", "enabled"]) {
+    for (const thinkingMode of ["", "disabled", "enabled"]) {
       await service.selectModel("second-text", { maxTokens: 1200, maxFee: "0.50", thinkingMode });
       assert.equal(config.publicConfig().qilingThinkingMode, thinkingMode);
       assert.equal(config.runtimeConfig().QILING_THINKING_MODE, thinkingMode);
@@ -569,8 +569,13 @@ app.whenReady().then(async () => {
       }, 0.3);
       const sent = calls.slice(before);
       assert.deepEqual(sent.map((call) => call.path), ["/v1/models/estimate", "/v1/chat/completions"]);
-      assert.deepEqual(sent[0].body.request.thinking, { type: thinkingMode });
-      assert.deepEqual(sent[1].body.thinking, { type: thinkingMode });
+      if (thinkingMode) {
+        assert.deepEqual(sent[0].body.request.thinking, { type: thinkingMode });
+        assert.deepEqual(sent[1].body.thinking, { type: thinkingMode });
+      } else {
+        assert(!Object.hasOwn(sent[0].body.request, "thinking"), "default estimate omits thinking entirely");
+        assert(!Object.hasOwn(sent[1].body, "thinking"), "default generation omits thinking entirely");
+      }
     }
     const nativeFetch = global.fetch;
     try {
@@ -593,7 +598,7 @@ app.whenReady().then(async () => {
       global.fetch = nativeFetch;
     }
     await service.selectModel("second-text", { maxTokens: 1200, maxFee: "0.50" });
-    assert.equal(config.publicConfig().qilingThinkingMode, "disabled", "new supported-model settings explicitly default off");
+    assert.equal(config.publicConfig().qilingThinkingMode, "", "supported-model settings default to omitted thinking");
     const beforeUnsupported = calls.length;
     await assert.rejects(chat([{ role: "user", content: "非法思考配置" }], {
       ...env, thinkingMode: "enabled", thinkingModes: [],

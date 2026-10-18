@@ -88,9 +88,9 @@ app.whenReady().then(async () => {
     assert((await js("document.body.innerText")).includes("已配置"));
     await click("器灵文本模型");
     await click("动态文本 · text-live");
-    assert.equal(await js(`document.querySelector('[role="switch"]').getAttribute('aria-checked')`), "false", "supported model defaults to explicit off");
-    await click("思考模式");
-    assert.equal(await js(`document.querySelector('[role="switch"]').getAttribute('aria-checked')`), "true");
+    assert.equal(await js(`document.querySelector('[role="radio"][data-state="checked"]').textContent.trim()`), "默认", "supported model defaults to provider behavior");
+    await click("开启");
+    assert.equal(await js(`document.querySelector('[role="radio"][data-state="checked"]').textContent.trim()`), "开启");
     assert.equal(
       await js(
         `document.querySelector('input[aria-label="最大输出量"]').value`,
@@ -116,19 +116,23 @@ app.whenReady().then(async () => {
     assert.equal(await js("window.__config.qilingThinkingMode"), "enabled");
     await click("器灵文本模型");
     await click("普通文本 · plain-text");
-    assert.equal(await js(`document.querySelectorAll('[role="switch"]').length`), 0, "unsupported models have no switch");
+    assert.equal(await js(`document.querySelectorAll('[role="radiogroup"]').length`), 0, "unsupported models have no thinking choices");
     await click("保存模型与设置");
     assert.equal(await js("window.__config.qilingThinkingMode"), "");
     await click("器灵文本模型");
     await click("动态文本 · text-live");
-    assert.equal(await js(`document.querySelector('[role="switch"]').getAttribute('aria-checked')`), "false");
+    assert.equal(await js(`document.querySelector('[role="radio"][data-state="checked"]').textContent.trim()`), "默认");
     await click("保存模型与设置");
-    assert.equal(await js("window.__config.qilingThinkingMode"), "disabled");
-    await js(`document.querySelector('[role="switch"]').focus()`);
-    win.webContents.sendInputEvent({ type: "keyDown", keyCode: "Space" });
-    win.webContents.sendInputEvent({ type: "keyUp", keyCode: "Space" });
+    assert.equal(await js("window.__config.qilingThinkingMode"), "");
+    assert(await js(`!('thinkingMode' in window.__calls.filter(c=>c.name==='qilingSelectModel').at(-1).payload)`), "default sends no thinking selection");
+    win.show();win.focus();await wait(100);
+    await js(`document.querySelector('[role="radio"][data-state="checked"]').focus()`);
+    win.webContents.sendInputEvent({ type: "keyDown", keyCode: "Right" });
+    await wait(80);
+    win.webContents.sendInputEvent({ type: "keyUp", keyCode: "Right" });
     await wait(100);
-    assert.equal(await js(`document.querySelector('[role="switch"]').getAttribute('aria-checked')`), "true", "thinking switch works with keyboard");
+    assert.equal(await js(`document.querySelector('[role="radio"][data-state="checked"]').textContent.trim()`), "开启", "thinking choices work with keyboard");
+    win.hide();
     await click("保存模型与设置");
     await click("自定义接口");
     assert.equal(
@@ -142,10 +146,17 @@ app.whenReady().then(async () => {
     await wait(3300);
     assert((await js("document.body.innerText")).includes("授权成功"));
     await click("完成");
-    assert.equal(await js(`document.querySelector('[role="switch"]').getAttribute('aria-checked')`), "true", "saved thinking restored after configuration reload");
-    assert(await js(`(()=>{const root=document.querySelector('[role="switch"]');const r=root.getBoundingClientRect();const t=root.querySelector('[data-slot="switch-thumb"]').getBoundingClientRect();return t.left>=r.left && t.right<=r.right+1;})()`), "switch thumb stays within track with global preflight disabled");
-    await js(`document.querySelector('[role="switch"]').scrollIntoView({block:'center'})`);
+    assert.equal(await js(`document.querySelector('[role="radio"][data-state="checked"]').textContent.trim()`), "开启", "explicit setting restored after reload");
+    await click("默认");
+    await click("保存模型与设置");
+    assert.equal(await js("window.__config.qilingThinkingMode"), "", "default clears a previously saved explicit mode");
     await win.capturePage().then((img) => fs.writeFileSync(path.join(out, "thinking-mode.png"), img.toPNG()));
+    for (const [width,height] of [[1024,768],[1280,800],[1440,900]]) {
+      win.setSize(width,height);await wait(120);
+      await js('window.scrollTo(0,0)');await wait(80);
+      assert(await js(`document.documentElement.scrollWidth <= innerWidth+1`), "configuration fits window width");
+      await win.capturePage().then((img) => fs.writeFileSync(path.join(out, `qiling-panel-${width}.png`), img.toPNG()));
+    }
     await click("编辑页");
     await wait(200);
     const original = await js("window.__editor.removeAiText");
