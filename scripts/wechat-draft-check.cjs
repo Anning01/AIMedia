@@ -81,5 +81,14 @@ app.whenReady().then(async () => {
     } finally { Object.assign(real, original); }
     console.log("PASS: WeChat direct publication code absent; article/sticker/create/update stay draft-only; legacy IPC publish flags and session recovery return drafts. No live network requests.");
   } catch (error) { console.error(error);exitCode = 1; }
-  finally { fs.rmSync(directory, { recursive: true, force: true });app.exit(exitCode); }
+  finally {
+    try { fs.rmSync(directory, { recursive: true, force: true }); }
+    catch (error) {
+      // Windows keeps Chromium session files locked until Electron exits.
+      if (process.platform !== "win32" || !["EBUSY", "EPERM"].includes(error.code)) {
+        console.error(error);
+        exitCode = 1;
+      }
+    } finally { app.exit(exitCode); }
+  }
 });
