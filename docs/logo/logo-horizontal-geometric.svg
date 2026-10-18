@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="128" viewBox="0 0 560 128">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2F54EB"/>
+      <stop offset="1" stop-color="#6E8DF6"/>
+    </linearGradient>
+    <linearGradient id="ink" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#E4EBFF"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(16,16)">
+    <g transform="scale(0.1875)">
+      <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+      <circle cx="256" cy="256" r="184" fill="#FFFFFF" opacity="0.08"/>
+      <rect x="128" y="138" width="256" height="40" rx="20" fill="url(#ink)"/>
+      <path d="M 360 212 L 168 328" stroke="url(#ink)" stroke-width="40" stroke-linecap="round" fill="none"/>
+      <path d="M 150 336 L 338 336 L 312 374" stroke="url(#ink)" stroke-width="40" stroke-linecap="round" fill="none"/>
+    </g>
+  </g>
+  <text x="136" y="72" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="46" font-weight="700" fill="#1F2430">万稿汇</text>
+  <text x="138" y="102" font-family="'Segoe UI',Arial,sans-serif" font-size="15" letter-spacing="3" fill="#8A93A6">WANGAOHUI STUDIO</text>
+</svg>

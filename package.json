@@ -1,0 +1,133 @@
+{
+  "name": "wangaohui",
+  "private": true,
+  "version": "1.0.3",
+  "description": "万稿汇 - 面向创作者的内容生产与发布桌面工具",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "concurrently -k \"vite\" \"wait-on tcp:127.0.0.1:5173 && cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5173 electron .\"",
+    "build": "tsc --noEmit && vite build",
+    "dist": "npm run dist:win",
+    "start": "electron .",
+    "preview": "vite preview",
+    "check:ui": "electron scripts/ui-check.cjs",
+    "check:creation": "electron scripts/creation-check.cjs",
+    "check:history": "electron scripts/history-check.cjs",
+    "check:publish": "electron scripts/publish-check.cjs",
+    "check:task-controls": "electron scripts/task-controls-check.cjs",
+    "check:ai": "electron scripts/ai-config-check.cjs",
+    "check:qiling": "electron scripts/qiling-check.cjs",
+    "check:qiling-ui": "electron scripts/qiling-ui-check.cjs",
+    "check:pipeline": "node scripts/pipeline-progress-check.cjs",
+    "check:secrets": "node scripts/check-secrets.cjs",
+    "dist:mac": "npm run build && electron-builder --mac dmg zip --publish never",
+    "dist:win": "npm run build && electron-builder --win nsis --x64 --publish never",
+    "check:release": "node scripts/release-check.cjs",
+    "check:wechat-drafts": "electron scripts/wechat-draft-check.cjs"
+  },
+  "dependencies": {
+    "@radix-ui/react-icons": "^1.3.2",
+    "@tailwindcss/vite": "^4.3.3",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "dayjs": "^1.11.13",
+    "electron-updater": "^6.8.9",
+    "html-to-image": "^1.11.13",
+    "qrcode": "^1.5.4",
+    "radix-ui": "^1.8.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "sonner": "^2.0.8",
+    "tailwind-merge": "^3.7.0",
+    "tailwindcss": "^4.3.3",
+    "xhshow-js": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.0",
+    "cross-env": "^7.0.3",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11",
+    "wait-on": "^8.0.1"
+  },
+  "build": {
+    "appId": "com.wangaohui.client",
+    "productName": "万稿汇",
+    "compression": "maximum",
+    "asar": true,
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json",
+      "!**/*.map",
+      "!**/config/**",
+      "!**/logs/**",
+      "!**/*.env",
+      "!**/.env*",
+      "!**/*.pfx",
+      "!**/*.p12",
+      "!**/*.pem",
+      "!**/*.key",
+      "!**/ai-config.json",
+      "!**/qiling-model-requests.json",
+      "!**/qiling-remove-tasks.json"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.png",
+      "executableName": "whg",
+      "forceCodeSigning": false
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "Anning01",
+      "repo": "AIMedia",
+      "releaseType": "draft"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "AIMedia-${version}-win-${arch}-Setup.${ext}"
+    },
+    "artifactName": "AIMedia-${version}-${os}-${arch}.${ext}",
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "build/icon.png",
+      "category": "public.app-category.productivity",
+      "sign": "./build/mac-sign.cjs",
+      "hardenedRuntime": true,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "notarize": false,
+      "artifactName": "AIMedia-${version}-mac-${arch}.${ext}"
+    },
+    "extraResources": [
+      {
+        "from": "LICENSE",
+        "to": "licenses/Apache-2.0.txt"
+      },
+      {
+        "from": "src/assets/fonts/OFL.txt",
+        "to": "licenses/SmileySans-OFL.txt"
+      }
+    ]
+  },
+  "homepage": "https://github.com/Anning01/AIMedia",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Anning01/AIMedia.git"
+  },
+  "license": "Apache-2.0",
+  "author": "Anning01"
+}

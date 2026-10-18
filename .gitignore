@@ -1,0 +1,44 @@
+# 依赖与构建产物
+node_modules/
+dist/
+release/
+
+# 本机配置与密钥（严禁上传）
+config/
+*.env
+.env
+
+# 临时文件与日志
+.tmp-*
+*.log
+*.png.tmp
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 本机账户数据、导出、开发工具设置与旧截图
+.claude/
+.idea/
+.vscode/
+logs/
+userData/
+userdata/
+exports/
+coverage/
+docs/screenshots/
+ai-config.json
+qiling-model-requests.json
+qiling-remove-tasks.json
+*session*.json
+*cookie*.json
+*credentials*.json
+
+# 私钥、签名证书与环境变量
+.env.*
+*.pfx
+*.p12
+*.pem
+*.key
+*.keystore
+*.mobileprovision

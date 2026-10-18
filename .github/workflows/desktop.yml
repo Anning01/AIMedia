@@ -1,0 +1,179 @@
+name: Desktop build and release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Platforms to build
+        type: choice
+        options: [all, windows]
+        default: all
+      source_ref:
+        description: Optional source tag or commit
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.source_ref || github.ref }}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run check:secrets
+      - run: npm run check:release
+      - run: npm run build
+      - run: npm run check:pipeline
+      - name: Validate release tag
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: node -e "if(process.env.RELEASE_TAG!=='v'+require('./package.json').version)throw Error('Release tag must match package.json version')"
+
+  mac:
+    if: github.event_name != 'pull_request' && inputs.platform != 'windows'
+    needs: verify
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            arch: arm64
+          - runner: macos-15-intel
+            arch: x64
+    runs-on: ${{ matrix.runner }}
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.source_ref || github.ref }}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Package macOS with ad-hoc signature
+        run: npm run dist:mac -- --${{ matrix.arch }}
+      - name: Verify app and ad-hoc signature
+        env:
+          TARGET_ARCH: ${{ matrix.arch }}
+        run: |
+          app=$(find release -maxdepth 2 -name '*.app' -type d -print -quit)
+          test -n "$app"
+          codesign --verify --deep --strict --verbose=2 "$app"
+          codesign -dv "$app" 2>&1 | grep 'Signature=adhoc'
+          node scripts/verify-package.cjs "$app/Contents/Resources/app.asar"
+          WGH_TEST_APP_ASAR="$app/Contents/Resources/app.asar" npx electron scripts/qiling-check.cjs
+          WGH_TEST_APP_ASAR="$app/Contents/Resources/app.asar" npx electron scripts/wechat-draft-check.cjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: mac-${{ matrix.arch }}
+          path: |
+            release/*.dmg
+            release/*.zip
+            release/latest-mac.yml
+          if-no-files-found: error
+          retention-days: 14
+
+  windows:
+    needs: verify
+    if: github.event_name != 'pull_request'
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.source_ref || github.ref }}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Build unsigned Windows x64 installer
+        shell: bash
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: |
+          npm run build
+          npx electron-builder --win nsis --x64 --publish never --config.win.forceCodeSigning=false
+      - name: Verify installer and executable
+        shell: pwsh
+        run: |
+          $files = @(Get-ChildItem release -Filter '*Setup.exe') + @(Get-Item release/win-unpacked/whg.exe)
+          if ($files.Count -lt 2) { throw 'Missing installer or application executable' }
+          foreach ($file in $files) {
+            if ($file.Length -eq 0) { throw "Empty package: $($file.Name)" }
+            $signature = Get-AuthenticodeSignature $file.FullName
+            if ($signature.Status -ne 'NotSigned') { throw "Expected unsigned package: $($file.Name)" }
+          }
+          node scripts/verify-package.cjs release/win-unpacked/resources/app.asar
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $env:WGH_TEST_APP_ASAR = (Resolve-Path release/win-unpacked/resources/app.asar).Path
+          npx electron scripts/qiling-check.cjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npx electron scripts/wechat-draft-check.cjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: windows-x64
+          path: |
+            release/*Setup.exe
+            release/*.blockmap
+            release/latest.yml
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    if: >-
+      always() && startsWith(github.ref, 'refs/tags/v') &&
+      needs.mac.result == 'success' && needs.windows.result == 'success'
+    needs: [mac, windows]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.source_ref || github.ref }}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          path: artifacts
+      - name: Verify and collect release files
+        run: node scripts/prepare-release.cjs artifacts release-upload
+      - name: Create release draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          notes="docs/releases/${RELEASE_TAG#v}.md"
+          if [[ -f "$notes" ]]; then
+            gh release create "$RELEASE_TAG" --verify-tag --draft --title "万稿汇 $RELEASE_TAG" --notes-file "$notes"
+          else
+            gh release create "$RELEASE_TAG" --verify-tag --draft --title "万稿汇 $RELEASE_TAG" --generate-notes
+          fi
+          find release-upload -type f -print0 | xargs -0 gh release upload "$RELEASE_TAG"
