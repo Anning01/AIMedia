@@ -13,6 +13,7 @@ import {
   listMaterialGroups,
   saveHostTasks,
   saveQueueItem,
+  saveWechatSession,
   uid,
   updateConsumed,
   updateMaterial,
@@ -362,13 +363,10 @@ export function useTaskCenter({ active = true }: { active?: boolean }) {
     let token = account.token;
     let wechatUsername = "";
     if (t.platform === "公众号") {
-      wechatUsername =
-        t.wechatUsername ||
-        account.currentUsername ||
-        (account.wechatAccounts || []).find(
-          (w) => w.kind !== "wxa" && w.enabled !== false,
-        )?.username ||
-        "";
+      wechatUsername = t.wechatUsername || "";
+      const target = (account.wechatAccounts || []).find((w) => w.username === wechatUsername);
+      if (!target || target.kind === "wxa" || target.enabled === false)
+        return { ok: false, error: "目标公众号不存在或已停用，请重新配置托管任务" };
     }
     const r = await window.wangaohui?.platformPublish({
       platform:
@@ -389,6 +387,8 @@ export function useTaskCenter({ active = true }: { active?: boolean }) {
       coverImageUrl: payload.coverImageUrl,
       saveDraftOnly: saveToDraftOnly(t.platform, t.publishMode),
       wechatUsername: wechatUsername || undefined,
+      wechatAccounts: account.wechatAccounts,
+      currentUsername: account.currentUsername,
       claimExclusive: account.claimExclusive,
       contentDeclaration: account.contentDeclaration,
       bjhTtv: account.bjhTtv,
@@ -397,8 +397,13 @@ export function useTaskCenter({ active = true }: { active?: boolean }) {
       xhsOriginal: account.xhsOriginal,
       xhsContentDeclaration: account.xhsContentDeclaration,
     });
-    if (r && r.ok)
+    if (r && r.ok) {
+      if (t.platform === "公众号" && r.cookies) {
+        const latest = listAccounts().find((a) => a.id === account.id);
+        if (latest) saveWechatSession(latest, wechatUsername, r.token, r.cookies, r.currentUsername || wechatUsername);
+      }
       return { ok: true as const, cookies: r.cookies, token: r.token };
+    }
     return { ok: false as const, error: r?.error || "发布失败" };
   };
 

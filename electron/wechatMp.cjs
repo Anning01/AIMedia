@@ -8,6 +8,20 @@ const BASE_URL = 'https://mp.weixin.qq.com';
 const DEFAULT_FINGERPRINT = '35dc47301bd07b69891ae7968e00661d';
 const PUBLISH_PARTITION = 'persist:wechat-publish';
 let publishSession = null;
+let sessionWork = Promise.resolve();
+
+// 切号和写入必须作为整体串行，避免托管、手动操作和保活交错切换身份。
+function withSession(work) {
+  const result = sessionWork.then(work);
+  sessionWork = result.catch(() => {});
+  return result;
+}
+
+function assertAccount(cookies, username) {
+  if (username && getCookieValue(cookies, 'slave_user') !== username) {
+    throw new Error('公众号登录身份与目标账号不一致，已停止操作，请在账号中心重新登录');
+  }
+}
 
 function getPublishSession() {
   if (!publishSession) {
@@ -1102,6 +1116,7 @@ function buildStickerCropList(fileId) {
 }
 
 async function saveDraft(token, state, fingerprint, fields, options = {}) {
+  assertAccount(state.value, options.username);
   const { mode = 'update', appmsgid = '' } = options;
   const sub = mode === 'create' ? 'create' : 'update';
   const { body, boundary } = buildMultipart(fields);
@@ -1135,6 +1150,7 @@ async function saveDraft(token, state, fingerprint, fields, options = {}) {
   return {
     success: false,
     error: result?.base_resp?.err_msg || result?.msg || '保存草稿失败',
+    errorCode: Number(result?.base_resp?.ret ?? result?.ret),
   };
 }
 
@@ -1292,7 +1308,7 @@ async function createDraft(token, cookies, fingerprint, opts) {
   });
   return saveDraft(token, state, fingerprint, fields, {
     mode: 'create',
-
+    username: opts.username,
   });
 }
 
@@ -1358,7 +1374,7 @@ async function updateDraft(token, cookies, fingerprint, appmsgid, dataSeq, opts 
   return saveDraft(token, state, fingerprint, fields, {
     mode: 'update',
     appmsgid,
-
+    username: opts.username,
   });
 }
 
@@ -1486,6 +1502,8 @@ async function verifySession(token, cookies) {
 }
 
 module.exports = {
+  withSession,
+  assertAccount,
   BASE_URL,
   DEFAULT_FINGERPRINT,
   platformUa,

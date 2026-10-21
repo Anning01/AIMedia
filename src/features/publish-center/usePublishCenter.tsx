@@ -290,6 +290,8 @@ export function usePublishCenter({ active = true }: { active?: boolean }) {
         coverImageUrl: coverMatch?.[1] || undefined,
         saveDraftOnly: saveToDraftOnly(pubPlatform, pubMode),
         wechatUsername: wechatTarget || undefined,
+        wechatAccounts: account.wechatAccounts,
+        currentUsername: account.currentUsername,
         claimExclusive: account.claimExclusive,
         contentDeclaration: account.contentDeclaration,
         bjhTtv: account.bjhTtv,

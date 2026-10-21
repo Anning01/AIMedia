@@ -122,6 +122,7 @@ export function InlineEditable({
     if (ref.current && ref.current.textContent !== initial) {
       ref.current.textContent = initial;
     }
+    ref.current?.focus();
     // 只在挂载时写入初始内容，避免输入时光标跳动
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -555,6 +556,7 @@ export function renderStickerBody(
                   e.stopPropagation();
                   edit.onDelete(coverBlock.id);
                 }}
+                aria-label="删除首图"
               />
             )}
           </div>
@@ -636,6 +638,7 @@ export function renderStickerBody(
                   e.stopPropagation();
                   edit.onDelete(b.id);
                 }}
+                aria-label="删除图片"
               />
             )}
           </div>
