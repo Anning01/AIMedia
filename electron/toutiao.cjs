@@ -5,6 +5,7 @@ const UA =
   '(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 
 let electron = null;
+let browserWork = Promise.resolve();
 try {
   electron = require('electron');
 } catch {
@@ -70,6 +71,10 @@ function parseCookieHeader(cookieString = '') {
 async function syncToutiaoCookies(platformSession, cookieString) {
   if (!platformSession || !cookieString) return;
   const map = parseCookieHeader(cookieString);
+  const current = await platformSession.cookies.get({url: 'https://mp.toutiao.com'});
+  const sessionId = map.sessionid || map.sessionid_ss;
+  if (sessionId && current.some(item => ['sessionid', 'sessionid_ss'].includes(item.name) && item.value === sessionId)) return;
+  await platformSession.clearStorageData({storages: ['cookies']});
   const targets = ['https://mp.toutiao.com', 'https://www.toutiao.com'];
   for (const [name, value] of Object.entries(map)) {
     for (const target of targets) {
@@ -94,25 +99,34 @@ async function syncToutiaoCookies(platformSession, cookieString) {
 }
 
 async function executeFetchInPage(win, payload) {
+  // 已编码表单原样交给官方客户端；显式 Content-Type 会跳过它的对象序列化。
   const script = `
-    (async () => {
+    new Promise((resolve) => {
       const opts = ${JSON.stringify(payload)};
-      const init = {
-        method: opts.method || 'GET',
-        credentials: 'include',
-        headers: opts.headers || {},
-      };
-      if (opts.body) init.body = opts.body;
-      try {
-        const resp = await fetch(opts.url, init);
-        const text = await resp.text();
-        let data = null;
-        try { data = JSON.parse(text); } catch (_) { data = { code: -1, message: 'invalid json', raw: text.slice(0, 500) }; }
-        return { status: resp.status, data };
-      } catch (err) {
-        return { status: 0, error: String(err && err.message || err) };
+      if (window.Garr?.network) {
+        const config = {headers: opts.headers || {}, withCredentials: true, timeout: opts.timeoutMs || 30000};
+        const request = opts.method === 'POST'
+          ? window.Garr.network.post(opts.url, opts.body || '', config)
+          : window.Garr.network.get(opts.url, config);
+        request.then(data => resolve({status:200, data}), error => resolve({status:error?.response?.status || 0, data:error?.response?.data, error:String(error?.message || error)}));
+        return;
       }
-    })();
+      const xhr = new XMLHttpRequest();
+      xhr.open(opts.method || 'GET', opts.url, true);
+      xhr.withCredentials = true;
+      xhr.timeout = opts.timeoutMs || 30000;
+      for (const [name, value] of Object.entries(opts.headers || {})) xhr.setRequestHeader(name, value);
+      xhr.onload = () => {
+        let data;
+        try { data = JSON.parse(xhr.responseText); }
+        catch (_) { data = {code:-1, message:'invalid json', raw:xhr.responseText.slice(0,500)}; }
+        resolve({status:xhr.status, data});
+      };
+      xhr.onerror = () => resolve({status:0, error:'头条请求网络异常'});
+      xhr.ontimeout = () => resolve({status:0, error:'头条请求超时'});
+      xhr.onabort = () => resolve({status:0, error:'头条请求已取消'});
+      xhr.send(opts.body || null);
+    })
   `;
   return win.webContents.executeJavaScript(script, true);
 }
@@ -250,6 +264,9 @@ function uploadHeaders(cookie) {
 }
 
 async function downloadImageBuffer(src) {
+  if (String(src).startsWith('wgh-image://')) {
+    return require('./images.cjs').readImageBuffer(src);
+  }
   if (/^data:/i.test(String(src))) {
     const m = String(src).match(/^data:([^;,]+)?(;base64)?,(.*)$/s);
     if (!m) throw new Error('非法URL');
@@ -285,7 +302,8 @@ async function uploadToutiaoImage(cookie, src, needCover = false) {
     throw new Error(`图片上传失败: ${up?.message || 'no image_uri'}`);
   }
   const imageUrl = up.data.image_url;
-  if (!needCover) return { imageUri: up.data.image_uri, imageUrl };
+  const uploaded = {imageUri: up.data.image_uri, imageUrl, width: up.data.image_width || 800, height: up.data.image_height || 600, mime: up.data.image_mime_type || contentType};
+  if (!needCover) return uploaded;
 
   const form2 = new FormData();
   form2.append('imageUrl', imageUrl);
@@ -298,7 +316,9 @@ async function uploadToutiaoImage(cookie, src, needCover = false) {
     throw new Error(`封面生成失败: ${cv?.message || 'no image_uri'}`);
   }
   return {
+    ...uploaded,
     imageUri: cv.data.image_uri,
+    bodyUri: up.data.image_uri,
     imageUrl,
     coverUrl: cv.data.cover_url || cv.data.image_url,
     width: cv.data.image_width || 800,
@@ -307,35 +327,36 @@ async function uploadToutiaoImage(cookie, src, needCover = false) {
 }
 
 async function prepareToutiaoContent(cookie, html, coverImageUrl = '') {
-  const imgRegex = /<img[^>]+src="([^"]+)"/gi;
-  const srcs = [];
-  let m;
-  while ((m = imgRegex.exec(html)) !== null) srcs.push(m[1]);
-  const map = {};
+  const imgRegex = /<img\b[^>]*>/gi;
+  const srcRegex = /\ssrc\s*=\s*(["'])(.*?)\1/i;
+  const decodeSrc = (src) => src.replace(/&amp;/gi, '&').replace(/&#(?:0*38|x0*26);/gi, '&');
+  const srcs = [...new Set((html.match(imgRegex) || []).map((tag) => tag.match(srcRegex)?.[2]).filter(Boolean).map(decodeSrc))];
+  const map = new Map();
   let coverData = null;
+  const coverSrc = decodeSrc(coverImageUrl) || srcs[0];
+  if (coverSrc && !srcs.includes(coverSrc)) srcs.push(coverSrc);
   for (const src of srcs) {
     try {
-      if (coverImageUrl && src === coverImageUrl) {
-        const c = await uploadToutiaoImage(cookie, src, true);
+      const c = await uploadToutiaoImage(cookie, src, src === coverSrc);
+      if (!/^https?:\/\//i.test(c.imageUrl || '') || !c.imageUri) throw new Error('上传结果缺少有效的图片地址或 URI');
+      if (src === coverSrc) {
+        if (!/^https?:\/\//i.test(c.coverUrl || '')) throw new Error('上传结果缺少有效的封面地址');
         coverData = { coverUrl: c.coverUrl, imageUri: c.imageUri, width: c.width, height: c.height };
-        map[src] = c.coverUrl;
-      } else if (!coverData) {
-        const c = await uploadToutiaoImage(cookie, src, true);
-        coverData = { coverUrl: c.coverUrl, imageUri: c.imageUri, width: c.width, height: c.height };
-        map[src] = c.coverUrl;
-      } else {
-        const c = await uploadToutiaoImage(cookie, src, false);
-        map[src] = c.imageUrl;
       }
+      map.set(src, c);
     } catch (e) {
-      // 上传失败保留原链，让平台自行处理
-      map[src] = src;
+      throw new Error(`头条图片处理失败（第 ${srcs.indexOf(src) + 1} 张）：${e.message || e}`);
     }
   }
-  let safeContent = html;
-  for (const [k, v] of Object.entries(map)) {
-    if (v !== k) safeContent = safeContent.split(k).join(v);
-  }
+  const escape = value => String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+  const safeContent = html.replace(imgRegex, tag => {
+    const source = tag.match(srcRegex)?.[2];
+    if (!source) return tag;
+    const image = map.get(decodeSrc(source));
+    const attrs = tag.replace(srcRegex, ` src="${escape(image.imageUrl)}"`)
+      .replace(/\s(?:web_uri|img_width|img_height|image_type|mime_type)\s*=\s*(["']).*?\1/gi, '');
+    return attrs.replace(/\s*\/?\s*>$/, ` web_uri="${escape(image.bodyUri || image.imageUri)}" img_width="${image.width}" img_height="${image.height}" image_type="1" mime_type="${escape(image.mime)}">`);
+  });
   return { content: safeContent, coverData };
 }
 
@@ -352,7 +373,9 @@ async function publishArticleWithBrowser(cookie, payload = {}, onLog) {
   const content = String(payload.content || '').trim();
   if (!title || !content) return { success: false, error: '缺少标题或内容' };
 
-  const platformSession = session.fromPartition('persist:pub-toutiao');
+  // 与登录窗口共享持久会话，保留头条 Web SDK 的设备状态。
+  const partition = 'persist:pub-toutiao';
+  const platformSession = session.fromPartition(partition);
   await syncToutiaoCookies(platformSession, normalized);
 
   const win = new BrowserWindow({
@@ -361,7 +384,7 @@ async function publishArticleWithBrowser(cookie, payload = {}, onLog) {
     show: false,
     autoHideMenuBar: true,
     webPreferences: {
-      partition: 'persist:pub-toutiao',
+      partition,
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: true,
@@ -438,60 +461,48 @@ async function publishArticleWithBrowser(cookie, payload = {}, onLog) {
       });
 
     await randomDelay(1500, 2500);
-    const msToken = await fetchWebsdkToken();
     const query = new URLSearchParams({
       source: 'mp',
       type: 'article',
       aid: '1231',
       mp_publish_ab_val: '0',
     });
-    if (msToken) query.set('msToken', msToken);
     const publishUrl = `https://mp.toutiao.com/mp/agw/article/publish?${query}`;
+    const antiResponse = await executeFetchInPage(win, {url: 'https://mp.toutiao.com/tt-anti-token'});
+    const antiData = antiResponse?.data;
+    if (Number(antiData?.errno) !== 0 || !antiData?.data?.token) {
+      return {success: false, error: '无法获取头条提交校验，请重新登录头条号', fallback: false};
+    }
     const postHeaders = {
       Accept: 'application/json, text/plain, */*',
       'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+      'tt-anti-token': antiData.data.token,
     };
 
-    log('保存草稿 (save=0)...');
-    const saveResp = await executeFetchInPage(win, {
+    // 新文章可直接发布，不能让额外的存草稿失败阻断发布。
+    const saveOnly = payload.save_draft_only === true;
+    log(saveOnly ? '保存草稿...' : '正式发布...');
+    const response = await executeFetchInPage(win, {
       url: publishUrl,
       method: 'POST',
       headers: postHeaders,
-      body: toForm(buildBody(0)),
+      body: toForm(buildBody(saveOnly ? 0 : 1)),
     });
-    const saveData = saveResp?.data || {};
-    if (Number(saveData.code ?? -1) !== 0) {
+    const result = response?.data || {};
+    if (Number(result.code ?? -1) !== 0) {
       return {
         success: false,
-        error: `草稿保存失败: ${JSON.stringify({ code: saveData.code, message: saveData.message })}`,
+        error: `${saveOnly ? '草稿保存' : '发布'}失败: ${JSON.stringify({code: result.code, message: result.message || response?.error})}`,
         fallback: false,
       };
     }
-    const pgcId = String(saveData?.data?.pgc_id || '');
-    log(`草稿保存成功 (pgc_id: ${pgcId})`);
-
-    if (payload.save_draft_only === true) {
-      return { success: true, articleId: pgcId, method: 'draft' };
-    }
-
-    await randomDelay(2000, 3500);
-    log('正式发布 (save=1)...');
-    const pubResp = await executeFetchInPage(win, {
-      url: publishUrl,
-      method: 'POST',
-      headers: postHeaders,
-      body: toForm(buildBody(1, pgcId)),
-    });
-    const pubData = pubResp?.data || {};
-    if (Number(pubData.code ?? -1) !== 0) {
-      return {
-        success: false,
-        error: `发布失败: ${JSON.stringify({ code: pubData.code, message: pubData.message })}`,
-        fallback: false,
-      };
-    }
+    const articleId = String(result?.data?.pgc_id || '');
+    if (!articleId || articleId === '0') return {success: false, error: '头条未返回有效的文章 ID，请到平台后台确认结果', fallback: false};
+    if (saveOnly) return {success: true, articleId, method: 'draft'};
     log('发布成功');
-    return { success: true, articleId: String(pubData?.data?.pgc_id || pgcId), method: 'publish' };
+    return { success: true, articleId, method: 'publish' };
+  } catch (err) {
+    return { success: false, error: err.message || '发布失败', fallback: false };
   } finally {
     if (win && !win.isDestroyed()) win.destroy();
   }
@@ -509,7 +520,9 @@ async function publishArticle(cookie, payload = {}, onLog) {
   if (!title || !content) return { success: false, error: '缺少标题或内容' };
 
   if (electron && electron.BrowserWindow) {
-    const browserResult = await publishArticleWithBrowser(cookie, payload, onLog);
+    const work = browserWork.then(() => publishArticleWithBrowser(cookie, payload, onLog));
+    browserWork = work.catch(() => {});
+    const browserResult = await work;
     if (browserResult?.success || browserResult?.fallback === false) {
       return browserResult;
     }
@@ -595,45 +608,22 @@ async function publishArticle(cookie, payload = {}, onLog) {
 
     const saveOnly = payload.save_draft_only === true;
 
-    log(saveOnly ? '保存草稿...' : '保存草稿...');
-    await sleep(1500);
-    const saveResp = await fetch(`https://mp.toutiao.com/mp/agw/article/publish?${query}`, {
+    log(saveOnly ? '保存草稿...' : '正式发布...');
+    const response = await fetch(`https://mp.toutiao.com/mp/agw/article/publish?${query}`, {
       method: 'POST',
       headers: postHeaders,
-      body: toForm(buildBody(0)),
+      body: toForm(buildBody(saveOnly ? 0 : 1)),
       signal: AbortSignal.timeout(30000),
     });
-    const saveData = await saveResp.json().catch(() => null);
-    if (Number(saveData?.code ?? -1) !== 0) {
-      return {
-        success: false,
-        error: `草稿保存失败: ${JSON.stringify({ code: saveData?.code, message: saveData?.message })}`,
-      };
+    const result = await response.json().catch(() => null);
+    if (Number(result?.code ?? -1) !== 0) {
+      return {success: false, error: `${saveOnly ? '草稿保存' : '发布'}失败: ${JSON.stringify({code: result?.code, message: result?.message})}`};
     }
-    const pgcId = String(saveData?.data?.pgc_id || '');
-    log(`草稿保存成功 (pgc_id: ${pgcId})`);
-
-    if (saveOnly) {
-      return { success: true, articleId: pgcId, method: 'draft' };
-    }
-
-    await sleep(2000);
-    log('正式发布 (save=1)...');
-    const pubResp = await fetch(`https://mp.toutiao.com/mp/agw/article/publish?${query}`, {
-      method: 'POST',
-      headers: postHeaders,
-      body: toForm(buildBody(1, pgcId)),
-      signal: AbortSignal.timeout(30000),
-    });
-    const pubData = await pubResp.json().catch(() => null);
-    if (Number(pubData?.code ?? -1) !== 0) {
-      return {
-        success: false,
-        error: `发布失败: ${JSON.stringify({ code: pubData?.code, message: pubData?.message })}`,
-      };
-    }
+    const articleId = String(result?.data?.pgc_id || '');
+    if (!articleId || articleId === '0') return {success: false, error: '头条未返回有效的文章 ID，请到平台后台确认结果'};
+    if (saveOnly) return {success: true, articleId, method: 'draft'};
     log('发布成功');
-    return { success: true, articleId: String(pubData?.data?.pgc_id || pgcId), method: 'publish' };
+    return { success: true, articleId, method: 'publish' };
   } catch (err) {
     return { success: false, error: err.message || '发布失败' };
   }

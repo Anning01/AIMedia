@@ -419,6 +419,8 @@ interface Window {
       digest?: string;
       saveDraftOnly?: boolean;
       wechatUsername?: string;
+      wechatAccounts?: Array<{ username?: string; appid?: string; acctType?: number; kind?: string }>;
+      currentUsername?: string;
       claimExclusive?: boolean;
       contentDeclaration?: string;
       bjhTtv?: boolean;
@@ -438,6 +440,7 @@ interface Window {
       cookies?: string;
       token?: string;
       lastRefresh?: string;
+      currentUsername?: string;
       error?: string;
     }>;
     wechatRefreshSession: (payload: {

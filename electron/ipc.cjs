@@ -533,15 +533,17 @@ function registerIpc() {
   ipcMain.handle('wechat-sync-accounts', async (_e, payload = {}) => {
     try {
       // 对齐参考项目：同步前先刷新最新 token/cookie，避免用旧 token 请求导致失败
-      const auth = await wechatMp.refreshAuth(payload.token, payload.cookie);
-      const r = await getPublicAccounts(auth.token, auth.cookies);
-      return {
-        ok: r.success,
-        accounts: r.accounts || [],
-        token: auth.token,
-        cookies: auth.cookies,
-        error: r.error,
-      };
+      return await wechatMp.withSession(async () => {
+        const auth = await wechatMp.refreshAuth(payload.token, payload.cookie);
+        const r = await getPublicAccounts(auth.token, auth.cookies);
+        return {
+          ok: r.success,
+          accounts: r.accounts || [],
+          token: auth.token,
+          cookies: auth.cookies,
+          error: r.error,
+        };
+      });
     } catch (err) {
       return { ok: false, error: String(err && err.message ? err.message : err) };
     }
@@ -666,82 +668,85 @@ function registerIpc() {
         return { ok: r.success, ...r };
       }
       if (platform === 'wechat') {
-        // 草稿操作后回写本次实际使用的登录态
-        let currentToken = token;
-        let currentCookie = cookie;
-        const postAuth = async (tk, ck) => {
-          try {
-            const auth = await wechatMp.refreshAuth(tk, ck);
-            if (auth.success && auth.cookies && auth.found) {
-              return { token: auth.token || tk, cookies: auth.cookies, lastRefresh: auth.lastRefresh };
+        return await wechatMp.withSession(async () => {
+          const username = String(payload.wechatUsername || '').trim();
+          const selectTarget = async () => {
+            const auth = await wechatMp.refreshSession(
+              token, cookie, username || undefined, fingerprint, undefined,
+              payload.wechatAccounts, payload.currentUsername,
+            );
+            if (!auth.success || !auth.cookies) throw new Error(auth.error || '切换公众号登录态失败');
+            wechatMp.assertAccount(auth.cookies, username);
+            token = auth.token || token;
+            cookie = auth.cookies;
+          };
+          if (username) await selectTarget();
+          // 草稿操作后回写本次实际使用的登录态
+          let currentToken = token;
+          let currentCookie = cookie;
+          const postAuth = async (tk, ck) => {
+            try {
+              const auth = await wechatMp.refreshAuth(tk, ck);
+              if (auth.success && auth.cookies && auth.found) {
+                return { token: auth.token || tk, cookies: auth.cookies, lastRefresh: auth.lastRefresh };
+              }
+            } catch {
+              /* ignore */
             }
-          } catch {
-            /* ignore */
-          }
-          return { token: tk, cookies: ck, lastRefresh: undefined };
-        };
-        const draftOpts = {
-          title: common.title,
-          content: common.content,
-          digest: payload.digest || '',
-          cover: payload.coverImageUrl || '',
-          postType: payload.postType === 'sticker' ? 'sticker' : 'article',
-          images: Array.isArray(payload.images) ? payload.images : [],
-          claimSourceType: payload.claimSourceType || 0,
-          isUserNoClaim: payload.isUserNoClaim || 0,
-          copyrightType: payload.copyrightType || 0,
-          sections: payload.sections0 || '',
-          composeInfo: payload.composeInfo || '',
-        };
-        let draft = await wechatMp.createDraft(
-          token,
-          cookie,
-          fingerprint,
-          draftOpts,
-        );
-        if (draft.success && draft.cookies) {
-          cookie = draft.cookies;
-          currentCookie = draft.cookies;
-          currentToken = token;
-        }
-        if (
-          !draft.success &&
-          (draft.errorCode === 200003 ||
-            /invalid session|invalid csrf|csrf token/i.test(draft.error || ''))
-        ) {
-          // 会话/CSRF 失效：重新切号续期后重试一次
-          const rr = await wechatMp.refreshSession(
+            return { token: tk, cookies: ck, lastRefresh: undefined };
+          };
+          const draftOpts = {
+            username,
+            title: common.title,
+            content: common.content,
+            digest: payload.digest || '',
+            cover: payload.coverImageUrl || '',
+            postType: payload.postType === 'sticker' ? 'sticker' : 'article',
+            images: Array.isArray(payload.images) ? payload.images : [],
+            claimSourceType: payload.claimSourceType || 0,
+            isUserNoClaim: payload.isUserNoClaim || 0,
+            copyrightType: payload.copyrightType || 0,
+            sections: payload.sections0 || '',
+            composeInfo: payload.composeInfo || '',
+          };
+          let draft = await wechatMp.createDraft(
             token,
             cookie,
-            payload.wechatUsername,
             fingerprint,
+            draftOpts,
           );
-          if (rr.success && rr.cookies) {
-            cookie = rr.cookies;
-            token = rr.token || token;
+          if (draft.success && draft.cookies) {
+            cookie = draft.cookies;
+            currentCookie = draft.cookies;
+            currentToken = token;
+          }
+          if (
+            !draft.success &&
+            (draft.errorCode === 200003 ||
+              /invalid session|invalid csrf|csrf token/i.test(draft.error || ''))
+          ) {
+            // 会话/CSRF 失效：重新切号续期后重试一次
+            await selectTarget();
             currentToken = token;
             currentCookie = cookie;
-            draft = await wechatMp.createDraft(
-              token,
-              cookie,
-              fingerprint,
-              draftOpts,
-            );
+            draft = await wechatMp.createDraft(token, cookie, fingerprint, draftOpts);
             if (draft.success && draft.cookies) cookie = draft.cookies;
           }
-        }
-        if (!draft.success) {
-          const auth = await postAuth(currentToken, currentCookie);
-          return { ok: false, error: draft.error, token: auth.token, cookies: auth.cookies };
-        }
-        const auth = await postAuth(currentToken, currentCookie);
-        return {
-          ok: true,
-          articleId: draft.appmsgid,
-          method: 'draft',
-          token: auth.token,
-          cookies: auth.cookies,
-        };
+          if (!draft.success) {
+            const auth = await postAuth(currentToken, currentCookie);
+            return { ok: false, error: draft.error, token: auth.token, cookies: auth.cookies };
+          }
+          const auth = await postAuth(token, cookie);
+          wechatMp.assertAccount(auth.cookies, username);
+          return {
+            ok: true,
+            articleId: draft.appmsgid,
+            method: 'draft',
+            token: auth.token,
+            cookies: auth.cookies,
+            currentUsername: username || undefined,
+          };
+        });
       }
       return { ok: false, error: `不支持的平台：${platform}` };
     } catch (err) {
@@ -750,7 +755,7 @@ function registerIpc() {
   });
   ipcMain.handle('wechat-refresh-session', async (_e, payload = {}) => {
     try {
-      const r = await wechatMp.refreshSession(
+      const r = await wechatMp.withSession(() => wechatMp.refreshSession(
         payload.token,
         payload.cookie,
         payload.username,
@@ -758,7 +763,8 @@ function registerIpc() {
         payload.appid,
         payload.accounts,
         payload.currentUsername,
-      );
+      ));
+      if (r.success) wechatMp.assertAccount(r.cookies, payload.username);
       console.log(
         `[ipc] wechat-refresh-session: target=${payload.username || '(none)'} currentUsername=${r.currentUsername || ''} token=${
           r.token || ''
@@ -780,7 +786,7 @@ function registerIpc() {
   ipcMain.handle('platform-verify', async (_e, payload = {}) => {
     try {
       if (payload.platform === 'wechat') {
-        const r = await wechatMp.verifySession(payload.token, payload.cookie);
+        const r = await wechatMp.withSession(() => wechatMp.verifySession(payload.token, payload.cookie));
         return { ok: r.ok, valid: r.valid, error: r.error };
       }
       if (payload.platform === 'toutiao') return await verifyToutiao(payload.cookie);

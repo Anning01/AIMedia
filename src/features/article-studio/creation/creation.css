@@ -360,6 +360,12 @@
   margin-bottom: 10px;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.editor-history-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 .creation-editor-toolbar p {
   margin: 0;

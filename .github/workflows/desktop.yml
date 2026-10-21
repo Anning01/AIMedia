@@ -39,6 +39,7 @@ jobs:
       - run: npm run check:release
       - run: npm run build
       - run: npm run check:pipeline
+      - run: npm run check:toutiao-images
       - name: Validate release tag
         if: startsWith(github.ref, 'refs/tags/')
         env:

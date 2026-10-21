@@ -12,6 +12,7 @@ import { useRemoveAi } from "./useRemoveAi";
 import { RemoveAiDialog } from "./RemoveAiDialog";
 import { TOOLBAR } from "./model";
 import { useArticleWorkspace } from "./workspace-context";
+import { EditorHistoryControls } from "./EditorHistoryControls";
 export function ArticleEditor() {
   const {
     removeAiText,
@@ -62,7 +63,7 @@ export function ArticleEditor() {
       >
         <>
           <div className="creation-editor-toolbar">
-            <p>点击内容直接编辑，按需插入新的模块。</p>
+            <EditorHistoryControls />
             <Space>
               <Button
                 disabled={!removeAiText.trim()}

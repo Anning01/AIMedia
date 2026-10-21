@@ -83,6 +83,7 @@ promoteFirstTitle,
 } from "./model";
 
 import { candidateBlocks, documentText } from "./remove-ai-model";
+import { sameBlocks, useBlockHistory } from "./useBlockHistory";
 
 import { GENERATION_TOAST_KEY, generationError, useGenerationFeedback } from "./useGenerationFeedback";
 
@@ -168,7 +169,12 @@ export function useArticleStudio({
   useEffect(()=>{
     if(generating&&generation.feedback.stage==='layout')setFlow({outline:'done',article:'done',layout:'active'});
   },[generating,generation.feedback.stage]);
-  const [blocks, setBlocks] = useState<Block[]>([]);
+  const { blocks, setBlocks, resetBlocks, undoBlocks, redoBlocks, canUndo, canRedo } = useBlockHistory();
+  const resetDocument = (next: Block[]) => {
+    resetBlocks(next);
+    setEditingId(null);
+    setAnchorId(null);
+  };
   const stickerTitleText = useMemo(
     () => blocks.find((b) => b.type === "title")?.text?.trim() || "",
     [blocks],
@@ -315,9 +321,7 @@ export function useArticleStudio({
     if (window.wangaohui?.selectImage) {
       const r = await window.wangaohui.selectImage();
       if (r.ok && r.dataUrl) {
-        setBlocks(
-          blocks.map((b) => (b.id === id ? { ...b, src: r.dataUrl } : b)),
-        );
+        setBlocks((prev) => prev.map((b) => (b.id === id ? { ...b, src: r.dataUrl } : b)));
         return;
       }
       if (!r.canceled) messageApi.error(r.error || "选择图片失败");
@@ -332,7 +336,7 @@ export function useArticleStudio({
       const reader = new FileReader();
       reader.onload = () => {
         setBlocks(
-          blocks.map((b) =>
+          (prev) => prev.map((b) =>
             b.id === id ? { ...b, src: String(reader.result) } : b,
           ),
         );
@@ -592,7 +596,7 @@ export function useArticleStudio({
   };
 
   const removeBlock = (id: string) => {
-    setBlocks(blocks.filter((b) => b.id !== id));
+    setBlocks((prev) => prev.filter((b) => b.id !== id));
     setEditingId((cur) => (cur === id ? null : cur));
   };
 
@@ -602,11 +606,10 @@ export function useArticleStudio({
     setEditValue(b.items ? b.items.join("\n") : b.text || "");
   };
 
-  const saveEdit = () => {
-    if (!editingId) return;
+  const pendingBlocks = useMemo(() => {
+    if (!editingId) return blocks;
     const listTypes = new Set(["list", "infoGrid", "badges"]);
-    setBlocks((prev) =>
-      prev.map((x) =>
+    return blocks.map((x) =>
         x.id === editingId
           ? listTypes.has(x.type)
             ? {
@@ -618,9 +621,21 @@ export function useArticleStudio({
               }
             : { ...x, text: editValue }
           : x,
-      ),
-    );
+      );
+  }, [blocks, editingId, editValue]);
+  const hasPendingEdit = !sameBlocks(blocks, pendingBlocks);
+  const saveEdit = () => {
+    if (!editingId) return;
+    setBlocks(pendingBlocks);
     setEditingId(null);
+  };
+  const undoEdit = () => {
+    if (hasPendingEdit) setBlocks(pendingBlocks);
+    if (undoBlocks()) { setEditingId(null); setAnchorId(null); }
+  };
+  const redoEdit = () => {
+    if (hasPendingEdit) return;
+    if (redoBlocks()) { setEditingId(null); setAnchorId(null); }
   };
 
   const removeAiText = documentText(blocks.map(block => block.id === editingId ? {...block, text:editValue, items:block.items ? editValue.split('\n') : undefined} : block));
@@ -653,7 +668,7 @@ export function useArticleStudio({
         next.push({ id: `b${nextBlockUid()}`, type: "image", text: "", src }),
       );
     }
-    setBlocks(next);
+    resetDocument(next);
     setGenerated(true);
     messageApi.success(`已载入贴图「${h.title}」`);
   };
@@ -668,7 +683,7 @@ export function useArticleStudio({
       messageApi.warning("该记录没有可载入的内容");
       return;
     }
-    setBlocks(
+    resetDocument(
       (() => {
         const loaded = (h.blocks as Block[]).map((b) =>
           b.type === "title"
@@ -963,6 +978,8 @@ export function useArticleStudio({
         images: isSticker ? stickerImages : [],
         saveDraftOnly: saveToDraftOnly(pushPlatform, pushMode),
         wechatUsername: wechatTarget || undefined,
+        wechatAccounts: account.wechatAccounts,
+        currentUsername: account.currentUsername,
         claimExclusive: account.claimExclusive,
         contentDeclaration: account.contentDeclaration,
         bjhTtv: account.bjhTtv,
@@ -1684,7 +1701,7 @@ export function useArticleStudio({
           src: u.dataUrl,
         })),
       ];
-      setBlocks(next);
+      resetDocument(next);
       setGenerated(true);
       generation.progress("文案已生成，正在制作首图与内容卡。");
       // 自动排版：首图渲染标题，每个段落渲染成一张内容卡
@@ -1744,7 +1761,7 @@ export function useArticleStudio({
       // 生成的贴图图片落盘，生成记录只存 wgh-image:// 路径
       finalBlocks = await saveBlockImages(finalBlocks, "generated");
       generation.assertActive();
-      setBlocks(finalBlocks);
+      resetDocument(finalBlocks);
       saveArticleHistoryItem({
         id: newUid("art"),
         title: finalTitle,
@@ -2018,7 +2035,7 @@ export function useArticleStudio({
       );
       // 生成阶段：把正文开头重复的标题行提升为标题，并删除正文中的重复段
       finalBlocks = promoteFirstTitle(finalBlocks);
-      if (finalBlocks.length > 0) setBlocks(finalBlocks);
+      if (finalBlocks.length > 0) resetDocument(finalBlocks);
       const title =
         normalizeTitleText(
           finalBlocks.find((b) => b.type === "title")?.text || "",
@@ -2177,6 +2194,10 @@ export function useArticleStudio({
     editValue,
     setEditValue,
     saveEdit,
+    undoEdit,
+    redoEdit,
+    canUndoEdit: canUndo || hasPendingEdit,
+    canRedoEdit: canRedo && !hasPendingEdit,
     cancelEdit,
     startEdit,
     removeBlock,
