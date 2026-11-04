@@ -98,17 +98,52 @@ export function useMaterials() {
   };
 
   const pickFile = async () => {
-    if (!window.wangaohui?.selectTextFile) {
-      messageApi.error("请通过桌面应用运行后使用文件导入");
+    if (window.wangaohui?.selectTextFile) {
+      try {
+        const r = await window.wangaohui.selectTextFile();
+        if (r.ok && r.content) {
+          setImportText(r.content);
+          setImportFileName(r.name || "");
+        } else if (!r.canceled) {
+          messageApi.error(r.error || "读取文件失败");
+        }
+      } catch (err) {
+        messageApi.error(err instanceof Error ? err.message : "读取文件失败");
+      }
       return;
     }
-    const r = await window.wangaohui.selectTextFile();
-    if (r.ok && r.content) {
-      setImportText(r.content);
-      setImportFileName(r.name || "");
-    } else if (!r.canceled) {
-      messageApi.error(r.error || "读取文件失败");
+
+    // 网页端或未注入环境使用原生文件选择器兜底
+    if (typeof document !== "undefined") {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = ".txt,.md,text/plain";
+      input.style.display = "none";
+      input.onchange = () => {
+        const file = input.files?.[0];
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) {
+          messageApi.error("文件超过 5MB，请拆分后再导入");
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const text = String(e.target?.result || "");
+          setImportText(text);
+          setImportFileName(file.name);
+        };
+        reader.onerror = () => {
+          messageApi.error("读取文件失败");
+        };
+        reader.readAsText(file);
+        input.remove();
+      };
+      document.body.appendChild(input);
+      input.click();
+      return;
     }
+
+    messageApi.error("请通过桌面应用运行后使用文件导入");
   };
 
   const generateAi = async () => {

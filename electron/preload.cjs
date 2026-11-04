@@ -54,6 +54,7 @@ contextBridge.exposeInMainWorld('wangaohui', {
   readAiConfig: () => ipcRenderer.invoke('read-ai-config'),
   selectImage: () => ipcRenderer.invoke('select-image'),
   selectImages: (payload) => ipcRenderer.invoke('select-images', payload),
+  selectTextFile: () => ipcRenderer.invoke('select-text-file'),
   saveImage: (payload) => ipcRenderer.invoke('image-save', payload),
   readImage: (payload) => ipcRenderer.invoke('image-read', payload),
   openImageDir: () => ipcRenderer.invoke('image-open-dir'),
