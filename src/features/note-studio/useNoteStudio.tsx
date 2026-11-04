@@ -563,11 +563,13 @@ ${parseSource}
         if (!item.url || !item.dataUrl) continue;
         map[item.url] = item.dataUrl;
         try {
+          // 图片先落盘再入库，避免 base64 撑爆 localStorage 配额
+          const stored = await saveImage(item.dataUrl, "library");
           saveAsset({
             id: uid("asset"),
             kind: "图片",
             name: `爆款原图 · ${note.title.slice(0, 12)} ${okItems.indexOf(item) + 1}`,
-            dataUrl: item.dataUrl,
+            dataUrl: stored,
             tags: ["爆款参考", "小红书"],
             createdAt: new Date().toISOString(),
           });
@@ -970,11 +972,13 @@ ${parseSource}
         results[`img-${i}`] = composed;
         done += 1;
         setImgProgress(done);
+        // 图片先落盘再入库，避免 base64 撑爆 localStorage 配额
+        const stored = await saveImage(composed, "library");
         saveAsset({
           id: uid("asset"),
           kind: "图片",
           name: `场景合成图 ${i + 1} · 对应爆款图 ${i + 1}`,
-          dataUrl: composed,
+          dataUrl: stored,
           tags: ["AI生成", "产品合成"],
           createdAt: new Date().toISOString(),
         });

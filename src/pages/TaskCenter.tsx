@@ -12,6 +12,7 @@ export default function TaskCenter({ active = true }: { active?: boolean }) {
   const {
     contextHolder,
     tasks,
+    openCreate,
     setCreateOpen,
     columns,
     editingTask,
@@ -46,7 +47,7 @@ export default function TaskCenter({ active = true }: { active?: boolean }) {
         <Button
           type="primary"
           icon={<PlusOutlined />}
-          onClick={() => setCreateOpen(true)}
+          onClick={openCreate}
         >
           新建任务
         </Button>
@@ -54,7 +55,12 @@ export default function TaskCenter({ active = true }: { active?: boolean }) {
 
       {tasks.length > 0 && <TaskStats tasks={tasks} />}
 
-      <TaskList tasks={tasks} setCreateOpen={setCreateOpen} columns={columns} />
+      <TaskList
+        tasks={tasks}
+        setCreateOpen={setCreateOpen}
+        openCreate={openCreate}
+        columns={columns}
+      />
 
       <TaskEditor
         editingTask={editingTask}

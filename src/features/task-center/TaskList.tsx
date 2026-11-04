@@ -5,8 +5,11 @@ import { useTaskCenter } from "./useTaskCenter";
 type Props = Pick<
   ReturnType<typeof useTaskCenter>,
   "tasks" | "setCreateOpen" | "columns"
->;
-export function TaskList({ tasks, setCreateOpen, columns }: Props) {
+> & {
+  openCreate?: () => void;
+};
+export function TaskList({ tasks, setCreateOpen, openCreate, columns }: Props) {
+  const handleCreate = openCreate || (() => setCreateOpen(true));
   return (
     <Card
       title={`托管任务（${tasks.length}）`}
@@ -16,7 +19,7 @@ export function TaskList({ tasks, setCreateOpen, columns }: Props) {
           <Button
             type="primary"
             icon={<PlusOutlined />}
-            onClick={() => setCreateOpen(true)}
+            onClick={handleCreate}
           >
             新建任务
           </Button>

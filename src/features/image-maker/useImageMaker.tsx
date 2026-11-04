@@ -12,6 +12,7 @@ saveAsset,
 uid,
 } from "@/data/localStore";
 import { renderDesignPng } from "@/utils/renderDesignPng";
+import { saveImage } from "@/utils/imageStore";
 import { useMemo,useRef,useState } from "react";
 import { buildLayers,CATEGORIES,Layer,TEMPLATES,Tmpl } from "./model";
 
@@ -154,11 +155,20 @@ export function useImageMaker() {
     } catch {
       dataUrl = undefined;
     }
+    // 图片先落盘再入库，避免 base64 撑爆 localStorage 配额
+    let stored = dataUrl;
+    if (dataUrl) {
+      try {
+        stored = await saveImage(dataUrl, "library");
+      } catch {
+        // 落盘失败保留原图
+      }
+    }
     saveAsset({
       id: uid("asset"),
       kind: "设计",
       name: `${catInfo.label} · ${layers[0]?.text || "未命名"}`,
-      dataUrl,
+      dataUrl: stored,
       design: { width: catInfo.w, height: catInfo.h, bg, layers },
       createdAt: new Date().toISOString(),
     });
@@ -198,11 +208,18 @@ export function useImageMaker() {
         throw new Error(r?.error || "生成失败");
       }
       setBg(`url(${r.images[0]})`);
+      // 图片先落盘再入库，避免 base64 撑爆 localStorage 配额
+      let stored = r.images[0];
+      try {
+        stored = await saveImage(r.images[0], "generated");
+      } catch {
+        // 落盘失败保留原图
+      }
       saveAsset({
         id: uid("asset"),
         kind: "图片",
         name: `AI 背景 · ${aiPrompt.slice(0, 18)}`,
-        dataUrl: r.images[0],
+        dataUrl: stored,
         tags: ["AI生成"],
         createdAt: new Date().toISOString(),
       });

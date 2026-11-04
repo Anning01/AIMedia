@@ -96,6 +96,7 @@ interface AiResult {
   japanese?: string;
   chinese?: string;
   reply?: string;
+  removeAi?: boolean;
   blocks?: Array<{
     type: string;
     text?: string;
@@ -463,6 +464,15 @@ interface Window {
       lastRefresh?: string;
       currentUsername?: string;
       appid?: string;
+      error?: string;
+    }>;
+    appDataRead: () => {
+      ok: boolean;
+      data?: Record<string, unknown>;
+      corrupted?: boolean;
+    };
+    appDataWrite: (data: Record<string, unknown>) => Promise<{
+      ok: boolean;
       error?: string;
     }>;
     platformVerify: (payload: {

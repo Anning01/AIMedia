@@ -1,3 +1,15 @@
+import type { DiskKey } from "./persistentStore";
+import * as persistent from "./persistentStore";
+
+const initPersistentStore = () => persistent.initPersistentStore();
+const readDisk = <T,>(key: DiskKey, fallback: T): T =>
+  persistent.readDisk<T>(key, fallback);
+const readLegacyValue = <T,>(key: string, fallback: T): T =>
+  persistent.readLegacyValue<T>(key, fallback);
+const writeDisk = (key: DiskKey, value: unknown) => {
+  persistent.writeDisk(key, value);
+};
+
 /**
  * 万稿汇本地数据层：草稿、发布队列、账号、任务、素材库、用量记录。
  * 所有按钮写入这里，页面从同一份数据读取，杜绝“假成功”提示。
@@ -123,6 +135,8 @@ export interface HostTaskItem {
   startTime: string;
   intervalMinutes: number;
   publishMode: 'draft' | 'publish';
+  /** 托管任务去 AI 味：生成正文后调器灵去 AI 处理（老任务无此字段时默认关闭） */
+  removeAi?: boolean;
   retry: boolean;
   enabled: boolean;
   status: '运行中' | '已暂停' | '待运行' | '执行中' | '已完成';
@@ -247,17 +261,66 @@ const KEYS = {
   consumed: 'wangaohui:consumed',
 };
 
+/**
+ * 读取本地数据。
+ * - 账号 / 素材组 / 图片素材走磁盘存储（{userData}/app-data.json），localStorage 只是兼容层
+ * - 解析失败时保留原始字符串并回退到兜底值，不再把"数据损坏"伪装成"数据为空"
+ */
 function read<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : fallback;
+    if (raw === null || raw === "") return fallback;
+    return JSON.parse(raw) as T;
   } catch {
+    // 数据损坏：保留原始内容，方便后续排查/恢复，不当成空数据
+    try {
+      localStorage.setItem(`${key}:corrupted`, localStorage.getItem(key) || "");
+    } catch {
+      // 保留失败也不影响使用
+    }
     return fallback;
   }
 }
 
+/**
+ * 写入本地数据。
+ * localStorage 写入失败（配额超限等）时不抛异常，避免调用方的"保存成功"变成假象；
+ * 账号 / 素材组 / 图片素材另有磁盘兜底，数据不会丢。
+ * 返回是否写成功。
+ */
 function write(key: string, value: unknown): void {
   localStorage.setItem(key, JSON.stringify(value));
+}
+
+/**
+ * 关键数据（账号 / 素材组 / 图片素材 / 托管任务）读写磁盘存储。
+ * 磁盘为主、localStorage 为辅：磁盘数据优先，缺失时才用 localStorage 的旧数据（并回写磁盘）。
+ */
+function readPersistent<T>(key: DiskKey, legacyKey: string, fallback: T): T {
+  const diskValue = readDisk<T>(key, fallback);
+  if (Array.isArray(diskValue) && diskValue.length > 0) return diskValue;
+  if (diskValue !== fallback) return diskValue;
+  // 磁盘还没有数据：尝试从 localStorage 的旧数据补齐（老用户迁移）
+  const legacy = readLegacyValue<T>(legacyKey, fallback);
+  if (legacy !== fallback) {
+    writeDisk(key, legacy);
+    return legacy;
+  }
+  return fallback;
+}
+
+/**
+ * 写入关键数据：磁盘存储为准，localStorage 同步一份作为兼容层。
+ * 返回 localStorage 是否写成功（false 表示配额超限，磁盘数据仍然有效）。
+ */
+function writePersistent(key: DiskKey, legacyKey: string, value: unknown): boolean {
+  writeDisk(key, value);
+  try {
+    write(legacyKey, value);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function uid(prefix = 'id'): string {
@@ -307,7 +370,7 @@ export function removeQueueItem(id: string): QueueItem[] {
 }
 
 export function listAccounts(): AccountItem[] {
-  return read<AccountItem[]>(KEYS.accounts, []);
+  return readPersistent<AccountItem[]>("accounts", KEYS.accounts, []);
 }
 
 export function saveAccount(a: AccountItem): AccountItem[] {
@@ -315,13 +378,13 @@ export function saveAccount(a: AccountItem): AccountItem[] {
   const idx = list.findIndex((x) => x.id === a.id);
   if (idx >= 0) list[idx] = a;
   else list.push(a);
-  write(KEYS.accounts, list);
+  writePersistent("accounts", KEYS.accounts, list);
   return list;
 }
 
 export function removeAccount(id: string): AccountItem[] {
   const list = listAccounts().filter((x) => x.id !== id);
-  write(KEYS.accounts, list);
+  writePersistent("accounts", KEYS.accounts, list);
   return list;
 }
 
@@ -394,11 +457,11 @@ export function saveTasks(list: TaskItem[]): void {
 }
 
 export function listMaterialGroups(): MaterialGroup[] {
-  return read<MaterialGroup[]>(KEYS.materialGroups, []);
+  return readPersistent<MaterialGroup[]>("materialGroups", KEYS.materialGroups, []);
 }
 
 export function saveMaterialGroups(list: MaterialGroup[]): void {
-  write(KEYS.materialGroups, list);
+  writePersistent("materialGroups", KEYS.materialGroups, list);
 }
 
 export function upsertMaterialGroup(g: MaterialGroup): MaterialGroup[] {
@@ -406,13 +469,13 @@ export function upsertMaterialGroup(g: MaterialGroup): MaterialGroup[] {
   const idx = list.findIndex((x) => x.id === g.id);
   if (idx >= 0) list[idx] = g;
   else list.unshift(g);
-  write(KEYS.materialGroups, list);
+  writePersistent("materialGroups", KEYS.materialGroups, list);
   return list;
 }
 
 export function removeMaterialGroup(id: string): MaterialGroup[] {
   const list = listMaterialGroups().filter((x) => x.id !== id);
-  write(KEYS.materialGroups, list);
+  writePersistent("materialGroups", KEYS.materialGroups, list);
   return list;
 }
 
@@ -429,20 +492,23 @@ export function updateMaterial(
         }
       : g,
   );
-  write(KEYS.materialGroups, list);
+  writePersistent("materialGroups", KEYS.materialGroups, list);
   return list;
 }
 
+// 兼容旧数据：老任务没有 removeAi 字段时默认关闭去 AI 味
+function normalizeHostTask(task: HostTaskItem): HostTaskItem {
+  const next =
+    task.platform === "公众号" ? { ...task, publishMode: "draft" as const } : task;
+  return { ...next, removeAi: next.removeAi === true };
+}
+
 export function listHostTasks(): HostTaskItem[] {
-  return read<HostTaskItem[]>(KEYS.hostTasks, []).map((task) =>
-    task.platform === "公众号" ? { ...task, publishMode: "draft" } : task,
-  );
+  return readPersistent<HostTaskItem[]>("hostTasks", KEYS.hostTasks, []).map(normalizeHostTask);
 }
 
 export function saveHostTasks(list: HostTaskItem[]): void {
-  write(KEYS.hostTasks, list.map((task) =>
-    task.platform === "公众号" ? { ...task, publishMode: "draft" } : task,
-  ));
+  writePersistent("hostTasks", KEYS.hostTasks, list.map(normalizeHostTask));
 }
 
 export function listConsumed(): ConsumedRecord[] {
@@ -467,45 +533,38 @@ export function updateConsumed(id: string, patch: Partial<ConsumedRecord>): Cons
 }
 
 export function listAssets(): AssetItem[] {
-  return read<AssetItem[]>(KEYS.assets, []);
+  return readPersistent<AssetItem[]>("assets", KEYS.assets, []);
 }
 
 export function saveAsset(a: AssetItem): AssetItem[] {
   let list = listAssets();
   list.unshift(a);
   list = list.slice(0, 60);
-  // 写入失败（超配额）时逐步丢最旧记录重试；单条也写不进才放弃
+  // 图片素材体积大，localStorage 写不下时逐步丢最旧记录重试；磁盘存储不受配额限制
   while (list.length > 0) {
-    try {
-      write(KEYS.assets, list);
-      return list;
-    } catch {
-      list = list.slice(0, -1);
-    }
+    const ok = writePersistent("assets", KEYS.assets, list);
+    if (ok) return list;
+    list = list.slice(0, -1);
   }
   return list;
 }
 
 export function updateAsset(id: string, patch: Partial<AssetItem>): AssetItem[] {
   const list = listAssets().map((a) => (a.id === id ? { ...a, ...patch } : a));
-  try {
-    write(KEYS.assets, list);
-  } catch {
-    /* 超出配额时保留原数据 */
-  }
+  writePersistent("assets", KEYS.assets, list);
   return list;
 }
 
 export function removeAsset(id: string): AssetItem[] {
   const list = listAssets().filter((a) => a.id !== id);
-  write(KEYS.assets, list);
+  writePersistent("assets", KEYS.assets, list);
   return list;
 }
 
 export function removeAssets(ids: string[]): AssetItem[] {
   const set = new Set(ids);
-  const list = listAssets().filter((a) => !set.has(a.id));
-  write(KEYS.assets, list);
+  const list = listAssets().filter((a) => set.has(a.id) === false);
+  writePersistent("assets", KEYS.assets, list);
   return list;
 }
 
