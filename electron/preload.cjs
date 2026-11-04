@@ -27,6 +27,9 @@ contextBridge.exposeInMainWorld('wangaohui', {
   winMinimize: () => ipcRenderer.invoke('window-minimize'),
   winMaximize: () => ipcRenderer.invoke('window-maximize'),
   winClose: () => ipcRenderer.invoke('window-close'),
+  // 关键业务数据（账号 / 素材库）走磁盘文件，读用 sendSync 以保持渲染进程同步接口
+  appDataRead: () => ipcRenderer.sendSync('app-data-read') || { ok: false, data: {} },
+  appDataWrite: (data) => ipcRenderer.invoke('app-data-write', data),
   appVersion: () => ipcRenderer.invoke('app-version'),
   updateCheck: () => ipcRenderer.invoke('update-check'),
   updateInstall: () => ipcRenderer.invoke('update-install'),

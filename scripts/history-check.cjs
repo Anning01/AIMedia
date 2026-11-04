@@ -4,6 +4,7 @@ const path = require("path");
 const assert = require("assert/strict");
 const vm = require("vm");
 const ts = require("typescript");
+const { createRequire } = require("module");
 const memory = new Map();
 let fail = false;
 const storage = {
@@ -21,7 +22,41 @@ vm.runInNewContext(
       target: ts.ScriptTarget.ES2020,
     },
   }).outputText,
-  { exports: exported, localStorage: storage },
+  {
+    exports: exported,
+    localStorage: storage,
+    // localStore 依赖的持久化层会被转成 CommonJS 后调用 require，这里补上测试环境所需的模块环境
+    require: (mod) => {
+      if (mod === "./persistentStore" || mod.endsWith("persistentStore")) {
+        const exportedPersist = {};
+        vm.runInNewContext(
+          ts.transpileModule(
+            fs.readFileSync(
+              path.resolve(__dirname, "..", "src", "data", "persistentStore.ts"),
+              "utf8",
+            ),
+            {
+              compilerOptions: {
+                module: ts.ModuleKind.CommonJS,
+                target: ts.ScriptTarget.ES2020,
+              },
+            },
+          ).outputText,
+          {
+            exports: exportedPersist,
+            localStorage: storage,
+            window: {},
+            console: { log() {}, warn() {}, error() {} },
+          },
+        );
+        return exportedPersist;
+      }
+      return require(mod);
+    },
+    // 渲染进程环境：持久化层在没有 Electron 桥接时应退化为纯 localStorage
+    window: {},
+    console: { log() {}, warn() {}, error() {} },
+  },
 );
 for (let index = 0; index < 30; index++)
   exported.saveArticleHistoryItem({

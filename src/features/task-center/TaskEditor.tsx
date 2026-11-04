@@ -68,6 +68,7 @@ export function TaskEditor({
           startTime: "09:00",
           intervalMinutes: 1440,
           publishMode: "draft",
+          removeAi: false,
           retry: true,
         }}
       >
@@ -421,6 +422,31 @@ export function TaskEditor({
         >
           公众号任务仅推送草稿箱。当天完成设定篇数后停止，第二天继续；一次任务达到篇数后结束。
         </div>
+        <Form.Item noStyle shouldUpdate>
+          {({ getFieldValue }) =>
+            getFieldValue("contentType") === "sticker" ? null : (
+              <>
+                <div className="mt-6 mb-3 flex items-center gap-3 first:mt-0">
+                  <span className="text-[13px] font-semibold text-foreground">AI 处理</span>
+                  <span className="h-px flex-1 bg-border" />
+                </div>
+                <Form.Item
+                  name="removeAi"
+                  label="生成后去 AI 味（器灵 remove-ai）"
+                  valuePropName="checked"
+                >
+                  <Switch />
+                </Form.Item>
+                <div
+                  className="muted"
+                  style={{ fontSize: 12, marginTop: -8, marginBottom: 8 }}
+                >
+                  正文生成后、排版前先过器灵去 AI 处理；按 2000 字分段提交，每段计一次调用；处理失败时本次任务记失败并不发布。
+                </div>
+              </>
+            )
+          }
+        </Form.Item>
         <div className="mt-6 mb-3 flex items-center gap-3 first:mt-0">
           <span className="text-[13px] font-semibold text-foreground">失败处理</span>
           <span className="h-px flex-1 bg-border" />

@@ -28,6 +28,13 @@ export function useAppUpdates() {
     try {
       const result = await window.wangaohui.updateCheck();
       if (!result.ok) throw Error(result.error || "检查更新失败");
+      if (result.message) {
+        if (result.hasUpdate) {
+          message.success(result.message);
+        } else {
+          message.info(result.message);
+        }
+      }
     } catch (error) {
       message.error(error instanceof Error ? error.message : "检查更新失败");
     } finally {

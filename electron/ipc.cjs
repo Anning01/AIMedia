@@ -20,11 +20,16 @@ const {
   publishArticle: publishBaijiahao,
   verifyLogin: verifyBaijiahao,
 } = require('./baijiahao.cjs');
+const { readAppData, writeAppData } = require('./app-data.cjs');
 const aiConfig = require('./ai-config.cjs');
 const { createQilingService } = require('./qiling-service.cjs');
+const { createRemoveRunner } = require('./qiling-remove-runner.cjs');
 const { isQilingUrl } = require('./qiling-api.cjs');
 let qiling;
 const qilingService = () => qiling ||= createQilingService({config:aiConfig,directory:app.getPath('userData'),openExternal:url=>shell.openExternal(url)});
+let removeRunner;
+// 托管任务专用的去 AI 后台执行器，与创作工坊的人工交互任务彼此独立
+const removeRunnerService = () => removeRunner ||= createRemoveRunner({config:aiConfig,directory:app.getPath('userData')});
 const aiError = error => ({ok:false,error:error.message||String(error),code:error.code,retryable:error.retryable});
 const callConfig = payload => ({...readAiConfig(),AI_REQUEST_ID:payload.requestId || require('crypto').randomUUID()});
 
@@ -32,6 +37,11 @@ const IMAGEHOST_CONFIG = path.join(__dirname, '..', 'config', 'imagehost.json');
 const readAiConfig = aiConfig.runtimeConfig;
 
 function registerIpc() {
+  // 读用 sendSync（渲染进程同步读取），必须用 ipcMain.on 注册，不能用 ipcMain.handle
+  ipcMain.on('app-data-read', (event) => {
+    event.returnValue = readAppData();
+  });
+  ipcMain.handle('app-data-write', (_e, payload) => writeAppData(payload));
   ipcMain.handle('window-minimize', () => {
     const win = BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0];
     win?.minimize();
@@ -386,6 +396,20 @@ function registerIpc() {
   ipcMain.handle('llm-chat',async(e,payload={})=>generateCall(e,payload,async cfg=>({ok:true,reply:await chatWithProvider(payload,cfg)})));
   ipcMain.handle('generate-article',async(e,payload={})=>generateCall(e,payload,async cfg=>{
     const result=await runPipeline(payload,cfg);
+    // 托管任务可选开启去 AI 味：正文生成后、排版前先过器灵 remove-ai，失败则整篇不发布。
+    if(payload.removeAi===true){
+      const {articleBlocks}=require('./article-text.cjs');
+      let cleaned;
+      try{
+        cleaned=await removeRunnerService().runRemove({text:result.chinese,allowSplit:true},"host:"+e.sender.id);
+      }catch(error){
+        // 去 AI 可能已付费提交，失败不得自动重试，否则会重复付费。
+        throw Object.assign(new Error(error&&error.message?error.message:"去 AI 处理失败"),{code:'QILING_REMOVE_FAILED',retryable:false});
+      }
+      const chinese=String(cleaned.text||"").trim();
+      if(!chinese)throw Object.assign(new Error("去 AI 处理后正文为空，本次任务不发布，请核对使用记录"),{code:'QILING_REMOVE_FAILED',retryable:false});
+      return {ok:true,mode:result.mode,chinese,blocks:articleBlocks(chinese),removeAi:true};
+    }
     return {ok:true,mode:result.mode,chinese:result.chinese,blocks:Array.isArray(result.blocks)?result.blocks:[]};
   }));
   ipcMain.handle('test-ai-config', async (_event, payload = {}) => {

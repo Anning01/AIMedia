@@ -196,6 +196,7 @@ export function useTaskCenter({ active = true }: { active?: boolean }) {
           intervalMinutes:
             frequency === "daily" ? Number(values.intervalMinutes) || 1440 : 0,
           publishMode: platform === "公众号" ? "draft" : values.publishMode === "publish" ? "publish" : "draft",
+          removeAi: values.removeAi === true,
           retry: values.retry !== false,
           nextRunAt,
           log: [
@@ -233,6 +234,7 @@ export function useTaskCenter({ active = true }: { active?: boolean }) {
           intervalMinutes:
             frequency === "daily" ? Number(values.intervalMinutes) || 1440 : 0,
           publishMode: platform === "公众号" ? "draft" : values.publishMode === "publish" ? "publish" : "draft",
+          removeAi: values.removeAi === true,
           retry: values.retry !== false,
           enabled: true,
           status: "运行中",
@@ -274,8 +276,15 @@ export function useTaskCenter({ active = true }: { active?: boolean }) {
       startTime: t.startTime,
       intervalMinutes: t.intervalMinutes || 1440,
       publishMode: saveToDraftOnly(t.platform, t.publishMode) ? "draft" : "publish",
+      removeAi: t.removeAi === true,
       retry: t.retry,
     });
+    setCreateOpen(true);
+  };
+
+  const openCreate = () => {
+    setEditingTask(null);
+    form.resetFields();
     setCreateOpen(true);
   };
 
@@ -423,6 +432,8 @@ export function useTaskCenter({ active = true }: { active?: boolean }) {
         words:800,
         audience: "公众号读者",
         category: "",
+        // 托管任务开启去 AI 味时，正文生成后在主进程里过器灵 remove-ai，失败则整篇不发布。
+        removeAi: t.removeAi === true,
       });
       if (!r?.ok || !r.chinese) throw Object.assign(new Error(r?.error || "文章生成失败"),{retryable:r?.retryable});
       return r;
@@ -584,54 +595,54 @@ export function useTaskCenter({ active = true }: { active?: boolean }) {
     const now = new Date();
     const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
     // 用最新存储的任务做执行基底，避免旧快照把编辑后的配置/日志覆盖掉
-    const fresh = listHostTasks().find((x) => x.id === t.id) || t;
+    const task = listHostTasks().find((x) => x.id === t.id) || t;
     // 下次执行基准：手动执行从当前时间起算；定时执行取“上次计划时间/当前时间”较新者
     const nextBase = manual
       ? Date.now()
       : Math.max(
-          fresh.nextRunAt ? new Date(fresh.nextRunAt).getTime() : Date.now(),
+          task.nextRunAt ? new Date(task.nextRunAt).getTime() : Date.now(),
           Date.now(),
         );
     const nextInterval = () =>
       new Date(
-        nextBase + Math.max(1, fresh.intervalMinutes || 60) * 60000,
+        nextBase + Math.max(1, task.intervalMinutes || 60) * 60000,
       ).toISOString();
-    const periodKey = fresh.frequency === "once" ? "once" : localDate;
-    let doneCount = fresh.periodKey === periodKey ? fresh.doneCount || 0 : 0;
-    const remaining = Math.max(0, fresh.perRunCount - doneCount);
+    const periodKey = task.frequency === "once" ? "once" : localDate;
+    let doneCount = task.periodKey === periodKey ? task.doneCount || 0 : 0;
+    const remaining = Math.max(0, task.perRunCount - doneCount);
     let current = pushLog(
-      { ...fresh, status: "执行中" },
-      `开始执行：${fresh.name}${fresh.frequency === "once" ? "" : `（今日已完成 ${doneCount}/${fresh.perRunCount}）`}`,
+      { ...task, status: "执行中" },
+      `开始执行：${task.name}${task.frequency === "once" ? "" : `（今日已完成 ${doneCount}/${task.perRunCount}）`}`,
     );
-    patchTask(t.id, current);
+    patchTask(task.id, current);
     try {
       if (remaining <= 0) {
         current = pushLog(
           current,
-          t.frequency === "once" ? "任务已完成" : "今日目标已完成，明天再执行",
+          task.frequency === "once" ? "任务已完成" : "今日目标已完成，明天再执行",
         );
-        patchTask(t.id, {
-          status: t.frequency === "once" ? "已完成" : "运行中",
-          enabled: t.frequency === "once" ? false : true,
+        patchTask(task.id, {
+          status: task.frequency === "once" ? "已完成" : "运行中",
+          enabled: task.frequency === "once" ? false : true,
           periodKey,
           doneCount,
           nextRunAt:
-            t.frequency === "once" ? t.nextRunAt : nextDayAt(t.startTime),
+            task.frequency === "once" ? task.nextRunAt : nextDayAt(task.startTime),
           log: current.log,
         });
         return;
       }
       // 每次执行只发布 1 篇：成功数未达每日目标时，按执行间隔继续跑，
       // 达到目标后当天跳过，次日再按开始时间恢复。
-      const items = await pickItems(t, 1);
+      const items = await pickItems(task, 1);
       if (!items.length) {
         current = pushLog(current, "素材池为空，本次跳过");
-        patchTask(t.id, {
-          status: t.frequency === "once" ? "已完成" : "运行中",
-          enabled: t.frequency === "once" ? false : true,
+        patchTask(task.id, {
+          status: task.frequency === "once" ? "已完成" : "运行中",
+          enabled: task.frequency === "once" ? false : true,
           periodKey,
           doneCount,
-          nextRunAt: t.frequency === "once" ? t.nextRunAt : nextInterval(),
+          nextRunAt: task.frequency === "once" ? task.nextRunAt : nextInterval(),
           log: current.log,
         });
         return;
@@ -648,20 +659,20 @@ export function useTaskCenter({ active = true }: { active?: boolean }) {
             consId = uid("cons");
             addConsumed({
               id: consId,
-              taskId: t.id,
-              sourceType: t.sourceType,
+              taskId: task.id,
+              sourceType: task.sourceType,
               itemKey: item.key,
               status: "done",
               createdAt: new Date().toISOString(),
             });
           }
-          if (t.contentType === "sticker") {
+          if (task.contentType === "sticker") {
             const g = await generateStickerImages(
-              t,
+              task,
               `${item.title}\n${item.content}`,
             );
-            const p = await publish(t, {
-              title: t.platform === "小红书" ? g.title : "",
+            const p = await publish(task, {
+              title: task.platform === "小红书" ? g.title : "",
               content: g.content,
               images: g.images,
               postType: "sticker",
@@ -669,15 +680,17 @@ export function useTaskCenter({ active = true }: { active?: boolean }) {
             if (!p.ok) throw new Error(p.error);
             current = pushLog(
               current,
-              `贴图已${saveToDraftOnly(t.platform, t.publishMode) ? "存入草稿" : "发布"}：${item.title}`,
+              `贴图已${saveToDraftOnly(task.platform, task.publishMode) ? "存入草稿" : "发布"}：${item.title}`,
             );
             doneCount += 1;
           } else {
             const a = await generateArticleHtml(
-              t,
+              task,
               `${item.title}\n${item.content}`,
             );
-            const p = await publish(t, {
+            if (task.removeAi === true)
+              current = pushLog(current, "正文已去 AI 味，发布处理后的文案");
+            const p = await publish(task, {
               title: a.title,
               content: a.html,
               coverImageUrl: a.coverImageUrl,
@@ -685,7 +698,7 @@ export function useTaskCenter({ active = true }: { active?: boolean }) {
             if (!p.ok) throw new Error(p.error);
             current = pushLog(
               current,
-              `文章已${saveToDraftOnly(t.platform, t.publishMode) ? "存入草稿" : "发布"}：${a.title}`,
+              `文章已${saveToDraftOnly(task.platform, task.publishMode) ? "存入草稿" : "发布"}：${a.title}`,
             );
             doneCount += 1;
           }
@@ -695,23 +708,23 @@ export function useTaskCenter({ active = true }: { active?: boolean }) {
               usedAt: new Date().toISOString(),
             });
           }
-          const pubAccount = listAccounts().find((a) => a.id === t.accountId);
-          const pubWechat = t.wechatUsername
+          const pubAccount = listAccounts().find((a) => a.id === task.accountId);
+          const pubWechat = task.wechatUsername
             ? (pubAccount?.wechatAccounts || []).find(
-                (w) => w.username === t.wechatUsername,
+                (w) => w.username === task.wechatUsername,
               )
             : undefined;
           saveQueueItem({
             id: uid("pub"),
-            platform: t.platform,
-            account: pubWechat?.nickname || pubAccount?.name || t.accountId,
+            platform: task.platform,
+            account: pubWechat?.nickname || pubAccount?.name || task.accountId,
             title: item.title,
-            status: saveToDraftOnly(t.platform, t.publishMode) ? "已存草稿" : "已发布",
+            status: saveToDraftOnly(task.platform, task.publishMode) ? "已存草稿" : "已发布",
             createdAt: new Date().toISOString(),
           });
-          addUsage(t.contentType === "sticker" ? "贴图" : "文章");
+          addUsage(task.contentType === "sticker" ? "贴图" : "文章");
           // 每成功一条立即落盘任务状态，避免重启后丢失已完成记录
-          patchTask(t.id, { periodKey, doneCount, log: current.log });
+          patchTask(task.id, { periodKey, doneCount, log: current.log });
         } catch (err) {
           current = pushLog(
             current,
@@ -721,35 +734,35 @@ export function useTaskCenter({ active = true }: { active?: boolean }) {
             updateMaterial(
               item.groupId,
               item.materialId,
-              t.retry ? { status: "failed" } : { status: "pending" },
+              task.retry ? { status: "failed" } : { status: "pending" },
             );
           } else if (consId) {
             updateConsumed(consId, { status: "failed" });
           }
-          patchTask(t.id, { periodKey, doneCount, log: current.log });
+          patchTask(task.id, { periodKey, doneCount, log: current.log });
           if (err && typeof err === 'object' && 'retryable' in err && err.retryable === false) {
             current=pushLog(current,'器灵调用已停止自动重试，请核对使用记录后手动恢复');
             throw err;
           }
         }
       }
-      const reached = doneCount >= t.perRunCount;
+      const reached = doneCount >= task.perRunCount;
       current = pushLog(
         current,
         reached
-          ? `目标完成（${doneCount}/${t.perRunCount}），用时 ${((Date.now() - started) / 1000).toFixed(0)}s`
-          : `本次执行完成（${doneCount}/${t.perRunCount}），用时 ${((Date.now() - started) / 1000).toFixed(0)}s`,
+          ? `目标完成（${doneCount}/${task.perRunCount}），用时 ${((Date.now() - started) / 1000).toFixed(0)}s`
+          : `本次执行完成（${doneCount}/${task.perRunCount}），用时 ${((Date.now() - started) / 1000).toFixed(0)}s`,
       );
-      patchTask(t.id, {
-        status: reached && t.frequency === "once" ? "已完成" : "运行中",
-        enabled: reached && t.frequency === "once" ? false : true,
+      patchTask(task.id, {
+        status: reached && task.frequency === "once" ? "已完成" : "运行中",
+        enabled: reached && task.frequency === "once" ? false : true,
         periodKey,
         doneCount,
         lastRunAt: new Date().toISOString(),
         nextRunAt: reached
-          ? t.frequency === "once"
-            ? t.nextRunAt
-            : nextDayAt(t.startTime)
+          ? task.frequency === "once"
+            ? task.nextRunAt
+            : nextDayAt(task.startTime)
           : nextInterval(),
         log: current.log,
       });
@@ -758,8 +771,8 @@ export function useTaskCenter({ active = true }: { active?: boolean }) {
         current,
         `任务执行失败：${err instanceof Error ? err.message : String(err)}`,
       );
-      patchTask(t.id, {
-        enabled: err && typeof err === "object" && "retryable" in err && err.retryable === false ? false : t.enabled,
+      patchTask(task.id, {
+        enabled: err && typeof err === "object" && "retryable" in err && err.retryable === false ? false : task.enabled,
         status: err && typeof err === "object" && "retryable" in err && err.retryable === false ? "已暂停" : "运行中",
         periodKey,
         doneCount,
@@ -846,11 +859,14 @@ export function useTaskCenter({ active = true }: { active?: boolean }) {
     {
       title: "类型",
       key: "type",
-      width: 70,
+      width: 100,
       render: (_: unknown, t: HostTaskItem) => (
-        <Tag color={t.contentType === "sticker" ? "purple" : "blue"}>
-          {t.contentType === "sticker" ? "贴图" : "文章"}
-        </Tag>
+        <span className="flex items-center gap-1">
+          <Tag color={t.contentType === "sticker" ? "purple" : "blue"}>
+            {t.contentType === "sticker" ? "贴图" : "文章"}
+          </Tag>
+          {t.removeAi && <Tag color="cyan">去AI</Tag>}
+        </span>
       ),
     },
     {
@@ -952,6 +968,7 @@ export function useTaskCenter({ active = true }: { active?: boolean }) {
   return {
     contextHolder,
     tasks,
+    openCreate,
     setCreateOpen,
     columns,
     editingTask,
