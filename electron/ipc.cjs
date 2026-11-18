@@ -252,7 +252,7 @@ function registerIpc() {
       } else if (provider === 'custom') {
         url = normalizeUrl(baseUrl || 'https://api.openai.com/v1', '/images/generations');
         body = {
-          model: model || 'gpt-image-1',
+          model: model || 'gpt-image-2.5-sunburst',
           prompt,
           n: count,
           size: ({ '3:4': '1024x1536', '9:16': '1024x1536', '4:3': '1536x1024', '16:9': '1536x1024', '1:1': '1024x1024' })[size] || size || '1024x1024',
